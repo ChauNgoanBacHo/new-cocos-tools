@@ -73,30 +73,6 @@ function getHealthTone(score: number) {
     return "text-rose-600 dark:text-rose-400";
 }
 
-function getFileSignal(file: CodeHealthFileReport) {
-    const hasTypescriptIssue = file.issues.some((issue) => issue.source === "typescript");
-    const hasError = file.issues.some((issue) => issue.severity === "error");
-
-    if (hasTypescriptIssue) {
-        return {
-            icon: "⛔",
-            className: "text-fuchsia-700 dark:text-fuchsia-300",
-        };
-    }
-
-    if (hasError) {
-        return {
-            icon: "🟠",
-            className: "text-amber-600 dark:text-amber-400",
-        };
-    }
-
-    return {
-        icon: "🟡",
-        className: "text-amber-600 dark:text-amber-400",
-    };
-}
-
 function formatCountBadge(label: string, count: number, tone: string) {
     return (
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone}`}>
@@ -310,11 +286,11 @@ export default function CodeHealth() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Source Folder <span className="text-red-500">*</span>
                             </label>
-                            <div className="sm:col-span-2 flex gap-2">
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={sourcePath}
@@ -425,7 +401,6 @@ export default function CodeHealth() {
                                 </div>
                             ) : (
                                 filteredFiles.map((file) => {
-                                    const signal = getFileSignal(file);
                                     const isExpanded = Boolean(expandedFiles[file.filePath]);
                                     const typescriptCount = file.issues.filter((issue) => issue.source === "typescript").length;
                                     const eslintErrorCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "error").length;
@@ -443,7 +418,6 @@ export default function CodeHealth() {
                                                     <span className="flex items-center justify-center">
                                                         <ChevronIcon expanded={isExpanded} />
                                                     </span>
-                                                    <span className="text-base">{signal.icon}</span>
                                                     <span className="font-semibold text-slate-800 dark:text-zinc-100 break-all">
                                                         {file.filePath}
                                                     </span>
@@ -464,7 +438,7 @@ export default function CodeHealth() {
                                                                 <th className="px-4 py-3 font-mono">Source</th>
                                                                 <th className="px-4 py-3 font-mono">Location</th>
                                                                 <th className="px-4 py-3 font-mono">Message</th>
-                                                                <th className="px-4 py-3 font-mono">Rule ID</th>
+                                                                <th className="px-4 py-3 font-mono min-w-[112px] whitespace-nowrap">Rule ID</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -494,7 +468,7 @@ export default function CodeHealth() {
                                                                     <td className="px-4 py-3 text-slate-800 dark:text-zinc-100">
                                                                         {issue.message}
                                                                     </td>
-                                                                    <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 font-mono break-all">
+                                                                    <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 font-mono whitespace-nowrap min-w-[112px]">
                                                                         {issue.ruleId}
                                                                     </td>
                                                                 </tr>

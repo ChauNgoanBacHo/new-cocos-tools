@@ -168,11 +168,11 @@ export default function CreateSoundConfigs() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Sound Folder <span className="text-red-500">*</span>
                             </label>
-                            <div className="sm:col-span-2 flex gap-2">
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={soundDir}
@@ -189,11 +189,11 @@ export default function CreateSoundConfigs() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Output Folder <span className="text-red-500">*</span>
                             </label>
-                            <div className="sm:col-span-2 flex gap-2">
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={outputDir}
@@ -210,11 +210,11 @@ export default function CreateSoundConfigs() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Sound File Name
                             </label>
-                            <div className="sm:col-span-2">
+                            <div>
                                 <input
                                     type="text"
                                     placeholder="SoundConfig9000.ts"
@@ -225,11 +225,11 @@ export default function CreateSoundConfigs() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Overwrite File
                             </label>
-                            <div className="text-left sm:col-span-2">
+                            <div className="text-left">
                                 <label className="inline-flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -244,11 +244,11 @@ export default function CreateSoundConfigs() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Add Sound Ref
                             </label>
-                            <div className="text-left sm:col-span-2">
+                            <div className="text-left">
                                 <label className="inline-flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -265,11 +265,11 @@ export default function CreateSoundConfigs() {
 
                         {addRef && (
                             <>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                            <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                     Scene File <span className="text-red-500">*</span>
                                 </label>
-                                <div className="sm:col-span-2 flex gap-2">
+                                <div className="flex gap-2">
                                     <input
                                         type="text"
                                         value={scenePath}
@@ -286,7 +286,7 @@ export default function CreateSoundConfigs() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                            <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left flex items-center gap-1">
                                     SoundModule UUID<span className="text-red-500">*</span>
                                     <span className="relative group">
@@ -298,7 +298,7 @@ export default function CreateSoundConfigs() {
                                         </span>
                                     </span>
                                 </label>
-                                <div className="sm:col-span-2">
+                                <div>
                                     <input
                                         type="text"
                                         value={componentHash}

@@ -291,7 +291,7 @@ function App() {
 
             {/* NỘI DUNG HIỂN THỊ CHÍNH BÊN PHẢI */}
             <main className="flex-1 p-8 overflow-y-auto bg-slate-100 dark:bg-zinc-900">
-                <div className="max-w-4xl h-full flex flex-col justify-between">
+                <div className="w-full h-full flex flex-col justify-between">
                     <div>
 
                         {/* <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm min-h-[400px]"> */}

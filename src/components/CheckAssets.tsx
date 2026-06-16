@@ -176,11 +176,11 @@ export default function CheckAssets() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Source Folder <span className="text-red-500">*</span>
                             </label>
-                            <div className="sm:col-span-2 flex gap-2">
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={sourceDir}
