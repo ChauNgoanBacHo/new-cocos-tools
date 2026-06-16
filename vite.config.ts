@@ -4,9 +4,8 @@ import electron from "vite-plugin-electron/simple";
 
 const electronMainExternals = [
     "eslint",
+    "typescript",
     "typescript-eslint",
-    "knip",
-    "knip/session",
     /^@oxc-resolver\//,
 ];
 

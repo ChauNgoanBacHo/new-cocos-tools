@@ -48,14 +48,14 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />,
     },
     {
-        id: "code-health",
-        label: "Code Health",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
-    },
-    {
         id: "spine-preview",
         label: "Spine Preview",
         icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
+    },
+    {
+        id: "code-health",
+        label: "Code Health",
+        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
     },
 ];
 
@@ -64,6 +64,14 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
+    const [, setCodeHealthSourcePath] = useStoredState<string>("code-health-source-path", "");
+    const [, setCodeHealthAutoRunKey] = useStoredState<string>("code-health-auto-run-key", "");
+
+    const handleOpenCodeHealth = (sourcePath: string) => {
+        setCodeHealthSourcePath(sourcePath);
+        setCodeHealthAutoRunKey(`${sourcePath}::${Date.now()}`);
+        setActiveTab("code-health");
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoading(false), 1600);
@@ -98,7 +106,7 @@ function App() {
             case "cheat":
                 return <CheatConsole />;
             case "anim":
-                return <CreateAnimConfigs />;
+                return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":
                 return <CreateSoundConfigs />;
             case "check-config":

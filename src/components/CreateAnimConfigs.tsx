@@ -7,7 +7,22 @@ interface AnimResult {
     exitCode: number;
 }
 
-export default function CreateAnimConfigs() {
+interface CreateAnimConfigsProps {
+    onOpenCodeHealth?: (sourcePath: string) => void;
+}
+
+function getCodeHealthScriptsPath(outputPath: string) {
+    const normalizedPath = outputPath.replace(/\\/g, "/");
+    const scriptsIndex = normalizedPath.lastIndexOf("/scripts");
+
+    if (scriptsIndex === -1) {
+        return outputPath;
+    }
+
+    return normalizedPath.slice(0, scriptsIndex + "/scripts".length);
+}
+
+export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfigsProps) {
     const [spineDir, setSpineDir] = useStoredState<string>("anim-spine-dir", "");
     const [outputDir, setOutputDir] = useStoredState<string>("anim-output-dir", "");
     const [animFileName, setAnimFileName] = useStoredState<string>("anim-file-name", "AnimConfig9000.ts");
@@ -51,6 +66,14 @@ export default function CreateAnimConfigs() {
             setResult(res);
             if (res.exitCode === 0) {
                 setStatus({ type: "success", message: overwrite ? "Quét và tạo file thành công!" : "Quét thành công (không ghi file)." });
+
+                const shouldOpenCodeHealth = window.confirm(
+                    "Create Anim Config thành công. Bạn có muốn mở Code Health để scan source này ngay không?",
+                );
+
+                if (shouldOpenCodeHealth) {
+                    onOpenCodeHealth?.(getCodeHealthScriptsPath(outputDir));
+                }
             } else {
                 setStatus({ type: "error", message: "Có lỗi xảy ra khi quét." });
             }

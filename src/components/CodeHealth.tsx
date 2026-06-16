@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 
-type CodeHealthMode = "full" | "eslint" | "knip";
-type CodeHealthSource = "eslint" | "knip";
+type CodeHealthMode = "full" | "eslint";
+type CodeHealthSource = "eslint" | "typescript";
 type CodeHealthSeverity = "error" | "warning";
-type CodeHealthFilter = "all" | "knip" | "eslint-error" | "eslint-warning";
+type CodeHealthFilter = "all" | "typescript" | "eslint-error" | "eslint-warning";
 
 interface CodeHealthIssue {
     source: CodeHealthSource;
@@ -33,8 +33,7 @@ interface CodeHealthResult {
         status: "success" | "issues" | "error";
         eslintErrors: number;
         eslintWarnings: number;
-        knipOrphanFiles: number;
-        knipUnusedExports: number;
+        typescriptErrors: number;
         totalFiles: number;
         totalIssues: number;
         healthScore: number;
@@ -47,12 +46,11 @@ interface CodeHealthResult {
         warningCount: number;
         files: CodeHealthFileReport[];
     };
-    knip: {
+    typescript: {
         stdout: string;
         stderr: string;
         exitCode: number;
-        orphanFiles: number;
-        unusedExports: number;
+        errorCount: number;
         files: CodeHealthFileReport[];
     };
     files: CodeHealthFileReport[];
@@ -60,7 +58,7 @@ interface CodeHealthResult {
 
 const FILTER_META: Record<CodeHealthFilter, { label: string; accent: string }> = {
     all: { label: "All", accent: "bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-200" },
-    knip: { label: "Knip", accent: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" },
+    typescript: { label: "TypeScript", accent: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300" },
     "eslint-error": { label: "ESLint Error", accent: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
     "eslint-warning": { label: "ESLint Warn", accent: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
 };
@@ -76,13 +74,20 @@ function getHealthTone(score: number) {
 }
 
 function getFileSignal(file: CodeHealthFileReport) {
-    const hasKnipIssue = file.issues.some((issue) => issue.source === "knip");
+    const hasTypescriptIssue = file.issues.some((issue) => issue.source === "typescript");
     const hasError = file.issues.some((issue) => issue.severity === "error");
 
-    if (hasKnipIssue || hasError) {
+    if (hasTypescriptIssue) {
         return {
-            icon: "🔴",
-            className: "text-rose-600 dark:text-rose-400",
+            icon: "⛔",
+            className: "text-fuchsia-700 dark:text-fuchsia-300",
+        };
+    }
+
+    if (hasError) {
+        return {
+            icon: "🟠",
+            className: "text-amber-600 dark:text-amber-400",
         };
     }
 
@@ -100,8 +105,29 @@ function formatCountBadge(label: string, count: number, tone: string) {
     );
 }
 
+function ChevronIcon({ expanded }: { expanded: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className={`h-4 w-4 text-slate-500 dark:text-zinc-400 transition-transform duration-200 ${
+                expanded ? "rotate-90" : "rotate-0"
+            }`}>
+            <path
+                d="M7 5l6 5-6 5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+            />
+        </svg>
+    );
+}
+
 export default function CodeHealth() {
     const [sourcePath, setSourcePath] = useStoredState<string>("code-health-source-path", "");
+    const [autoRunKey, setAutoRunKey, autoRunReady] = useStoredState<string>("code-health-auto-run-key", "");
     const [isRunning, setIsRunning] = useState(false);
     const [activeMode, setActiveMode] = useState<CodeHealthMode>("full");
     const [result, setResult] = useState<CodeHealthResult | null>(null);
@@ -183,8 +209,8 @@ export default function CodeHealth() {
                 return true;
             }
 
-            if (activeFilter === "knip") {
-                return file.issues.some((issue) => issue.source === "knip");
+            if (activeFilter === "typescript") {
+                return file.issues.some((issue) => issue.source === "typescript");
             }
 
             if (activeFilter === "eslint-error") {
@@ -199,17 +225,17 @@ export default function CodeHealth() {
         if (!result) {
             return {
                 all: 0,
-                knip: 0,
+                typescript: 0,
                 "eslint-error": 0,
                 "eslint-warning": 0,
             };
         }
 
         return {
-            all: result.files.length,
-            knip: result.files.filter((file) => file.issues.some((issue) => issue.source === "knip")).length,
-            "eslint-error": result.files.filter((file) => file.issues.some((issue) => issue.source === "eslint" && issue.severity === "error")).length,
-            "eslint-warning": result.files.filter((file) => file.issues.some((issue) => issue.source === "eslint" && issue.severity === "warning")).length,
+            all: result.summary.totalIssues,
+            typescript: result.summary.typescriptErrors,
+            "eslint-error": result.summary.eslintErrors,
+            "eslint-warning": result.summary.eslintWarnings,
         };
     }, [result]);
 
@@ -227,6 +253,15 @@ export default function CodeHealth() {
             : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400";
 
     const healthScoreTone = getHealthTone(result?.summary.healthScore ?? 100);
+
+    useEffect(() => {
+        if (!autoRunReady || !autoRunKey || !sourcePath.trim() || isRunning) {
+            return;
+        }
+
+        void runScan("full");
+        setAutoRunKey("");
+    }, [autoRunKey, autoRunReady, isRunning, setAutoRunKey, sourcePath]);
 
     return (
         <div>
@@ -297,21 +332,24 @@ export default function CodeHealth() {
                         </div>
                     </div>
 
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            disabled={isRunning}
+                            onClick={() => runScan("full")}
+                            className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
+                                isRunning
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
+                            }`}>
+                            {isRunning && activeMode === "full" ? "Running Health Check..." : "⚡ Run Health Check"}
+                        </button>
+                    </div>
+
                     {result && (
                         <div className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4 space-y-4">
                             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <button
-                                        type="button"
-                                        disabled={isRunning}
-                                        onClick={() => runScan("full")}
-                                        className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
-                                            isRunning
-                                                ? "opacity-50 cursor-not-allowed"
-                                                : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
-                                        }`}>
-                                        {isRunning && activeMode === "full" ? "Running Health Check..." : "⚡ Run Health Check"}
-                                    </button>
                                     <span className={`text-sm font-black uppercase tracking-[0.22em] ${healthScoreTone}`}>
                                         Health Score: {result.summary.healthScore}/100
                                     </span>
@@ -350,7 +388,15 @@ export default function CodeHealth() {
                                 })}
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+                                    <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
+                                        TypeScript Errors
+                                    </div>
+                                    <div className="mt-2 text-2xl font-bold text-fuchsia-700 dark:text-fuchsia-300">
+                                        {result.summary.typescriptErrors}
+                                    </div>
+                                </div>
                                 <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
                                     <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
                                         ESLint Errors
@@ -367,39 +413,7 @@ export default function CodeHealth() {
                                         {result.summary.eslintWarnings}
                                     </div>
                                 </div>
-                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
-                                    <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
-                                        Knip Orphan Files
-                                    </div>
-                                    <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
-                                        {result.summary.knipOrphanFiles}
-                                    </div>
-                                </div>
-                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
-                                    <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
-                                        Knip Unused Exports
-                                    </div>
-                                    <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
-                                        {result.summary.knipUnusedExports}
-                                    </div>
-                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    {!result && (
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                disabled={isRunning}
-                                onClick={() => runScan("full")}
-                                className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
-                                    isRunning
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
-                                }`}>
-                                {isRunning && activeMode === "full" ? "Running Health Check..." : "Run Health Check"}
-                            </button>
                         </div>
                     )}
 
@@ -413,7 +427,7 @@ export default function CodeHealth() {
                                 filteredFiles.map((file) => {
                                     const signal = getFileSignal(file);
                                     const isExpanded = Boolean(expandedFiles[file.filePath]);
-                                    const knipCount = file.issues.filter((issue) => issue.source === "knip").length;
+                                    const typescriptCount = file.issues.filter((issue) => issue.source === "typescript").length;
                                     const eslintErrorCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "error").length;
                                     const eslintWarningCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "warning").length;
 
@@ -426,17 +440,17 @@ export default function CodeHealth() {
                                                 onClick={() => toggleExpanded(file.filePath)}
                                                 className="w-full px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 transition-all text-left">
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <span className="text-base">{isExpanded ? "🔽" : "▶️"}</span>
-                                                    <span className={`text-base ${signal.className}`}>{signal.icon}</span>
+                                                    <span className="flex items-center justify-center">
+                                                        <ChevronIcon expanded={isExpanded} />
+                                                    </span>
+                                                    <span className="text-base">{signal.icon}</span>
                                                     <span className="font-semibold text-slate-800 dark:text-zinc-100 break-all">
                                                         {file.filePath}
                                                     </span>
                                                 </div>
 
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    {file.errorCount > 0 && formatCountBadge("🔴", file.errorCount, "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300")}
-                                                    {file.warningCount > 0 && formatCountBadge("🟡", file.warningCount, "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300")}
-                                                    {knipCount > 0 && formatCountBadge("Knip", knipCount, "bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-300")}
+                                                    {typescriptCount > 0 && formatCountBadge("TypeScript", typescriptCount, "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300")}
                                                     {eslintErrorCount > 0 && formatCountBadge("ESLint Error", eslintErrorCount, "bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300")}
                                                     {eslintWarningCount > 0 && formatCountBadge("ESLint Warn", eslintWarningCount, "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-300")}
                                                 </div>
@@ -460,13 +474,13 @@ export default function CodeHealth() {
                                                                     className="border-b border-slate-200 dark:border-zinc-800 last:border-0 align-top">
                                                                     <td className="px-4 py-3">
                                                                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                                                            issue.source === "knip"
-                                                                                ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                                                                            issue.source === "typescript"
+                                                                                    ? "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300"
                                                                                 : issue.severity === "error"
                                                                                     ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
                                                                                     : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                                                                         }`}>
-                                                                            {issue.source === "knip" ? "Knip" : "ESLint"}
+                                                                            {issue.source === "typescript" ? "TypeScript" : "ESLint"}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-3 text-slate-600 dark:text-zinc-300 font-mono whitespace-nowrap">

@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("open-in-vscode", filePath, line, column),
     runEslint: (sourcePath: string) =>
         ipcRenderer.invoke("run-eslint", sourcePath),
-    runCodeHealth: (sourcePath: string, mode: "full" | "eslint" | "knip") =>
+    runCodeHealth: (sourcePath: string, mode: "full" | "eslint") =>
         ipcRenderer.invoke("run-code-health", sourcePath, mode),
     checkConfig: (configFilePath: string, sourcePath: string) =>
         ipcRenderer.invoke("check-config", configFilePath, sourcePath),

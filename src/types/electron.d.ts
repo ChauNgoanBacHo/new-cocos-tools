@@ -17,15 +17,14 @@ interface ElectronAPI {
         stderr: string;
         exitCode: number;
     }>;
-    runCodeHealth: (sourcePath: string, mode: "full" | "eslint" | "knip") => Promise<{
-        mode: "full" | "eslint" | "knip";
+    runCodeHealth: (sourcePath: string, mode: "full" | "eslint") => Promise<{
+        mode: "full" | "eslint";
         exitCode: number;
         summary: {
             status: "success" | "issues" | "error";
             eslintErrors: number;
             eslintWarnings: number;
-            knipOrphanFiles: number;
-            knipUnusedExports: number;
+            typescriptErrors: number;
             totalFiles: number;
             totalIssues: number;
             healthScore: number;
@@ -40,12 +39,12 @@ interface ElectronAPI {
                 filePath: string;
                 absolutePath: string;
                 errorCount: number;
-                warningCount: number;
-                issues: Array<{
-                    source: "eslint" | "knip";
-                    severity: "error" | "warning";
-                    location: {
-                        line: number | null;
+                        warningCount: number;
+                        issues: Array<{
+                            source: "eslint" | "typescript";
+                            severity: "error" | "warning";
+                            location: {
+                                line: number | null;
                         column: number | null;
                         label: string;
                     };
@@ -54,19 +53,18 @@ interface ElectronAPI {
                 }>;
             }>;
         };
-        knip: {
+        typescript: {
             stdout: string;
             stderr: string;
             exitCode: number;
-            orphanFiles: number;
-            unusedExports: number;
+            errorCount: number;
             files: Array<{
                 filePath: string;
                 absolutePath: string;
                 errorCount: number;
                 warningCount: number;
                 issues: Array<{
-                    source: "eslint" | "knip";
+                    source: "eslint" | "typescript";
                     severity: "error" | "warning";
                     location: {
                         line: number | null;
@@ -84,7 +82,7 @@ interface ElectronAPI {
             errorCount: number;
             warningCount: number;
             issues: Array<{
-                source: "eslint" | "knip";
+                source: "eslint" | "typescript";
                 severity: "error" | "warning";
                 location: {
                     line: number | null;
