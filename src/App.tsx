@@ -23,6 +23,11 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />,
     },
     {
+        id: "drive-sync",
+        label: "Drive Sync",
+        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
+    },
+    {
         id: "anim",
         label: "Create Anim",
         icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113A.375.375 0 019.75 15.113V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></>,
@@ -52,17 +57,12 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Spine Preview",
         icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
     },
-    {
-        id: "drive-sync",
-        label: "Drive Sync",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
-    },
 ];
 
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
     const [isLoading, setIsLoading] = useState(true);
-    const [appVersion, setAppVersion] = useState("v0.2.0");
+    const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
 
     useEffect(() => {
@@ -81,7 +81,7 @@ function App() {
     useEffect(() => {
         window.electronAPI.getAppVersion()
             .then((version) => setAppVersion(`v${version}`))
-            .catch(() => setAppVersion("v0.2.0"));
+            .catch(() => setAppVersion("v0.1.0"));
     }, []);
 
     useEffect(() => {
