@@ -397,7 +397,7 @@ export default function CodeHealth() {
                         <div className="grid grid-cols-1 gap-4">
                             {filteredFiles.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 p-8 text-center text-sm text-slate-500 dark:text-zinc-400">
-                                    Khong co file nao khop voi filter hien tai.
+                                    Không có file nào khớp với filter hiện tại.
                                 </div>
                             ) : (
                                 filteredFiles.map((file) => {
