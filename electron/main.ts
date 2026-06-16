@@ -111,6 +111,8 @@ ipcMain.handle("select-file", async () => {
     return result.filePaths[0];
 });
 
+ipcMain.handle("get-app-version", () => app.getVersion());
+
 registerEslintHandler();
 registerCheckConfigHandler();
 registerCreateSoundHandler();

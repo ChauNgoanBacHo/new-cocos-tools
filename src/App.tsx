@@ -61,6 +61,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
     const [isLoading, setIsLoading] = useState(true);
+    const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useState<boolean>(() => {
         const saved = localStorage.getItem("theme");
         if (saved) return saved === "dark";
@@ -68,7 +69,7 @@ function App() {
     });
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 3200);
+        const timer = setTimeout(() => setIsLoading(false), 1600);
         return () => clearTimeout(timer);
     }, []);
 
@@ -80,6 +81,12 @@ function App() {
         }
         localStorage.setItem("theme", isDark ? "dark" : "light");
     }, [isDark]);
+
+    useEffect(() => {
+        window.electronAPI.getAppVersion()
+            .then((version) => setAppVersion(`v${version}`))
+            .catch(() => setAppVersion("v0.1.0"));
+    }, []);
 
     useEffect(() => {
         // Re-initialize Preline UI components on tab change
@@ -274,6 +281,7 @@ function App() {
                         </button>
                     </div>
                     <span className={footerNoteClassName}>Prompted by TiTi</span>
+                    <span className={footerNoteClassName}>{appVersion}</span>
                 </div>
             </aside>
 

@@ -1,5 +1,6 @@
 interface ElectronAPI {
     ping: () => Promise<string>;
+    getAppVersion: () => Promise<string>;
     selectFolder: () => Promise<string | null>;
     selectFile: () => Promise<string | null>;
     runEslint: (sourcePath: string) => Promise<{
