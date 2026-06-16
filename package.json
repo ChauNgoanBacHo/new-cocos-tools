@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "build:electron": "npm run build && electron-builder",
     "build:electron:mac": "npm run build && electron-builder --mac",
-    "release:mac": "rm -rf release && npm run build && electron-builder --mac zip && node scripts/cleanup-mac-release.mjs",
+    "release:mac": "rm -rf release && npm run build && electron-builder --mac dir && node scripts/package-mac-release.mjs && node scripts/cleanup-mac-release.mjs",
     "build:electron:linux": "npm run build && electron-builder --linux",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -43,7 +43,7 @@
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
-        "zip"
+        "dir"
       ],
       "category": "public.app-category.utilities",
       "identity": null,

@@ -31,7 +31,7 @@ npm run build:electron:linux
 npm run release:mac
 ```
 
-This produces a macOS `.zip` release in `release/` that contains `CocosTools.app`.
+This builds `CocosTools.app`, then creates a macOS `.zip` release in `release/`.
 The release script also cleans the `release/` folder so only the current patch `.zip` remains.
 
 ## Manual patch update flow
