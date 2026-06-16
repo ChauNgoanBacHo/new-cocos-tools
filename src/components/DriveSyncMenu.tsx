@@ -85,7 +85,7 @@ export function DriveSyncMenu() {
         try {
           const selectedFolder = folders.find(f => f.rootFolderId === selectedDrive);
           await window.electronAPI.driveSync.reportComplete({
-            syncType: syncScope,
+            syncType: syncScope === 'all' ? 'full' : syncScope,
             rootFolderId: selectedDrive,
             rootFolderName: selectedFolder?.rootFolderName,
             localPath: localRoot,
