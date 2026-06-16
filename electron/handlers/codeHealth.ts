@@ -123,8 +123,6 @@ export async function runEslintScan(sourcePath: string): Promise<EslintScanResul
                         "no-undef": "error",
                         "no-duplicate-imports": "error",
                         "no-console": ["warn", { allow: ["warn", "error"] }],
-                        "no-multiple-empty-lines": ["warn", { max: 1, maxEOF: 0 }],
-                        semi: ["warn", "always"],
                     },
                 },
                 {
@@ -159,8 +157,6 @@ export async function runEslintScan(sourcePath: string): Promise<EslintScanResul
                         "no-undef": "error",
                         "no-duplicate-imports": "error",
                         "no-console": ["warn", { allow: ["warn", "error"] }],
-                        "no-multiple-empty-lines": ["warn", { max: 1, maxEOF: 0 }],
-                        semi: ["warn", "always"],
                         ...(tsconfigPath ? {
                             "@typescript-eslint/await-thenable": "error",
                         } : {}),
