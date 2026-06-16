@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface UnusedEntry {
     label: string;
@@ -16,9 +17,7 @@ interface AssetSection {
 }
 
 export default function CheckAssets() {
-    const [sourceDir, setSourceDir] = useState<string>(() => {
-        return localStorage.getItem("check-assets-dir") || "";
-    });
+    const [sourceDir, setSourceDir] = useStoredState<string>("check-assets-dir", "");
     const [isRunning, setIsRunning] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
     const [sections, setSections] = useState<AssetSection[]>([]);
@@ -26,8 +25,6 @@ export default function CheckAssets() {
         type: null,
         message: "",
     });
-
-    useEffect(() => { localStorage.setItem("check-assets-dir", sourceDir); }, [sourceDir]);
 
     const totalUnused = sections.reduce((sum, s) => sum + s.unused.length, 0);
     const totalUsed = sections.reduce((sum, s) => sum + s.used, 0);

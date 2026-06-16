@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface CheckResult {
     stdout: string;
@@ -7,26 +8,14 @@ interface CheckResult {
 }
 
 export default function CheckConfigs() {
-    const [configPath, setConfigPath] = useState<string>(() => {
-        return localStorage.getItem("check-config-path") || "";
-    });
-    const [sourcePath, setSourcePath] = useState<string>(() => {
-        return localStorage.getItem("check-source-path") || "";
-    });
+    const [configPath, setConfigPath] = useStoredState<string>("check-config-path", "");
+    const [sourcePath, setSourcePath] = useStoredState<string>("check-source-path", "");
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<CheckResult | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
         message: "",
     });
-
-    useEffect(() => {
-        localStorage.setItem("check-config-path", configPath);
-    }, [configPath]);
-
-    useEffect(() => {
-        localStorage.setItem("check-source-path", sourcePath);
-    }, [sourcePath]);
 
     const handleSelectConfigFile = async () => {
         const file = await window.electronAPI.selectFile();

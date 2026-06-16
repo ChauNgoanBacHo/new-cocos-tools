@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import type { WatchFolder } from '../features/drive-sync/types';
+import { useStoredState } from '../hooks/useStoredState';
 
 export function DriveSyncMenu() {
   const [folders, setFolders] = useState<WatchFolder[]>([]);
-  const [selectedDrive, setSelectedDrive] = useState(() => localStorage.getItem('drive-sync-selected-drive') || '');
-  const [localRoot, setLocalRoot] = useState(() => localStorage.getItem('drive-sync-local-root') || '');
+  const [selectedDrive, setSelectedDrive] = useStoredState<string>('drive-sync-selected-drive', '');
+  const [localRoot, setLocalRoot] = useStoredState<string>('drive-sync-local-root', '');
   const [syncing, setSyncing] = useState(false);
   const [progress, setProgress] = useState({ downloaded: 0, total: 0 });
   const [error, setError] = useState('');
@@ -18,14 +19,6 @@ export function DriveSyncMenu() {
   useEffect(() => {
     window.electronAPI.driveSync.init().then(setFolders).catch(e => setError(e.message));
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('drive-sync-selected-drive', selectedDrive);
-  }, [selectedDrive]);
-
-  useEffect(() => {
-    localStorage.setItem('drive-sync-local-root', localRoot);
-  }, [localRoot]);
 
   const handleSelectFolder = async () => {
     const path = await window.electronAPI.selectFolder();
@@ -77,7 +70,7 @@ export function DriveSyncMenu() {
 
       if (result.failedFiles.length > 0) {
         setFailedFiles(result.failedFiles);
-        localStorage.setItem('drive-sync-failed-files', JSON.stringify(result.failedFiles));
+        window.electronAPI.storage.set('drive-sync-failed-files', result.failedFiles).catch(() => {});
       }
 
       // Report sync complete to backend (Discord notification)

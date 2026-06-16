@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface AnimResult {
     stdout: string;
@@ -7,33 +8,17 @@ interface AnimResult {
 }
 
 export default function CreateAnimConfigs() {
-    const [spineDir, setSpineDir] = useState<string>(() => {
-        return localStorage.getItem("anim-spine-dir") || "";
-    });
-    const [outputDir, setOutputDir] = useState<string>(() => {
-        return localStorage.getItem("anim-output-dir") || "";
-    });
-    const [animFileName, setAnimFileName] = useState<string>(() => {
-        return localStorage.getItem("anim-file-name") || "AnimConfig9000.ts";
-    });
-    const [timeFileName, setTimeFileName] = useState<string>(() => {
-        return localStorage.getItem("time-file-name") || "TimeConfig9000.ts";
-    });
-    const [overwrite, setOverwrite] = useState<boolean>(() => {
-        return localStorage.getItem("anim-overwrite") === "true";
-    });
+    const [spineDir, setSpineDir] = useStoredState<string>("anim-spine-dir", "");
+    const [outputDir, setOutputDir] = useStoredState<string>("anim-output-dir", "");
+    const [animFileName, setAnimFileName] = useStoredState<string>("anim-file-name", "AnimConfig9000.ts");
+    const [timeFileName, setTimeFileName] = useStoredState<string>("time-file-name", "TimeConfig9000.ts");
+    const [overwrite, setOverwrite] = useStoredState<boolean>("anim-overwrite", false);
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<AnimResult | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
         message: "",
     });
-
-    useEffect(() => { localStorage.setItem("anim-spine-dir", spineDir); }, [spineDir]);
-    useEffect(() => { localStorage.setItem("anim-output-dir", outputDir); }, [outputDir]);
-    useEffect(() => { localStorage.setItem("anim-file-name", animFileName); }, [animFileName]);
-    useEffect(() => { localStorage.setItem("time-file-name", timeFileName); }, [timeFileName]);
-    useEffect(() => { localStorage.setItem("anim-overwrite", String(overwrite)); }, [overwrite]);
 
     const handleSelectSpineDir = async () => {
         const folder = await window.electronAPI.selectFolder();

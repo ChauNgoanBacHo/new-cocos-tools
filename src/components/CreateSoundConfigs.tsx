@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface SoundResult {
     stdout: string;
@@ -26,27 +27,13 @@ function compressUuid(uuid: string): string {
 }
 
 export default function CreateSoundConfigs() {
-    const [soundDir, setSoundDir] = useState<string>(() => {
-        return localStorage.getItem("sound-dir") || "";
-    });
-    const [outputDir, setOutputDir] = useState<string>(() => {
-        return localStorage.getItem("sound-output-dir") || "";
-    });
-    const [soundFileName, setSoundFileName] = useState<string>(() => {
-        return localStorage.getItem("sound-file-name") || "SoundConfig9000.ts";
-    });
-    const [overwrite, setOverwrite] = useState<boolean>(() => {
-        return localStorage.getItem("sound-overwrite") === "true";
-    });
-    const [addRef, setAddRef] = useState<boolean>(() => {
-        return localStorage.getItem("sound-add-ref") === "true";
-    });
-    const [scenePath, setScenePath] = useState<string>(() => {
-        return localStorage.getItem("sound-scene-path") || "";
-    });
-    const [componentHash, setComponentHash] = useState<string>(() => {
-        return localStorage.getItem("sound-component-hash") || "03514d7d-70f6-4f78-8a17-cb1687d00ec0";
-    });
+    const [soundDir, setSoundDir] = useStoredState<string>("sound-dir", "");
+    const [outputDir, setOutputDir] = useStoredState<string>("sound-output-dir", "");
+    const [soundFileName, setSoundFileName] = useStoredState<string>("sound-file-name", "SoundConfig9000.ts");
+    const [overwrite, setOverwrite] = useStoredState<boolean>("sound-overwrite", false);
+    const [addRef, setAddRef] = useStoredState<boolean>("sound-add-ref", false);
+    const [scenePath, setScenePath] = useStoredState<string>("sound-scene-path", "");
+    const [componentHash, setComponentHash] = useStoredState<string>("sound-component-hash", "03514d7d-70f6-4f78-8a17-cb1687d00ec0");
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<SoundResult | null>(null);
     const [refResult, setRefResult] = useState<SoundResult | null>(null);
@@ -54,14 +41,6 @@ export default function CreateSoundConfigs() {
         type: null,
         message: "",
     });
-
-    useEffect(() => { localStorage.setItem("sound-dir", soundDir); }, [soundDir]);
-    useEffect(() => { localStorage.setItem("sound-output-dir", outputDir); }, [outputDir]);
-    useEffect(() => { localStorage.setItem("sound-file-name", soundFileName); }, [soundFileName]);
-    useEffect(() => { localStorage.setItem("sound-overwrite", String(overwrite)); }, [overwrite]);
-    useEffect(() => { localStorage.setItem("sound-add-ref", String(addRef)); }, [addRef]);
-    useEffect(() => { localStorage.setItem("sound-scene-path", scenePath); }, [scenePath]);
-    useEffect(() => { localStorage.setItem("sound-component-hash", componentHash); }, [componentHash]);
 
     const handleSelectSoundDir = async () => {
         const folder = await window.electronAPI.selectFolder();

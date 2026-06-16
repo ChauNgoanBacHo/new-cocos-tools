@@ -1,6 +1,11 @@
 interface ElectronAPI {
     ping: () => Promise<string>;
     getAppVersion: () => Promise<string>;
+    storage: {
+        get: (key: string) => Promise<unknown>;
+        set: (key: string, value: unknown) => Promise<boolean>;
+        remove: (key: string) => Promise<boolean>;
+    };
     selectFolder: () => Promise<string | null>;
     selectFile: () => Promise<string | null>;
     runEslint: (sourcePath: string) => Promise<{

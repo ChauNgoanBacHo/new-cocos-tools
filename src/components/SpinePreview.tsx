@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import SpinePreviewModal, { type SpineResult } from "./SpinePreviewModal";
+import { useStoredState } from "../hooks/useStoredState";
 
 const RESULTS_STORAGE_KEY = "spine-preview-last-results";
 
@@ -11,18 +12,9 @@ function shortName(fileName: string): string {
 }
 
 export default function SpinePreview() {
-    const [sourceDir, setSourceDir] = useState<string>(() => {
-        return localStorage.getItem("spine-preview-source-dir") || "";
-    });
+    const [sourceDir, setSourceDir] = useStoredState<string>("spine-preview-source-dir", "");
     const [isRunning, setIsRunning] = useState(false);
-    const [results, setResults] = useState<SpineResult[]>(() => {
-        try {
-            const saved = localStorage.getItem(RESULTS_STORAGE_KEY);
-            return saved ? (JSON.parse(saved) as SpineResult[]) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [results, setResults] = useStoredState<SpineResult[]>(RESULTS_STORAGE_KEY, []);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
         message: "",
@@ -33,15 +25,6 @@ export default function SpinePreview() {
     const filteredResults = search.trim()
         ? results.filter(r => r.fileName.toLowerCase().includes(search.trim().toLowerCase()))
         : results;
-
-    useEffect(() => { localStorage.setItem("spine-preview-source-dir", sourceDir); }, [sourceDir]);
-    useEffect(() => {
-        try {
-            localStorage.setItem(RESULTS_STORAGE_KEY, JSON.stringify(results));
-        } catch {
-            // ignore quota errors
-        }
-    }, [results]);
 
     const handleSelectSourceDir = async () => {
         const folder = await window.electronAPI.selectFolder();

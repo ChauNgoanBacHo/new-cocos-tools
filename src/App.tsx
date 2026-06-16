@@ -10,6 +10,7 @@ import CheckAssets from "./components/CheckAssets";
 import EslintLogs from "./components/EslintLogs";
 import SpinePreview from "./components/SpinePreview";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
+import { useStoredState } from "./hooks/useStoredState";
 
 type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "eslint-logs" | "spine-preview" | "drive-sync";
 
@@ -61,12 +62,8 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
     const [isLoading, setIsLoading] = useState(true);
-    const [appVersion, setAppVersion] = useState("v0.1.0");
-    const [isDark, setIsDark] = useState<boolean>(() => {
-        const saved = localStorage.getItem("theme");
-        if (saved) return saved === "dark";
-        return true;
-    });
+    const [appVersion, setAppVersion] = useState("v0.2.0");
+    const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoading(false), 1600);
@@ -79,13 +76,12 @@ function App() {
         } else {
             document.documentElement.classList.remove("dark");
         }
-        localStorage.setItem("theme", isDark ? "dark" : "light");
     }, [isDark]);
 
     useEffect(() => {
         window.electronAPI.getAppVersion()
             .then((version) => setAppVersion(`v${version}`))
-            .catch(() => setAppVersion("v0.1.0"));
+            .catch(() => setAppVersion("v0.2.0"));
     }, []);
 
     useEffect(() => {

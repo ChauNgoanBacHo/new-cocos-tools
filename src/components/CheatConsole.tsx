@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface PanelData {
     id: string;
@@ -124,19 +125,8 @@ interface GameData {
 }
 
 export default function CheatConsole() {
-    const [games, setGames] = useState<GameData[]>(() => {
-        const saved = localStorage.getItem("games");
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {}
-        }
-        return [];
-    });
-
-    const [selectedGameId, setSelectedGameId] = useState<string | null>(() => {
-        return localStorage.getItem("selectedGameId") || null;
-    });
+    const [games, setGames] = useStoredState<GameData[]>("games", []);
+    const [selectedGameId, setSelectedGameId] = useStoredState<string | null>("selectedGameId", null);
 
     const activeGame = games.find((g) => g.id === selectedGameId);
 
@@ -163,19 +153,6 @@ export default function CheatConsole() {
     const matrixCellAnimationTimeoutRef = useRef<number | null>(null);
     const [isFieldConfigOpen, setIsFieldConfigOpen] = useState(false);
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
-
-    // Auto-save fields to localStorage on changes
-    useEffect(() => {
-        localStorage.setItem("games", JSON.stringify(games));
-    }, [games]);
-
-    useEffect(() => {
-        if (selectedGameId) {
-            localStorage.setItem("selectedGameId", selectedGameId);
-        } else {
-            localStorage.removeItem("selectedGameId");
-        }
-    }, [selectedGameId]);
 
     useEffect(() => {
         if (activeGame) {

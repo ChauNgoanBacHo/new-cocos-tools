@@ -4,6 +4,11 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("electronAPI", {
     ping: () => ipcRenderer.invoke("ping"),
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    storage: {
+        get: (key: string) => ipcRenderer.invoke("storage:get", key),
+        set: (key: string, value: unknown) => ipcRenderer.invoke("storage:set", key, value),
+        remove: (key: string) => ipcRenderer.invoke("storage:remove", key),
+    },
     selectFolder: () => ipcRenderer.invoke("select-folder"),
     selectFile: () => ipcRenderer.invoke("select-file"),
     runEslint: (sourcePath: string) =>

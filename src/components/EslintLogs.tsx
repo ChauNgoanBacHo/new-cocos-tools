@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
 
 interface EslintResult {
     stdout: string;
@@ -7,19 +8,13 @@ interface EslintResult {
 }
 
 export default function EslintLogs() {
-    const [sourcePath, setSourcePath] = useState<string>(() => {
-        return localStorage.getItem("eslint-source-path") || "";
-    });
+    const [sourcePath, setSourcePath] = useStoredState<string>("eslint-source-path", "");
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<EslintResult | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
         message: "",
     });
-
-    useEffect(() => {
-        localStorage.setItem("eslint-source-path", sourcePath);
-    }, [sourcePath]);
 
     const handleSelectSourcePath = async () => {
         const folder = await window.electronAPI.selectFolder();

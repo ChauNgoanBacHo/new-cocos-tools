@@ -10,6 +10,7 @@ import { registerCreateAnimHandler } from "./handlers/createAnim";
 import { registerBindSoundRefsHandler } from "./handlers/bindSoundRefs";
 import { registerCheckAssetsHandler } from "./handlers/checkAssets";
 import { registerSpinePreviewHandler } from "./handlers/spinePreview";
+import { registerStorageHandlers } from "./storage";
 import { setupDriveSyncHandlers } from "../src/features/drive-sync/electron-handlers";
 
 app.commandLine.appendSwitch("use-mock-keychain");
@@ -120,6 +121,7 @@ registerCreateAnimHandler();
 registerBindSoundRefsHandler();
 registerCheckAssetsHandler();
 registerSpinePreviewHandler();
+registerStorageHandlers();
 
 setupDriveSyncHandlers(
     'https://drive-bot-0ahh.onrender.com',
