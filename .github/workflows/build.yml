@@ -66,7 +66,7 @@ jobs:
 
       - name: Package macOS
         if: runner.os == 'macOS'
-        run: npm run build && npx electron-builder --mac --publish never
+        run: npm run release:mac -- --publish never
 
       - name: Package Linux
         if: runner.os == 'Linux'
