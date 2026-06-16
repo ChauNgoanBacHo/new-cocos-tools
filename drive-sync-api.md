@@ -446,3 +446,82 @@ Dùng để Electron biết backend đang healthy không trước khi bấm sync
 ```http
 GET /api/drive/sync-plan?rootFolderId=<id>&scope=all
 ```
+
+---
+
+## 8. Report Sync Complete
+
+`POST /api/drive/sync-complete`
+
+Endpoint nay de app Electron bao nguoc lai cho web service sau khi da sync xong 100%. Server se dung Drive bot gui thong bao vao channel Discord.
+
+Chi bao khi thanh cong. Neu sync fail thi app khong can goi endpoint nay.
+
+### Request
+
+```http
+POST /api/drive/sync-complete
+Authorization: Bearer <INTERNAL_API_KEY>
+Content-Type: application/json
+```
+
+```json
+{
+  "syncType": "today",
+  "rootFolderId": "19Zph0Ov8FucR1kSY6Ntwk_KCr_bFVXZT",
+  "rootFolderName": "9704-ArtAssets",
+  "localPath": "/Users/fe-tienhuynh/Documents/assets/9704-ArtAssets",
+  "totalFiles": 18,
+  "totalBytes": 28301924,
+  "actorName": "Tien Huynh",
+  "success": true
+}
+```
+
+### Payload fields
+
+- `syncType`
+  - `today` cho sync trong ngay
+  - `full` cho full sync
+- `rootFolderId`
+  Bat buoc
+- `rootFolderName`
+  Khuyen nghi gui kem de message dep hon
+- `localPath`
+  Bat buoc, la path local da sync thanh cong
+- `totalFiles`
+  Optional
+- `totalBytes`
+  Optional
+- `actorName`
+  Optional, de in ra ai da sync
+- `success`
+  Optional. Neu gui `false`, backend se bo qua va khong bao Discord
+
+### Success response
+
+```json
+{
+  "ok": true,
+  "notified": true,
+  "syncType": "today"
+}
+```
+
+### Ignored response
+
+Neu app van goi nham cho case fail:
+
+```json
+{
+  "ok": true,
+  "skipped": true,
+  "reason": "FAILED_SYNC_IGNORED"
+}
+```
+
+### Discord message example
+
+```text
+Tổng tài đã sync thành công [9704-ArtAssets] tại path `/Users/fe-tienhuynh/Documents/assets/9704-ArtAssets` (18 file, 28301924 bytes).
+```

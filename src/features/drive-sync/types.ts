@@ -87,3 +87,22 @@ export interface SyncStatusResponse {
   watchedFolderCount: number;
   changeEventCount: number;
 }
+
+export interface ReportSyncCompleteRequest {
+  syncType: 'today' | 'full';
+  rootFolderId: string;
+  rootFolderName?: string;
+  localPath: string;
+  totalFiles?: number;
+  totalBytes?: number;
+  actorName?: string;
+  success?: boolean;
+}
+
+export interface ReportSyncCompleteResponse {
+  ok: true;
+  notified?: boolean;
+  skipped?: boolean;
+  reason?: string;
+  syncType?: string;
+}

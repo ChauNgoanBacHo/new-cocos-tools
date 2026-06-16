@@ -1,4 +1,4 @@
-import type { WatchFolder, ChangeFeedResponse, TreeSnapshotResponse, SyncPlanResponse, SyncStatusResponse } from './types';
+import type { WatchFolder, ChangeFeedResponse, TreeSnapshotResponse, SyncPlanResponse, SyncStatusResponse, ReportSyncCompleteRequest, ReportSyncCompleteResponse } from './types';
 
 export class DriveSyncClient {
   private baseUrl: string;
@@ -51,5 +51,20 @@ export class DriveSyncClient {
     const res = await fetch(`${this.baseUrl}/api/drive/files/${fileId}/download`, { headers });
     if (!res.ok) throw new Error(`Download error: ${res.status}`);
     return res.arrayBuffer();
+  }
+
+  async reportSyncComplete(payload: ReportSyncCompleteRequest): Promise<ReportSyncCompleteResponse> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
+    console.log('[DriveSyncClient] Reporting sync complete:', payload);
+    const res = await fetch(`${this.baseUrl}/api/drive/sync-complete`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Report error: ${res.status}`);
+    const data = await res.json();
+    console.log('[DriveSyncClient] Report response:', data);
+    return data;
   }
 }

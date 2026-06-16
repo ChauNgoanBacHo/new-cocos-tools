@@ -85,4 +85,17 @@ export function setupDriveSyncHandlers(
   ipcMain.handle('drive-sync:pause', () => {
     pauseRequested = true;
   });
+
+  ipcMain.handle('drive-sync:report-complete', (_event, payload: {
+    syncType: 'today' | 'full';
+    rootFolderId: string;
+    rootFolderName?: string;
+    localPath: string;
+    totalFiles?: number;
+    totalBytes?: number;
+    actorName?: string;
+    success?: boolean;
+  }) => {
+    return client.reportSyncComplete(payload);
+  });
 }

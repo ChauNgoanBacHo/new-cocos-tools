@@ -94,6 +94,16 @@ interface ElectronAPI {
             failedFiles: Array<{ fileName: string; path: string; error: string }>;
         }>;
         pauseSync: () => Promise<void>;
+        reportComplete: (payload: {
+            syncType: 'today' | 'full';
+            rootFolderId: string;
+            rootFolderName?: string;
+            localPath: string;
+            totalFiles?: number;
+            totalBytes?: number;
+            actorName?: string;
+            success?: boolean;
+        }) => Promise<{ ok: true; notified?: boolean; skipped?: boolean; reason?: string; syncType?: string }>;
     };
 }
 

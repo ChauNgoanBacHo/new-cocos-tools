@@ -79,6 +79,24 @@ export function DriveSyncMenu() {
         setFailedFiles(result.failedFiles);
         localStorage.setItem('drive-sync-failed-files', JSON.stringify(result.failedFiles));
       }
+
+      // Report sync complete to backend (Discord notification)
+      if (result.success || result.failedFiles.length === 0) {
+        try {
+          const selectedFolder = folders.find(f => f.rootFolderId === selectedDrive);
+          await window.electronAPI.driveSync.reportComplete({
+            syncType: syncScope,
+            rootFolderId: selectedDrive,
+            rootFolderName: selectedFolder?.rootFolderName,
+            localPath: localRoot,
+            totalFiles: plan.totalFiles,
+            totalBytes: plan.totalBytes,
+            success: true
+          });
+        } catch (reportErr) {
+          console.error('[DriveSyncMenu] Failed to report sync complete:', reportErr);
+        }
+      }
     } catch (e: any) {
       if (syncIdRef.current !== currentSyncId) return;
 

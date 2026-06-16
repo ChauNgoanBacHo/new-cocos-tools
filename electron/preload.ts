@@ -35,5 +35,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
             }>;
         },
         pauseSync: () => ipcRenderer.invoke("drive-sync:pause"),
+        reportComplete: (payload: {
+            syncType: 'today' | 'full';
+            rootFolderId: string;
+            rootFolderName?: string;
+            localPath: string;
+            totalFiles?: number;
+            totalBytes?: number;
+            actorName?: string;
+            success?: boolean;
+        }) => ipcRenderer.invoke("drive-sync:report-complete", payload),
     },
 });
