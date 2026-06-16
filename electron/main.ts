@@ -1,9 +1,11 @@
 // electron/main.ts
-import { app, BrowserWindow, ipcMain, dialog, screen, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, screen, protocol, shell } from "electron";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
+import { spawn } from "child_process";
+import { fileURLToPath, pathToFileURL } from "url";
 import { registerEslintHandler } from "./handlers/eslint";
+import { registerCodeHealthHandler } from "./handlers/codeHealth";
 import { registerCheckConfigHandler } from "./handlers/checkConfig";
 import { registerCreateSoundHandler } from "./handlers/createSound";
 import { registerCreateAnimHandler } from "./handlers/createAnim";
@@ -114,7 +116,89 @@ ipcMain.handle("select-file", async () => {
 
 ipcMain.handle("get-app-version", () => app.getVersion());
 
+function runDetachedCommand(command: string, args: string[]) {
+    return new Promise<void>((resolve, reject) => {
+        const child = spawn(command, args, {
+            detached: true,
+            stdio: "ignore",
+        });
+
+        child.once("error", reject);
+        child.once("spawn", () => {
+            child.unref();
+            resolve();
+        });
+    });
+}
+
+ipcMain.handle("open-in-vscode", async (_event, filePath: string, line?: number | null, column?: number | null) => {
+    try {
+        if (!filePath || !fs.existsSync(filePath)) {
+            return {
+                ok: false,
+                error: "Khong tim thay file de mo trong VS Code.",
+            };
+        }
+
+        const target = line && column
+            ? `${filePath}:${line}:${column}`
+            : line
+                ? `${filePath}:${line}`
+                : filePath;
+
+        try {
+            await runDetachedCommand("code", ["-g", target]);
+            return { ok: true };
+        } catch (primaryError) {
+            if (process.platform === "darwin") {
+                try {
+                    const vscodeUri = `${pathToFileURL(filePath).href.replace("file://", "vscode://file/")}${line ? `:${line}` : ""}${column ? `:${column}` : ""}`;
+                    const opened = await shell.openExternal(vscodeUri);
+                    if (opened === "") {
+                        return { ok: true };
+                    }
+                } catch {
+                    try {
+                        await runDetachedCommand("open", ["-a", "Visual Studio Code", filePath, "--args", "-g", target]);
+                        return { ok: true };
+                    } catch {
+                        return {
+                            ok: false,
+                            error: "Khong mo duoc file trong VS Code. Hay cai lenh Shell Command: Install 'code' command in PATH trong VS Code, hoac dam bao ung dung Visual Studio Code da duoc cai.",
+                        };
+                    }
+                }
+
+                try {
+                    await runDetachedCommand("open", ["-a", "Visual Studio Code", filePath]);
+                    return { ok: true };
+                } catch {
+                    return {
+                        ok: false,
+                        error: "Khong mo duoc file trong VS Code. Hay cai lenh Shell Command: Install 'code' command in PATH trong VS Code, hoac dam bao ung dung Visual Studio Code da duoc cai.",
+                    };
+                }
+            }
+
+            return {
+                ok: false,
+                error: primaryError instanceof Error
+                    ? primaryError.message
+                    : "Khong mo duoc VS Code tu app.",
+            };
+        }
+    } catch (error: unknown) {
+        return {
+            ok: false,
+            error: error instanceof Error
+                ? error.message
+                : "Khong mo duoc VS Code tu app.",
+        };
+    }
+});
+
 registerEslintHandler();
+registerCodeHealthHandler();
 registerCheckConfigHandler();
 registerCreateSoundHandler();
 registerCreateAnimHandler();

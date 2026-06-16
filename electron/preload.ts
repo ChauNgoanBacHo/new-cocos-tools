@@ -11,8 +11,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
     selectFolder: () => ipcRenderer.invoke("select-folder"),
     selectFile: () => ipcRenderer.invoke("select-file"),
+    openInVSCode: (filePath: string, line?: number | null, column?: number | null) =>
+        ipcRenderer.invoke("open-in-vscode", filePath, line, column),
     runEslint: (sourcePath: string) =>
         ipcRenderer.invoke("run-eslint", sourcePath),
+    runCodeHealth: (sourcePath: string, mode: "full" | "eslint" | "knip") =>
+        ipcRenderer.invoke("run-code-health", sourcePath, mode),
     checkConfig: (configFilePath: string, sourcePath: string) =>
         ipcRenderer.invoke("check-config", configFilePath, sourcePath),
     createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean) =>

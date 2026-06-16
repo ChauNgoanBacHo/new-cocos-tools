@@ -8,10 +8,93 @@ interface ElectronAPI {
     };
     selectFolder: () => Promise<string | null>;
     selectFile: () => Promise<string | null>;
+    openInVSCode: (filePath: string, line?: number | null, column?: number | null) => Promise<{
+        ok: boolean;
+        error?: string;
+    }>;
     runEslint: (sourcePath: string) => Promise<{
         stdout: string;
         stderr: string;
         exitCode: number;
+    }>;
+    runCodeHealth: (sourcePath: string, mode: "full" | "eslint" | "knip") => Promise<{
+        mode: "full" | "eslint" | "knip";
+        exitCode: number;
+        summary: {
+            status: "success" | "issues" | "error";
+            eslintErrors: number;
+            eslintWarnings: number;
+            knipOrphanFiles: number;
+            knipUnusedExports: number;
+            totalFiles: number;
+            totalIssues: number;
+            healthScore: number;
+        };
+        eslint: {
+            stdout: string;
+            stderr: string;
+            exitCode: number;
+            errorCount: number;
+            warningCount: number;
+            files: Array<{
+                filePath: string;
+                absolutePath: string;
+                errorCount: number;
+                warningCount: number;
+                issues: Array<{
+                    source: "eslint" | "knip";
+                    severity: "error" | "warning";
+                    location: {
+                        line: number | null;
+                        column: number | null;
+                        label: string;
+                    };
+                    message: string;
+                    ruleId: string;
+                }>;
+            }>;
+        };
+        knip: {
+            stdout: string;
+            stderr: string;
+            exitCode: number;
+            orphanFiles: number;
+            unusedExports: number;
+            files: Array<{
+                filePath: string;
+                absolutePath: string;
+                errorCount: number;
+                warningCount: number;
+                issues: Array<{
+                    source: "eslint" | "knip";
+                    severity: "error" | "warning";
+                    location: {
+                        line: number | null;
+                        column: number | null;
+                        label: string;
+                    };
+                    message: string;
+                    ruleId: string;
+                }>;
+            }>;
+        };
+        files: Array<{
+            filePath: string;
+            absolutePath: string;
+            errorCount: number;
+            warningCount: number;
+            issues: Array<{
+                source: "eslint" | "knip";
+                severity: "error" | "warning";
+                location: {
+                    line: number | null;
+                    column: number | null;
+                    label: string;
+                };
+                message: string;
+                ruleId: string;
+            }>;
+        }>;
     }>;
     checkConfig: (configFilePath: string, sourcePath: string) => Promise<{
         stdout: string;

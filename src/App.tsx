@@ -7,12 +7,12 @@ import CreateAnimConfigs from "./components/CreateAnimConfigs";
 import CreateSoundConfigs from "./components/CreateSoundConfigs";
 import CheckConfigs from "./components/CheckConfigs";
 import CheckAssets from "./components/CheckAssets";
-import EslintLogs from "./components/EslintLogs";
+import CodeHealth from "./components/CodeHealth";
 import SpinePreview from "./components/SpinePreview";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
 
-type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "eslint-logs" | "spine-preview" | "drive-sync";
+type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
 // rendered data-driven in the sidebar.
@@ -48,8 +48,8 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />,
     },
     {
-        id: "eslint-logs",
-        label: "ESLint Logs",
+        id: "code-health",
+        label: "Code Health",
         icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
     },
     {
@@ -105,8 +105,8 @@ function App() {
                 return <CheckConfigs />;
             case "check-assets":
                 return <CheckAssets />;
-            case "eslint-logs":
-                return <EslintLogs />;
+            case "code-health":
+                return <CodeHealth />;
             case "spine-preview":
                 return <SpinePreview />;
             case "drive-sync":

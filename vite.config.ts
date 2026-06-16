@@ -2,6 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron/simple";
 
+const electronMainExternals = [
+    "eslint",
+    "typescript-eslint",
+    "knip",
+    "knip/session",
+    /^@oxc-resolver\//,
+];
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [
@@ -12,7 +20,7 @@ export default defineConfig({
                 vite: {
                     build: {
                         rollupOptions: {
-                            external: ["eslint", "typescript-eslint"],
+                            external: electronMainExternals,
                         },
                     },
                 },
