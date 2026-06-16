@@ -174,7 +174,7 @@ function App() {
 
     const sidebarClassName = isDark
         ? "w-64 bg-zinc-950 border-r border-zinc-800/50 p-5 flex flex-col justify-between shadow-lg z-10"
-        : "w-64 bg-gradient-to-b from-amber-50 via-white to-slate-50 border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
+        : "w-64 bg-white border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
         ? "text-md font-bold uppercase tracking-widest text-amber-400/90 font-mono"

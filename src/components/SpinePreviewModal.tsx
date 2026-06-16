@@ -227,11 +227,32 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
 
     const handlePauseToggle = () => {
         const next = !paused;
-        setPaused(next);
+        const spine = singleSpineRef.current;
+        const stage = stageRef.current;
+
         if (next) {
+            // Pause: just pause the stage
+            setPaused(true);
             stageRef.current?.setPaused(true);
         } else {
-            resumePlayback();
+            // Play/Restart: re-play current animation from beginning
+            setPaused(false);
+            if (spine && currentAnim) {
+                const seq = seqRef.current;
+                if (seq) {
+                    // Restart sequence from step 0
+                    seqStepRef.current = 0;
+                    elapsedRef.current = 0;
+                    setElapsed(0);
+                    SpineStage.playSequence(spine, sequence, loopLast);
+                } else {
+                    // Restart single animation
+                    elapsedRef.current = 0;
+                    setElapsed(0);
+                    SpineStage.playAnimation(spine, currentAnim, loop);
+                }
+            }
+            stage?.setPaused(false);
         }
     };
 
@@ -388,7 +409,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="w-full max-w-5xl h-[85vh] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="w-[90vw] h-[90vh] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-zinc-700">
                     <div className="flex items-center gap-2">
@@ -435,8 +456,11 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-all cursor-pointer ml-1.5">
-                        ✕ Close
+                        title="Close (Esc)"
+                        className="w-8 h-8 flex items-center justify-center text-red-500 dark:text-red-400 rounded-lg bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/30 dark:border-red-500/40 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white dark:hover:border-red-500 transition-all cursor-pointer ml-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
@@ -453,6 +477,20 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                         {loadError && (
                             <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-red-400 text-xs font-mono">
                                 {loadError}
+                            </div>
+                        )}
+
+                        {/* Animation selector for expanded mode - top left */}
+                        {expanded && (
+                            <div className="absolute top-3 left-3">
+                                <select
+                                    value={currentAnim}
+                                    onChange={(e) => handleSelectAnim(e.target.value)}
+                                    className="px-3 py-2 rounded-xl bg-black/70 backdrop-blur-md border border-amber-500/40 text-[12px] text-amber-100 font-mono font-semibold focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 cursor-pointer hover:bg-black/80 hover:border-amber-400/60 transition-all shadow-lg">
+                                    {item.animations.map(a => (
+                                        <option key={a} value={a} className="bg-zinc-800 text-zinc-100">{a}</option>
+                                    ))}
+                                </select>
                             </div>
                         )}
 
@@ -485,24 +523,48 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 <button
                                     type="button"
                                     onClick={() => stepBy(-FRAME)}
-                                    title="Lùi 1 frame"
-                                    className="w-7 h-7 flex items-center justify-center text-xs font-bold text-white rounded-lg bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
-                                    ⏮
+                                    title="Previous frame (←)"
+                                    className="w-7 h-7 flex items-center justify-center text-white rounded-lg bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 16.811c0 .864-.933 1.405-1.683.977l-7.108-4.062a1.125 1.125 0 010-1.953l7.108-4.062A1.125 1.125 0 0121 8.688v8.123zM11.25 16.811c0 .864-.933 1.405-1.683.977l-7.108-4.062a1.125 1.125 0 010-1.953l7.108-4.062a1.125 1.125 0 011.683.977v8.123z" />
+                                    </svg>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handlePauseToggle}
-                                    className="text-xs font-bold text-white px-2.5 py-1 rounded-lg bg-amber-500/80 hover:bg-amber-500 transition-all cursor-pointer">
-                                    {paused ? "▶ Play" : "⏸ Pause"}
+                                    title={paused ? "Play (Space)" : "Pause (Space)"}
+                                    className="w-7 h-7 flex items-center justify-center text-white rounded-lg bg-amber-500/80 hover:bg-amber-500 transition-all cursor-pointer">
+                                    {paused ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                                        </svg>
+                                    )}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => stepBy(FRAME)}
-                                    title="Tiến 1 frame"
-                                    className="w-7 h-7 flex items-center justify-center text-xs font-bold text-white rounded-lg bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
-                                    ⏭
+                                    title="Next frame (→)"
+                                    className="w-7 h-7 flex items-center justify-center text-white rounded-lg bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.688c0-.864.933-1.405 1.683-.977l7.108 4.062a1.125 1.125 0 010 1.953l-7.108 4.062A1.125 1.125 0 013 16.811V8.688zM12.75 8.688c0-.864.933-1.405 1.683-.977l7.108 4.062a1.125 1.125 0 010 1.953l-7.108 4.062a1.125 1.125 0 01-1.683-.977V8.688z" />
+                                    </svg>
                                 </button>
-                                <label className="flex items-center gap-2 text-[11px] text-zinc-300 font-mono">
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleLoop(!loop)}
+                                    title={loop ? "Loop ON (click to disable)" : "Loop OFF (click to enable)"}
+                                    className={`w-7 h-7 flex items-center justify-center text-white rounded-lg transition-all cursor-pointer ${
+                                        loop ? "bg-amber-500/80 hover:bg-amber-500" : "bg-white/10 hover:bg-white/20"
+                                    }`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                </button>
+                                <label className="flex items-center gap-2 text-[11px] text-zinc-300 font-mono" title="Playback speed">
                                     Speed {timeScale.toFixed(1)}x
                                     <input
                                         type="range"
@@ -564,15 +626,6 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                     <option key={a} value={a}>{a}</option>
                                 ))}
                             </select>
-                            <label className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-zinc-400 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={loop}
-                                    onChange={(e) => handleToggleLoop(e.target.checked)}
-                                    className="accent-amber-500 cursor-pointer"
-                                />
-                                Loop
-                            </label>
                         </div>
 
                         {/* Skin dropdown (only when the spine has multiple skins) */}

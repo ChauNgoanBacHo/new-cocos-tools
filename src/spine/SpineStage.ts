@@ -59,6 +59,7 @@ export class SpineStage {
     // (1 = fit-to-view). Zoom is applied as baseScale * zoom.
     private fit: { spine: Spine; baseScale: number; centerX: number; centerY: number } | null = null;
     private zoom = 1;
+    private bgSprite: PIXI.Sprite | null = null;
 
     constructor(container: HTMLElement, opts: SpineStageOptions = {}) {
         // Let Pixi create its own canvas (a fresh WebGL context every mount —
@@ -77,6 +78,43 @@ export class SpineStage {
         view.style.height = "100%";
         view.style.display = "block";
         container.appendChild(view);
+
+        // Load default background image from src/assets/background.jpg.
+        // Use new URL(...) so Vite resolves the asset in both dev and production.
+        const defaultBgUrl = new URL("../assets/background.jpg", import.meta.url).href;
+        this.loadBackgroundImage(defaultBgUrl).catch(err => {
+            console.error("Failed to load default background:", err);
+        });
+
+        // Re-fit spine and background on canvas resize
+        const resizeObserver = new ResizeObserver(() => this.onResize());
+        resizeObserver.observe(container);
+    }
+
+    /** Load an image and use it as a background sprite (cover mode). */
+    private async loadBackgroundImage(imageUrl: string): Promise<void> {
+        if (this.destroyed) return;
+        try {
+            const texture = await PIXI.Assets.load<PIXI.Texture>(imageUrl);
+            if (this.destroyed) return;
+            // Remove existing
+            if (this.bgSprite) {
+                this.app.stage.removeChild(this.bgSprite);
+                this.bgSprite.destroy();
+                this.bgSprite = null;
+            }
+            this.bgSprite = new PIXI.Sprite(texture);
+            const sw = this.app.renderer.width / this.app.renderer.resolution;
+            const sh = this.app.renderer.height / this.app.renderer.resolution;
+            const scale = Math.max(sw / texture.width, sh / texture.height);
+            this.bgSprite.width = texture.width * scale;
+            this.bgSprite.height = texture.height * scale;
+            this.bgSprite.x = (sw - this.bgSprite.width) / 2;
+            this.bgSprite.y = (sh - this.bgSprite.height) / 2;
+            this.app.stage.addChildAt(this.bgSprite, 0);
+        } catch (err) {
+            console.error("Failed to load background image:", err);
+        }
     }
 
     /** Load a spine from local json+atlas. Adds it to the stage and returns it. */
@@ -154,6 +192,25 @@ export class SpineStage {
 
     get currentZoom(): number {
         return this.zoom;
+    }
+
+    /** Re-center the fitted spine and refit background on canvas resize. */
+    private onResize(): void {
+        // Refit background sprite to cover the new canvas size
+        if (this.bgSprite) {
+            const sw = this.app.renderer.width / this.app.renderer.resolution;
+            const sh = this.app.renderer.height / this.app.renderer.resolution;
+            const texture = this.bgSprite.texture;
+            const scale = Math.max(sw / texture.width, sh / texture.height);
+            this.bgSprite.width = texture.width * scale;
+            this.bgSprite.height = texture.height * scale;
+            this.bgSprite.x = (sw - this.bgSprite.width) / 2;
+            this.bgSprite.y = (sh - this.bgSprite.height) / 2;
+        }
+        // Re-center the spine
+        if (this.fit) {
+            this.applyFit();
+        }
     }
 
     /** Available animation names for a spine. */
@@ -301,6 +358,46 @@ export class SpineStage {
 
     get loadedSpines(): readonly Spine[] {
         return this.spines;
+    }
+
+    /** Set background mode: 'transparent' (checkerboard via alpha) or 'image' (jpg). */
+    async setBackground(mode: 'transparent' | 'image', imageUrl?: string): Promise<void> {
+        if (this.destroyed) return;
+
+        // Remove existing bg sprite if any
+        if (this.bgSprite) {
+            this.app.stage.removeChild(this.bgSprite);
+            this.bgSprite.destroy();
+            this.bgSprite = null;
+        }
+
+        if (mode === 'transparent') {
+            // Set transparent background (alpha 0)
+            this.app.renderer.background.color = 0x000000;
+            this.app.renderer.background.alpha = 0;
+        } else if (mode === 'image' && imageUrl) {
+            // Set solid color first as fallback
+            this.app.renderer.background.color = 0x1e1e22;
+            this.app.renderer.background.alpha = 1;
+
+            try {
+                const texture = await PIXI.Assets.load<PIXI.Texture>(imageUrl);
+                if (this.destroyed) return;
+                this.bgSprite = new PIXI.Sprite(texture);
+                // Scale to cover the stage
+                const sw = this.app.renderer.width / this.app.renderer.resolution;
+                const sh = this.app.renderer.height / this.app.renderer.resolution;
+                const scale = Math.max(sw / texture.width, sh / texture.height);
+                this.bgSprite.width = texture.width * scale;
+                this.bgSprite.height = texture.height * scale;
+                this.bgSprite.x = (sw - this.bgSprite.width) / 2;
+                this.bgSprite.y = (sh - this.bgSprite.height) / 2;
+                // Send to back of stage
+                this.app.stage.addChildAt(this.bgSprite, 0);
+            } catch (err) {
+                console.error('Failed to load background image:', err);
+            }
+        }
     }
 
     destroy(): void {
