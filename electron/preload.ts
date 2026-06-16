@@ -1,0 +1,39 @@
+// electron/preload.ts
+import { contextBridge, ipcRenderer } from "electron";
+
+contextBridge.exposeInMainWorld("electronAPI", {
+    ping: () => ipcRenderer.invoke("ping"),
+    selectFolder: () => ipcRenderer.invoke("select-folder"),
+    selectFile: () => ipcRenderer.invoke("select-file"),
+    runEslint: (sourcePath: string) =>
+        ipcRenderer.invoke("run-eslint", sourcePath),
+    checkConfig: (configFilePath: string, sourcePath: string) =>
+        ipcRenderer.invoke("check-config", configFilePath, sourcePath),
+    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean) =>
+        ipcRenderer.invoke("create-anim-config", spineDir, outputDir, animFileName, timeFileName, overwrite),
+    createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean) =>
+        ipcRenderer.invoke("create-sound-config", soundDir, outputDir, soundFileName, overwrite),
+    selectSceneFile: () => ipcRenderer.invoke("select-scene-file"),
+    bindSoundRefs: (soundDir: string, sceneFilePath: string, componentHash: string) =>
+        ipcRenderer.invoke("bind-sound-refs", soundDir, sceneFilePath, componentHash),
+    checkAssets: (sourceDir: string) =>
+        ipcRenderer.invoke("check-assets", sourceDir),
+    deleteAssets: (sourceDir: string, files: string[]) =>
+        ipcRenderer.invoke("delete-assets", sourceDir, files),
+    spinePreview: (sourceDir: string) =>
+        ipcRenderer.invoke("spine-preview", sourceDir),
+    driveSync: {
+        init: () => ipcRenderer.invoke("drive-sync:init"),
+        getSyncPlan: (rootFolderId: string, scope?: 'today' | 'all') => ipcRenderer.invoke("drive-sync:sync-plan", rootFolderId, scope),
+        getSyncStatus: () => ipcRenderer.invoke("drive-sync:status"),
+        syncFolder: (rootFolderId: string, localPath: string, scope: 'today' | 'all', onProgress: (progress: { downloaded: number; total: number }) => void) => {
+            ipcRenderer.removeAllListeners("drive-sync:progress");
+            ipcRenderer.on("drive-sync:progress", (_, progress) => onProgress(progress));
+            return ipcRenderer.invoke("drive-sync:sync-folder", rootFolderId, localPath, scope) as Promise<{
+                success: boolean;
+                failedFiles: Array<{ fileName: string; path: string; error: string }>;
+            }>;
+        },
+        pauseSync: () => ipcRenderer.invoke("drive-sync:pause"),
+    },
+});
