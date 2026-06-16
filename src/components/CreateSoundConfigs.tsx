@@ -7,6 +7,21 @@ interface SoundResult {
     exitCode: number;
 }
 
+interface CreateSoundConfigsProps {
+    onOpenCodeHealth?: (sourcePath: string) => void;
+}
+
+function getCodeHealthScriptsPath(outputPath: string) {
+    const normalizedPath = outputPath.replace(/\\/g, "/");
+    const scriptsIndex = normalizedPath.lastIndexOf("/scripts");
+
+    if (scriptsIndex === -1) {
+        return outputPath;
+    }
+
+    return normalizedPath.slice(0, scriptsIndex + "/scripts".length);
+}
+
 // Cocos UUID compression: giữ 5 hex đầu, phần còn lại nén mỗi 3 hex (12 bit) -> 2 ký tự base64.
 // VD: 03514d7d-70f6-4f78-8a17-cb1687d00ec0 -> 0351419cPZPeIoXyxaH0A7A
 const BASE64_KEYS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -26,7 +41,7 @@ function compressUuid(uuid: string): string {
     return result;
 }
 
-export default function CreateSoundConfigs() {
+export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConfigsProps) {
     const [soundDir, setSoundDir] = useStoredState<string>("sound-dir", "");
     const [outputDir, setOutputDir] = useStoredState<string>("sound-output-dir", "");
     const [soundFileName, setSoundFileName] = useStoredState<string>("sound-file-name", "SoundConfig9000.ts");
@@ -87,6 +102,14 @@ export default function CreateSoundConfigs() {
                 setRefResult(refRes);
                 if (res.exitCode === 0 && refRes.exitCode === 0) {
                     setStatus({ type: "success", message: "Tạo config và gắn ref thành công!" });
+
+                    const shouldOpenCodeHealth = window.confirm(
+                        "Create Sound Config thành công. Bạn có muốn mở Code Health để scan source này ngay không?",
+                    );
+
+                    if (shouldOpenCodeHealth) {
+                        onOpenCodeHealth?.(getCodeHealthScriptsPath(outputDir));
+                    }
                 } else if (res.exitCode === 0) {
                     setStatus({ type: "error", message: "Tạo config OK nhưng gắn ref thất bại." });
                 } else {
@@ -95,6 +118,14 @@ export default function CreateSoundConfigs() {
             } else {
                 if (res.exitCode === 0) {
                     setStatus({ type: "success", message: overwrite ? "Quét và tạo file thành công!" : "Quét thành công (không ghi file)." });
+
+                    const shouldOpenCodeHealth = window.confirm(
+                        "Create Sound Config thành công. Bạn có muốn mở Code Health để scan source này ngay không?",
+                    );
+
+                    if (shouldOpenCodeHealth) {
+                        onOpenCodeHealth?.(getCodeHealthScriptsPath(outputDir));
+                    }
                 } else {
                     setStatus({ type: "error", message: "Có lỗi xảy ra khi quét." });
                 }

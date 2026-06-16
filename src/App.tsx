@@ -108,7 +108,7 @@ function App() {
             case "anim":
                 return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":
-                return <CreateSoundConfigs />;
+                return <CreateSoundConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "check-config":
                 return <CheckConfigs />;
             case "check-assets":

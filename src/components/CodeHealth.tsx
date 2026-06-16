@@ -121,7 +121,7 @@ export default function CodeHealth() {
 
     const runScan = async (mode: CodeHealthMode) => {
         if (!sourcePath.trim()) {
-            setStatus({ type: "error", message: "Vui long chon Source Code Folder!" });
+            setStatus({ type: "error", message: "Vui lòng chọn Source Code Folder!" });
             return;
         }
 
@@ -140,14 +140,14 @@ export default function CodeHealth() {
             );
 
             if (res.summary.status === "success") {
-                setStatus({ type: "success", message: "Code Health scan thanh cong, khong co van de!" });
+                setStatus({ type: "success", message: "Code Health scan thành công" });
             } else if (res.summary.status === "issues") {
                 setStatus({ type: null, message: "" });
             } else {
-                setStatus({ type: "error", message: "Code Health gap loi khi chay scan." });
+                setStatus({ type: "error", message: "Code Health gặp lỗi khi chạy scan." });
             }
         } catch {
-            setStatus({ type: "error", message: "Loi khi chay Code Health. Kiem tra lai duong dan source." });
+            setStatus({ type: "error", message: "Lỗi khi chạy Code Health. Kiểm tra lại đường dẫn source." });
         } finally {
             setIsRunning(false);
         }
@@ -172,7 +172,7 @@ export default function CodeHealth() {
         if (!response.ok) {
             setStatus({
                 type: "error",
-                message: response.error || "Khong mo duoc file trong VS Code.",
+                message: response.error || "Không mở được file trong VS Code.",
             });
         }
     };

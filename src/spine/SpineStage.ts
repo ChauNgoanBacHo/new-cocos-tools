@@ -141,7 +141,10 @@ export class SpineStage {
     }
 
     /**
-     * Center + scale a single spine to fit the current view (with padding).
+     * Center a single spine and only scale it DOWN when it is larger than the
+     * available view. Small spines keep their real authored size instead of
+     * being auto-upscaled to fill the canvas.
+     *
      * Stores the computed base scale and center so zoom can be applied on top
      * via setZoom() without recomputing the fit.
      */
@@ -154,7 +157,8 @@ export class SpineStage {
             spine.position.set(view.width / 2, view.height / 2);
             return;
         }
-        const baseScale = Math.min(view.width / bounds.width, view.height / bounds.height) / padding;
+        const fittedScale = Math.min(view.width / bounds.width, view.height / bounds.height) / padding;
+        const baseScale = Math.min(1, fittedScale);
         this.fit = {
             spine,
             baseScale,
