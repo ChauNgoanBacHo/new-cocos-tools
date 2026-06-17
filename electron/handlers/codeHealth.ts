@@ -69,14 +69,48 @@ interface TypescriptScanResult {
 const MIN_TYPESCRIPT_TARGET = ts.ScriptTarget.ES2017;
 const IGNORED_TYPESCRIPT_GLOBAL_NAMES = new Set([
     "Array",
+    "Boolean",
+    "Date",
+    "Error",
+    "EvalError",
     "Function",
+    "Infinity",
+    "Int8Array",
+    "Int16Array",
+    "Int32Array",
+    "isFinite",
+    "isNaN",
+    "JSON",
+    "Map",
     "Math",
+    "NaN",
     "Object",
     "Number",
+    "parseFloat",
+    "parseInt",
     "Promise",
+    "RangeError",
     "Record",
+    "Readonly",
+    "ReferenceError",
+    "RegExp",
+    "ReturnType",
     "Set",
+    "String",
+    "Symbol",
+    "SyntaxError",
+    "TypeError",
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+    "URIError",
+    "WeakMap",
+    "WeakSet",
     "console",
+    "decodeURI",
+    "decodeURIComponent",
+    "encodeURI",
+    "encodeURIComponent",
 ]);
 const IGNORED_TYPESCRIPT_MODULES = new Set(["cc"]);
 
@@ -373,7 +407,7 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
         const diagnostics = ts.getPreEmitDiagnostics(program);
         const fileReports = new Map<string, CodeHealthFileReport>();
         const seenIssues = new Set<string>();
-        const skipRuleIds = new Set(["ts(6305)"]);
+        const skipRuleIds = new Set(["ts(2705)", "ts(6305)"]);
 
         for (const diagnostic of diagnostics) {
             const diagnosticFile = diagnostic.file?.fileName;
