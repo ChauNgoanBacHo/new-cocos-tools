@@ -407,7 +407,7 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
         const diagnostics = ts.getPreEmitDiagnostics(program);
         const fileReports = new Map<string, CodeHealthFileReport>();
         const seenIssues = new Set<string>();
-        const skipRuleIds = new Set(["ts(2705)", "ts(6305)"]);
+        const skipRuleIds = new Set(["ts(2697)", "ts(2705)", "ts(6305)"]);
 
         for (const diagnostic of diagnostics) {
             const diagnosticFile = diagnostic.file?.fileName;
