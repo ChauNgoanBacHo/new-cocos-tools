@@ -247,7 +247,7 @@ export default function CodeHealth() {
                         Code Health
                     </h2>
                     <p className="text-slate-500 dark:text-zinc-400 text-xs">
-                        Gom bao cao ESLint va Knip theo tung file de dev sua nhanh hon
+                        Báo cáo Typescript va Eslint theo từng file
                     </p>
                 </div>
             </div>

@@ -13,6 +13,11 @@ type CodeHealthSeverity = "error" | "warning";
 const HEALTH_SCORE_MAX = 100;
 const HEALTH_WEIGHT_CRITICAL = 12;
 const HEALTH_WEIGHT_MINOR = 4;
+const MIN_TYPESCRIPT_LIBS = [
+    "lib.es5.d.ts",
+    "lib.es2015.d.ts",
+    "lib.es2017.d.ts",
+];
 
 interface CodeHealthIssue {
     source: CodeHealthSource;
@@ -62,15 +67,49 @@ interface TypescriptScanResult {
 }
 
 const MIN_TYPESCRIPT_TARGET = ts.ScriptTarget.ES2017;
-const MIN_TYPESCRIPT_LIB = "lib.es2017.d.ts";
-const IGNORED_TYPESCRIPT_MODULES = new Set(["cc"]);
-const IGNORED_TYPESCRIPT_PROPERTIES = new Set([
-    "node",
-    "schedule",
-    "scheduleOnce",
-    "unschedule",
-    "unscheduleAllCallbacks",
+const IGNORED_TYPESCRIPT_GLOBAL_NAMES = new Set([
+    "Array",
+    "Function",
+    "Math",
+    "Object",
+    "Number",
+    "Promise",
+    "Record",
+    "Set",
+    "console",
 ]);
+const IGNORED_TYPESCRIPT_MODULES = new Set(["cc"]);
+
+function applyIsolatedTypescriptOptions(options: ts.CompilerOptions): ts.CompilerOptions {
+    return {
+        ...options,
+        types: [],
+        typeRoots: [],
+    };
+}
+
+function resolveExistingPath(targetPath: string) {
+    const absolutePath = path.resolve(targetPath);
+    return fs.existsSync(absolutePath) ? fs.realpathSync(absolutePath) : absolutePath;
+}
+
+function ensureMinimumTypescriptLibs(options: ts.CompilerOptions): ts.CompilerOptions {
+    const currentLib = options.lib ?? [];
+    const normalizedLibs = new Set(currentLib.map((entry) => entry.toLowerCase()));
+    const mergedLibs = [...currentLib];
+
+    for (const libName of MIN_TYPESCRIPT_LIBS) {
+        if (!normalizedLibs.has(libName)) {
+            mergedLibs.push(libName);
+        }
+    }
+
+    return {
+        ...options,
+        noLib: false,
+        lib: mergedLibs,
+    };
+}
 
 function findNearestUpwardFile(sourcePath: string, fileName: string) {
     let currentPath = path.resolve(sourcePath);
@@ -272,9 +311,10 @@ export async function runEslintScan(sourcePath: string): Promise<EslintScanResul
 
 async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResult> {
     try {
-        const workspaceRoot = getWorkspaceRoot(sourcePath);
-        const tsconfigPath = findNearestTsconfig(sourcePath);
-        const sourceRoot = path.resolve(sourcePath);
+        const resolvedSourcePath = resolveExistingPath(sourcePath);
+        const workspaceRoot = resolveExistingPath(getWorkspaceRoot(resolvedSourcePath));
+        const tsconfigPath = findNearestTsconfig(resolvedSourcePath);
+        const sourceRoot = resolvedSourcePath;
         const lines: string[] = [];
 
         let fileNames: string[] = [];
@@ -286,6 +326,8 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
             target: ts.ScriptTarget.ES2020,
             module: ts.ModuleKind.ESNext,
             moduleResolution: ts.ModuleResolutionKind.NodeJs,
+            experimentalDecorators: true,
+            useDefineForClassFields: false,
         };
 
         if (tsconfigPath) {
@@ -316,7 +358,8 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
                 noEmit: true,
             };
         } else {
-            fileNames = getScriptCandidatePaths(sourcePath);
+            fileNames = getScriptCandidatePaths(resolvedSourcePath);
+            options = applyIsolatedTypescriptOptions(options);
         }
 
         const currentTarget = options.target ?? ts.ScriptTarget.ES3;
@@ -324,19 +367,17 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
             options.target = MIN_TYPESCRIPT_TARGET;
         }
 
-        const currentLib = options.lib ?? [];
-        if (!currentLib.some((entry) => entry.toLowerCase() === MIN_TYPESCRIPT_LIB)) {
-            options.lib = [...new Set([...currentLib, MIN_TYPESCRIPT_LIB])];
-        }
+        options = ensureMinimumTypescriptLibs(options);
 
         const program = ts.createProgram(fileNames, options);
         const diagnostics = ts.getPreEmitDiagnostics(program);
         const fileReports = new Map<string, CodeHealthFileReport>();
+        const seenIssues = new Set<string>();
+        const skipRuleIds = new Set(["ts(6305)"]);
 
         for (const diagnostic of diagnostics) {
             const diagnosticFile = diagnostic.file?.fileName;
             if (!diagnosticFile) continue;
-
             const normalizedFilePath = normalizeFilePath(diagnosticFile);
             if (!isPathInside(sourceRoot, normalizedFilePath)) continue;
 
@@ -352,13 +393,24 @@ async function runTypescriptScan(sourcePath: string): Promise<TypescriptScanResu
                     continue;
                 }
             }
-            if (diagnostic.code === 2339) {
-                const ignoredPropertyMatch = message.match(/Property '([^']+)' does not exist on type /);
-                if (ignoredPropertyMatch && IGNORED_TYPESCRIPT_PROPERTIES.has(ignoredPropertyMatch[1])) {
+            if (diagnostic.code === 2304 || diagnostic.code === 2583 || diagnostic.code === 2584) {
+                const ignoredNameMatch = message.match(/Cannot find name '([^']+)'/);
+                if (ignoredNameMatch && IGNORED_TYPESCRIPT_GLOBAL_NAMES.has(ignoredNameMatch[1])) {
                     continue;
                 }
             }
+            if (diagnostic.code === 2339) {
+                continue;
+            }
             const ruleId = `ts(${diagnostic.code})`;
+            if (skipRuleIds.has(ruleId)) {
+                continue;
+            }
+            const issueKey = `${relativePath}|${line}|${column}|${ruleId}|${message}`;
+            if (seenIssues.has(issueKey)) {
+                continue;
+            }
+            seenIssues.add(issueKey);
 
             lines.push(`${relativePath}:${line}:${column}  error  ${message}  ${ruleId}`);
 
@@ -796,12 +848,13 @@ function mergeFileReports(fileReports: CodeHealthFileReport[]) {
 
 export function registerCodeHealthHandler() {
     ipcMain.handle("run-code-health", async (_event, sourcePath: string, mode: CodeHealthMode) => {
+        const resolvedSourcePath = resolveExistingPath(sourcePath);
         const shouldRunEslint = mode === "full" || mode === "eslint";
         const shouldRunTypescript = mode === "full";
 
         const [eslintResult, typescriptResult] = await Promise.all([
-            shouldRunEslint ? runEslintScan(sourcePath) : Promise.resolve(createEmptyEslintResult()),
-            shouldRunTypescript ? runTypescriptScan(sourcePath) : Promise.resolve(createEmptyTypescriptResult()),
+            shouldRunEslint ? runEslintScan(resolvedSourcePath) : Promise.resolve(createEmptyEslintResult()),
+            shouldRunTypescript ? runTypescriptScan(resolvedSourcePath) : Promise.resolve(createEmptyTypescriptResult()),
         ]);
         const knipResult = createEmptyKnipResult();
 
