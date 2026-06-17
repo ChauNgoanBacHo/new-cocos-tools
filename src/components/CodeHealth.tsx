@@ -6,6 +6,13 @@ type CodeHealthSource = "eslint" | "typescript";
 type CodeHealthSeverity = "error" | "warning";
 type CodeHealthFilter = "all" | "typescript" | "eslint-error" | "eslint-warning";
 
+const NICE_TO_HAVE_RULE_IDS = new Set([
+    "max-lines-per-function",
+    "max-params",
+    "complexity",
+    "max-depth",
+]);
+
 interface CodeHealthIssue {
     source: CodeHealthSource;
     severity: CodeHealthSeverity;
@@ -101,6 +108,18 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
     );
 }
 
+function isNiceToHaveIssue(issue: CodeHealthIssue) {
+    return issue.source === "eslint"
+        && issue.severity === "warning"
+        && NICE_TO_HAVE_RULE_IDS.has(issue.ruleId);
+}
+
+function isPrimaryWarning(issue: CodeHealthIssue) {
+    return issue.source === "eslint"
+        && issue.severity === "warning"
+        && !isNiceToHaveIssue(issue);
+}
+
 export default function CodeHealth() {
     const [sourcePath, setSourcePath] = useStoredState<string>("code-health-source-path", "");
     const [autoRunKey, setAutoRunKey, autoRunReady] = useStoredState<string>("code-health-auto-run-key", "");
@@ -193,9 +212,33 @@ export default function CodeHealth() {
                 return file.issues.some((issue) => issue.source === "eslint" && issue.severity === "error");
             }
 
-            return file.issues.some((issue) => issue.source === "eslint" && issue.severity === "warning");
+            return file.issues.some((issue) => isPrimaryWarning(issue));
         });
     }, [activeFilter, result]);
+
+    const primaryFiles = useMemo(() => filteredFiles
+        .map((file) => {
+            const issues = file.issues.filter((issue) => !isNiceToHaveIssue(issue));
+            return {
+                ...file,
+                errorCount: issues.filter((issue) => issue.severity === "error").length,
+                warningCount: issues.filter((issue) => issue.severity === "warning").length,
+                issues,
+            };
+        })
+        .filter((file) => file.issues.length > 0), [filteredFiles]);
+
+    const niceToHaveFiles = useMemo(() => filteredFiles
+        .map((file) => {
+            const issues = file.issues.filter((issue) => isNiceToHaveIssue(issue));
+            return {
+                ...file,
+                errorCount: 0,
+                warningCount: issues.length,
+                issues,
+            };
+        })
+        .filter((file) => file.issues.length > 0), [filteredFiles]);
 
     const filterCounts = useMemo(() => {
         if (!result) {
@@ -204,14 +247,20 @@ export default function CodeHealth() {
                 typescript: 0,
                 "eslint-error": 0,
                 "eslint-warning": 0,
+                "nice-to-have": 0,
             };
         }
+
+        const allIssues = result.files.flatMap((file) => file.issues);
+        const primaryWarnings = allIssues.filter((issue) => isPrimaryWarning(issue)).length;
+        const niceToHaveWarnings = allIssues.filter((issue) => isNiceToHaveIssue(issue)).length;
 
         return {
             all: result.summary.totalIssues,
             typescript: result.summary.typescriptErrors,
             "eslint-error": result.summary.eslintErrors,
-            "eslint-warning": result.summary.eslintWarnings,
+            "eslint-warning": primaryWarnings,
+            "nice-to-have": niceToHaveWarnings,
         };
     }, [result]);
 
@@ -238,6 +287,97 @@ export default function CodeHealth() {
         void runScan("full");
         setAutoRunKey("");
     }, [autoRunKey, autoRunReady, isRunning, setAutoRunKey, sourcePath]);
+
+    const renderFileList = (files: CodeHealthFileReport[], emptyMessage: string) => {
+        if (files.length === 0) {
+            return (
+                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 p-8 text-center text-sm text-slate-500 dark:text-zinc-400">
+                    {emptyMessage}
+                </div>
+            );
+        }
+
+        return files.map((file) => {
+            const isExpanded = Boolean(expandedFiles[file.filePath]);
+            const typescriptCount = file.issues.filter((issue) => issue.source === "typescript").length;
+            const eslintErrorCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "error").length;
+            const eslintWarningCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "warning").length;
+
+            return (
+                <div
+                    key={file.filePath}
+                    className="rounded-2xl border border-slate-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => toggleExpanded(file.filePath)}
+                        className="w-full px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 transition-all text-left">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="flex items-center justify-center">
+                                <ChevronIcon expanded={isExpanded} />
+                            </span>
+                            <span className="font-semibold text-slate-800 dark:text-zinc-100 break-all">
+                                {file.filePath}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            {typescriptCount > 0 && formatCountBadge("TypeScript", typescriptCount, "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300")}
+                            {eslintErrorCount > 0 && formatCountBadge("ESLint Error", eslintErrorCount, "bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300")}
+                            {eslintWarningCount > 0 && formatCountBadge("ESLint Warn", eslintWarningCount, "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-300")}
+                        </div>
+                    </button>
+
+                    {isExpanded && (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-slate-100 dark:bg-zinc-900 border-y border-slate-200 dark:border-zinc-700">
+                                    <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
+                                        <th className="px-4 py-3 font-mono w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">Source</th>
+                                        <th className="px-4 py-3 font-mono w-[140px] min-w-[140px] max-w-[140px] whitespace-nowrap">Location</th>
+                                        <th className="px-4 py-3 font-mono">Message</th>
+                                        <th className="px-4 py-3 font-mono min-w-[112px] whitespace-nowrap">Rule ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {file.issues.map((issue, index) => (
+                                        <tr
+                                            key={`${file.filePath}-${issue.ruleId}-${index}`}
+                                            className="border-b border-slate-200 dark:border-zinc-800 last:border-0 align-top">
+                                            <td className="px-4 py-3 w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                    issue.source === "typescript"
+                                                            ? "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300"
+                                                        : issue.severity === "error"
+                                                            ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                                }`}>
+                                                    {issue.source === "typescript" ? "TypeScript" : "ESLint"}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-600 dark:text-zinc-300 font-mono whitespace-nowrap w-[140px] min-w-[140px] max-w-[140px]">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleOpenInVSCode(file, issue)}
+                                                    className="text-left text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline cursor-pointer">
+                                                    {issue.location.label}
+                                                </button>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-800 dark:text-zinc-100">
+                                                {issue.message}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 font-mono whitespace-nowrap min-w-[112px]">
+                                                {issue.ruleId}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        });
+    };
 
     return (
         <div>
@@ -364,29 +504,37 @@ export default function CodeHealth() {
                                 })}
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5">
                                     <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
                                         TypeScript Errors
                                     </div>
-                                    <div className="mt-2 text-2xl font-bold text-fuchsia-700 dark:text-fuchsia-300">
+                                    <div className="mt-1.5 text-xl font-bold text-fuchsia-700 dark:text-fuchsia-300">
                                         {result.summary.typescriptErrors}
                                     </div>
                                 </div>
-                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5">
                                     <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
                                         ESLint Errors
                                     </div>
-                                    <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
+                                    <div className="mt-1.5 text-xl font-bold text-rose-600 dark:text-rose-400">
                                         {result.summary.eslintErrors}
                                     </div>
                                 </div>
-                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5">
                                     <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
                                         ESLint Warnings
                                     </div>
-                                    <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">
-                                        {result.summary.eslintWarnings}
+                                    <div className="mt-1.5 text-xl font-bold text-amber-600 dark:text-amber-400">
+                                        {filterCounts["eslint-warning"]}
+                                    </div>
+                                </div>
+                                <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5">
+                                    <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-500">
+                                        Nice To Have
+                                    </div>
+                                    <div className="mt-1.5 text-xl font-bold text-amber-700 dark:text-amber-300">
+                                        {filterCounts["nice-to-have"]}
                                     </div>
                                 </div>
                             </div>
@@ -394,92 +542,37 @@ export default function CodeHealth() {
                     )}
 
                     {result && (
-                        <div className="grid grid-cols-1 gap-4">
-                            {filteredFiles.length === 0 ? (
-                                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 p-8 text-center text-sm text-slate-500 dark:text-zinc-400">
-                                    Không có file nào khớp với filter hiện tại.
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-100">
+                                            Main Issues
+                                        </h3>
+                                        <p className="text-xs text-slate-500 dark:text-zinc-400">
+                                            Nhóm lỗi và warning chính nên ưu tiên đọc trước.
+                                        </p>
+                                    </div>
                                 </div>
-                            ) : (
-                                filteredFiles.map((file) => {
-                                    const isExpanded = Boolean(expandedFiles[file.filePath]);
-                                    const typescriptCount = file.issues.filter((issue) => issue.source === "typescript").length;
-                                    const eslintErrorCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "error").length;
-                                    const eslintWarningCount = file.issues.filter((issue) => issue.source === "eslint" && issue.severity === "warning").length;
+                                <div className="grid grid-cols-1 gap-4">
+                                    {renderFileList(primaryFiles, "Không có file nào khớp với filter hiện tại.")}
+                                </div>
+                            </div>
 
-                                    return (
-                                        <div
-                                            key={file.filePath}
-                                            className="rounded-2xl border border-slate-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleExpanded(file.filePath)}
-                                                className="w-full px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 transition-all text-left">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <span className="flex items-center justify-center">
-                                                        <ChevronIcon expanded={isExpanded} />
-                                                    </span>
-                                                    <span className="font-semibold text-slate-800 dark:text-zinc-100 break-all">
-                                                        {file.filePath}
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    {typescriptCount > 0 && formatCountBadge("TypeScript", typescriptCount, "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300")}
-                                                    {eslintErrorCount > 0 && formatCountBadge("ESLint Error", eslintErrorCount, "bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300")}
-                                                    {eslintWarningCount > 0 && formatCountBadge("ESLint Warn", eslintWarningCount, "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-300")}
-                                                </div>
-                                            </button>
-
-                                            {isExpanded && (
-                                                <div className="overflow-x-auto">
-                                                    <table className="min-w-full text-sm">
-                                                        <thead className="bg-slate-100 dark:bg-zinc-900 border-y border-slate-200 dark:border-zinc-700">
-                                                            <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
-                                                                <th className="px-4 py-3 font-mono">Source</th>
-                                                                <th className="px-4 py-3 font-mono">Location</th>
-                                                                <th className="px-4 py-3 font-mono">Message</th>
-                                                                <th className="px-4 py-3 font-mono min-w-[112px] whitespace-nowrap">Rule ID</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {file.issues.map((issue, index) => (
-                                                                <tr
-                                                                    key={`${file.filePath}-${issue.ruleId}-${index}`}
-                                                                    className="border-b border-slate-200 dark:border-zinc-800 last:border-0 align-top">
-                                                                    <td className="px-4 py-3">
-                                                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                                                            issue.source === "typescript"
-                                                                                    ? "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300"
-                                                                                : issue.severity === "error"
-                                                                                    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                                                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                                                                        }`}>
-                                                                            {issue.source === "typescript" ? "TypeScript" : "ESLint"}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-slate-600 dark:text-zinc-300 font-mono whitespace-nowrap">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => void handleOpenInVSCode(file, issue)}
-                                                                            className="text-left text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline cursor-pointer">
-                                                                            {issue.location.label}
-                                                                        </button>
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-slate-800 dark:text-zinc-100">
-                                                                        {issue.message}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 font-mono whitespace-nowrap min-w-[112px]">
-                                                                        {issue.ruleId}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
+                            {niceToHaveFiles.length > 0 && (
+                                <div className="space-y-3">
+                                    <div className="rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/10 p-4">
+                                        <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                            Nice To Have
+                                        </h3>
+                                        <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-200/80">
+                                            Các warning này thiên về readability và maintainability, có thể tập làm để improve quality của code.
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {renderFileList(niceToHaveFiles, "Không có warning nice to have nào.")}
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
