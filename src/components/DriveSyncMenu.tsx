@@ -156,20 +156,20 @@ export function DriveSyncMenu() {
             <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
               <span className="text-sm">☁️</span>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                Sync Configuration
+                Configuration
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
-                Drive Source <span className="text-red-500">*</span>
+                Path <span className="text-red-500">*</span>
               </label>
               <div>
                 <select
                   value={selectedDrive}
                   onChange={e => setSelectedDrive(e.target.value)}
                   disabled={syncing}
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 disabled:opacity-50 disabled:cursor-not-allowed">
                   <option value="">-- Choose Drive Folder --</option>
                   {folders.map(f => (
                     <option key={f.rootFolderId} value={f.rootFolderId}>{f.rootFolderName}</option>
@@ -180,7 +180,7 @@ export function DriveSyncMenu() {
 
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
-                Local Folder <span className="text-red-500">*</span>
+                Output Folder <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
                 <input
@@ -188,14 +188,18 @@ export function DriveSyncMenu() {
                   value={localRoot}
                   readOnly
                   placeholder="Click Browse to select folder"
-                  className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none"
+                  className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleSelectFolder}
+                  title="Browse output folder"
+                  aria-label="Browse output folder"
                   disabled={syncing}
-                  className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                  Browse
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/5 bg-[#1b2029] text-zinc-400 transition-all hover:bg-[#232938] hover:text-zinc-200 hover:border-[#7d6df7]/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                  </svg>
                 </button>
               </div>
             </div>

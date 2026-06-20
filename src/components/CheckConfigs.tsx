@@ -122,13 +122,17 @@ export default function CheckConfigs() {
                                     value={configPath}
                                     onChange={(e) => setConfigPath(e.target.value)}
                                     placeholder="e.g., /path/to/SoundConfig9704.ts"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectConfigFile}
-                                    className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer">
-                                    Browse
+                                    title="Browse config file"
+                                    aria-label="Browse config file"
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/5 bg-[#1b2029] text-zinc-400 transition-all hover:bg-[#232938] hover:text-zinc-200 hover:border-[#7d6df7]/20 cursor-pointer">
+                                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -143,13 +147,17 @@ export default function CheckConfigs() {
                                     value={sourcePath}
                                     onChange={(e) => setSourcePath(e.target.value)}
                                     placeholder="e.g., /path/to/scripts"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectSourcePath}
-                                    className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer">
-                                    Browse
+                                    title="Browse source folder"
+                                    aria-label="Browse source folder"
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/5 bg-[#1b2029] text-zinc-400 transition-all hover:bg-[#232938] hover:text-zinc-200 hover:border-[#7d6df7]/20 cursor-pointer">
+                                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -188,7 +196,7 @@ export default function CheckConfigs() {
                                     <span>Checking...</span>
                                 </>
                             ) : (
-                                "Run"
+                                "Scan"
                             )}
                         </button>
                     </div>

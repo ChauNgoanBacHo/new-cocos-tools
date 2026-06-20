@@ -992,7 +992,7 @@ export default function CheatConsole() {
                                                 value={newGameId}
                                                 onChange={(e) => setNewGameId(e.target.value)}
                                                 placeholder="e.g., 9704"
-                                                className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-2.5 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                                             />
                                         </div>
                                         <div>
@@ -1003,7 +1003,7 @@ export default function CheatConsole() {
                                                 value={newGameName}
                                                 onChange={(e) => setNewGameName(e.target.value)}
                                                 placeholder="e.g., Slot Game"
-                                                className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-2.5 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                                             />
                                         </div>
                                     </div>
@@ -1148,7 +1148,7 @@ export default function CheatConsole() {
                                                     setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, id: newId } : g));
                                                     setSelectedGameId(newId);
                                                 }}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 font-mono text-sm font-bold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 font-mono text-sm font-bold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1163,7 +1163,7 @@ export default function CheatConsole() {
                                                 type="text"
                                                 value={activeGame.name}
                                                 onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, name: e.target.value } : g))}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm font-semibold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 text-sm font-semibold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1183,7 +1183,7 @@ export default function CheatConsole() {
                                                 value={activeGame.userId}
                                                 onChange={(e) => updateActiveGameUserId(e.target.value)}
                                                 placeholder="User ID"
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1197,7 +1197,7 @@ export default function CheatConsole() {
                                             <select
                                                 value={activeGame.env}
                                                 onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, env: e.target.value as "staging" | "dev" } : g))}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 cursor-pointer">
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 cursor-pointer">
                                                 <option value="staging">Staging</option>
                                                 <option value="dev">Dev</option>
                                             </select>
