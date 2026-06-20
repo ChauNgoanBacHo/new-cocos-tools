@@ -20,6 +20,7 @@ export default function CheckAssets() {
     const [sourceDir, setSourceDir] = useStoredState<string>("check-assets-dir", "");
     const [isRunning, setIsRunning] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
+    const [hasScanSucceeded, setHasScanSucceeded] = useState(false);
     const [sections, setSections] = useState<AssetSection[]>([]);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
@@ -42,20 +43,24 @@ export default function CheckAssets() {
 
         setIsRunning(true);
         setSections([]);
+        setHasScanSucceeded(false);
         setStatus({ type: null, message: "" });
 
         try {
             const res = await window.electronAPI.checkAssets(sourceDir);
             if (res.exitCode === 0) {
                 setSections(res.sections);
+                setHasScanSucceeded(true);
                 setStatus({
                     type: "success",
                     message: `Quét hoàn tất: ${res.totalUsed} used, ${res.totalUnused} unused.`,
                 });
             } else {
+                setHasScanSucceeded(false);
                 setStatus({ type: "error", message: res.error || "Có lỗi xảy ra khi quét." });
             }
         } catch {
+            setHasScanSucceeded(false);
             setStatus({ type: "error", message: "Lỗi khi kiểm tra assets. Kiểm tra lại đường dẫn." });
         } finally {
             setIsRunning(false);
@@ -65,6 +70,7 @@ export default function CheckAssets() {
     const handleClearForm = () => {
         setSourceDir("");
         setSections([]);
+        setHasScanSucceeded(false);
         setStatus({ type: null, message: "" });
     };
 
@@ -160,7 +166,9 @@ export default function CheckAssets() {
                     <div className="px-6 pb-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm">📁</span>
+                                <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                </svg>
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                                     Configuration
                                 </h3>
@@ -172,7 +180,7 @@ export default function CheckAssets() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     busy
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-transparent hover:bg-[#7d6df7]/10 border-[#7d6df7]/35 text-[#b7a8ff] cursor-pointer"
+                                        : "bg-red-500/10 hover:bg-red-500/15 border-red-400/30 text-red-300 cursor-pointer"
                                 }`}>
                                 Clear
                             </button>
@@ -205,18 +213,20 @@ export default function CheckAssets() {
                     </div>
 
                     <div className="px-6 flex justify-end gap-2">
-                        <button
-                            type="button"
-                            disabled={busy || totalUnused === 0}
-                            onClick={handleClearAll}
-                            title={totalUnused === 0 ? "Không có file unused để xoá" : "Xoá toàn bộ file unused"}
-                            className={`px-5 py-2.5 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 border ${
-                                busy || totalUnused === 0
-                                    ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                    : "bg-red-600 hover:bg-red-500 text-white border-red-600 shadow-md shadow-red-500/10 active:scale-[0.99] cursor-pointer"
-                            }`}>
-                            {isClearing ? "Clearing..." : `🗑 Clear All${totalUnused > 0 ? ` (${totalUnused})` : ""}`}
-                        </button>
+                        {hasScanSucceeded && (
+                            <button
+                                type="button"
+                                disabled={busy || totalUnused === 0}
+                                onClick={handleClearAll}
+                                title={totalUnused === 0 ? "Không có file unused để xoá" : "Xoá toàn bộ file unused"}
+                                className={`px-5 py-2.5 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 border ${
+                                    busy || totalUnused === 0
+                                        ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
+                                        : "bg-red-600 hover:bg-red-500 text-white border-red-600 shadow-md shadow-red-500/10 active:scale-[0.99] cursor-pointer"
+                                }`}>
+                                {isClearing ? "Clearing..." : `🗑 Clear All${totalUnused > 0 ? ` (${totalUnused})` : ""}`}
+                            </button>
+                        )}
                         <button
                             type="button"
                             disabled={busy}

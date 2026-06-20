@@ -154,7 +154,9 @@ export function DriveSyncMenu() {
 
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
-              <span className="text-sm">☁️</span>
+              <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+              </svg>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                 Configuration
               </h3>
@@ -210,15 +212,29 @@ export function DriveSyncMenu() {
               type="button"
               onClick={() => handleSync('today')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer">
-              {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : '📅 Sync Today'}
+              className="flex-1 px-6 py-3.5 bg-[#39435a] hover:bg-[#46506a] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-black/10 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m0 0l-5-5m5 5l5-5" />
+                  </svg>
+                  <span>Sync Today</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={() => handleSync('all')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-[#5f66d9] hover:bg-[#737bf0] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#5f66d9]/20 disabled:cursor-not-allowed cursor-pointer">
-              {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : '💾 Full Sync'}
+              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0113.08-4.95M19.5 12a7.5 7.5 0 01-13.08 4.95M16.5 4.5h1.5v1.5M6 18H4.5v-1.5" />
+                  </svg>
+                  <span>Full Sync</span>
+                </>
+              )}
             </button>
             {syncing && !paused && (
               <button

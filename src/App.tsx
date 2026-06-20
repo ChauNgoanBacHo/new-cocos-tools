@@ -135,6 +135,7 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
 
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
+    const [cheatViewResetKey, setCheatViewResetKey] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
@@ -233,7 +234,7 @@ function App() {
     const renderContent = () => {
         switch (activeTab) {
             case "cheat":
-                return <CheatConsole />;
+                return <CheatConsole resetSignal={cheatViewResetKey} />;
             case "anim":
                 return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":
@@ -339,8 +340,8 @@ function App() {
         : "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap";
 
     const sidebarSubtitleClassName = isDark
-        ? "opm-kicker text-[#7b8295] text-[10px] mt-1 tracking-[0.08em]"
-        : "opm-kicker text-[#7b8295] text-[10px] mt-1 tracking-[0.08em]";
+        ? "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]"
+        : "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]";
 
     const navItemClassName = (active: boolean) =>
         active
@@ -398,7 +399,12 @@ function App() {
                                         return (
                                             <button
                                                 key={tab.id}
-                                                onClick={() => setActiveTab(tab.id)}
+                                                onClick={() => {
+                                                    setActiveTab(tab.id);
+                                                    if (tab.id === "cheat") {
+                                                        setCheatViewResetKey((prev) => prev + 1);
+                                                    }
+                                                }}
                                                 className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
                                                 <span className="flex items-center gap-3">
                                                     <svg

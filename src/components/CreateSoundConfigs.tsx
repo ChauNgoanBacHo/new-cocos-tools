@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
+import ActionPromptModal from "./ActionPromptModal";
 
 interface SoundResult {
     stdout: string;
@@ -52,6 +53,7 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<SoundResult | null>(null);
     const [refResult, setRefResult] = useState<SoundResult | null>(null);
+    const [pendingCodeHealthPath, setPendingCodeHealthPath] = useState<string | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
         message: "",
@@ -102,14 +104,7 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                 setRefResult(refRes);
                 if (res.exitCode === 0 && refRes.exitCode === 0) {
                     setStatus({ type: "success", message: "Tạo config và gắn ref thành công!" });
-
-                    const shouldOpenCodeHealth = window.confirm(
-                        "Create Sound Config thành công. Bạn có muốn mở Code Health để scan source này ngay không?",
-                    );
-
-                    if (shouldOpenCodeHealth) {
-                        onOpenCodeHealth?.(getCodeHealthScriptsPath(outputDir));
-                    }
+                    setPendingCodeHealthPath(getCodeHealthScriptsPath(outputDir));
                 } else if (res.exitCode === 0) {
                     setStatus({ type: "error", message: "Tạo config OK nhưng gắn ref thất bại." });
                 } else {
@@ -118,14 +113,7 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
             } else {
                 if (res.exitCode === 0) {
                     setStatus({ type: "success", message: overwrite ? "Quét và tạo file thành công!" : "Quét thành công (không ghi file)." });
-
-                    const shouldOpenCodeHealth = window.confirm(
-                        "Create Sound Config thành công. Bạn có muốn mở Code Health để scan source này ngay không?",
-                    );
-
-                    if (shouldOpenCodeHealth) {
-                        onOpenCodeHealth?.(getCodeHealthScriptsPath(outputDir));
-                    }
+                    setPendingCodeHealthPath(getCodeHealthScriptsPath(outputDir));
                 } else {
                     setStatus({ type: "error", message: "Có lỗi xảy ra khi quét." });
                 }
@@ -149,11 +137,27 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
         setComponentHash("");
         setResult(null);
         setRefResult(null);
+        setPendingCodeHealthPath(null);
         setStatus({ type: null, message: "" });
     };
 
     return (
         <div className="sm:col-span-2">
+            <ActionPromptModal
+                open={Boolean(pendingCodeHealthPath)}
+                title="Create Sound Config thành công"
+                description="Bạn có muốn mở Code Health để scan source này ngay không?"
+                confirmLabel="Mở Code Health"
+                cancelLabel="Để sau"
+                onConfirm={() => {
+                    if (pendingCodeHealthPath) {
+                        onOpenCodeHealth?.(pendingCodeHealthPath);
+                    }
+                    setPendingCodeHealthPath(null);
+                }}
+                onCancel={() => setPendingCodeHealthPath(null)}
+            />
+
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
                     <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
@@ -183,7 +187,9 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                     <div className="px-6 pb-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm">📁</span>
+                                <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                </svg>
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                                     Configuration
                                 </h3>
@@ -195,7 +201,7 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     isRunning
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-transparent hover:bg-[#7d6df7]/10 border-[#7d6df7]/35 text-[#b7a8ff] cursor-pointer"
+                                        : "bg-red-500/10 hover:bg-red-500/15 border-red-400/30 text-red-300 cursor-pointer"
                                 }`}>
                                 Clear
                             </button>

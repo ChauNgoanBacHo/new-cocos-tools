@@ -181,7 +181,11 @@ interface GameData {
     fieldConfig?: FieldConfig[];
 }
 
-export default function CheatConsole() {
+interface CheatConsoleProps {
+    resetSignal?: number;
+}
+
+export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [games, setGames] = useStoredState<GameData[]>("games", []);
     const [selectedGameId, setSelectedGameId] = useStoredState<string | null>("selectedGameId", null);
     const [localSocketEnabled, setLocalSocketEnabled] = useStoredState<boolean>("cheat-matrix-local-ws-enabled", false);
@@ -322,6 +326,12 @@ export default function CheatConsole() {
             });
         }
     }, [activeGame?.panels?.length]);
+
+    useEffect(() => {
+        setSelectedGameId(null);
+        setStatus({ type: null, message: "" });
+        setIsCreatingGame(false);
+    }, [resetSignal, setSelectedGameId]);
 
     useEffect(() => {
         return () => {
@@ -917,18 +927,6 @@ export default function CheatConsole() {
         <div>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="flex items-center gap-3">
-                    {selectedGameId && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSelectedGameId(null);
-                                setStatus({ type: null, message: "" });
-                            }}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-slate-200"
-                            title="Quay lại danh sách game">
-                            ⬅️ Back
-                        </button>
-                    )}
                     <div className="text-left">
                         <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
                             Matrix Simulator
@@ -944,11 +942,33 @@ export default function CheatConsole() {
                     <button
                         type="button"
                         onClick={() => setIsCreatingGame((prev) => !prev)}
-                        className="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl hover:bg-red-500 transition-all cursor-pointer shadow-md shadow-red-500/10">
-                        {isCreatingGame ? "✕ Close Form" : "➕ Create New Game"}
+                        className={`px-4 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md ${
+                            isCreatingGame
+                                ? "bg-white/5 text-zinc-200 hover:bg-white/10 shadow-black/10"
+                                : "bg-[#7d6df7] text-white hover:bg-[#9387ff] shadow-[#7d6df7]/20"
+                        }`}>
+                        {isCreatingGame ? "✕ Close Form" : "＋ Create New Game"}
                     </button>
                 )}
             </div>
+
+            {selectedGameId && (
+                <div className="mb-4 px-1">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedGameId(null);
+                            setStatus({ type: null, message: "" });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-300 transition-all hover:bg-white/10 hover:text-white cursor-pointer"
+                        title="Quay lại danh sách game">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                </div>
+            )}
 
             <div className={`overflow-hidden ${
                 selectedGameId
@@ -976,43 +996,45 @@ export default function CheatConsole() {
                             {isCreatingGame && (
                                 <form
                                     onSubmit={handleCreateGame}
-                                    className="bg-slate-50 dark:bg-zinc-800 border border-red-200 dark:border-red-700 p-5 rounded-2xl space-y-4 shadow-sm animate-in fade-in duration-200">
-                                    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2 mb-1">
-                                        <span className="text-sm">🎮</span>
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                    className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden animate-in fade-in duration-200">
+                                    <div className="flex items-center gap-2 border-b border-white/5 bg-white/5 px-5 py-3">
+                                        <span className="text-sm text-[#b7a8ff]">🎮</span>
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
                                             Create New Game
                                         </h3>
                                     </div>
+                                    <div className="space-y-4 px-5 py-5">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs text-slate-500 font-medium mb-1">Game ID *</label>
+                                            <label className="block text-xs text-zinc-400 font-medium mb-1">Game ID *</label>
                                             <input
                                                 type="text"
                                                 required
                                                 value={newGameId}
                                                 onChange={(e) => setNewGameId(e.target.value)}
                                                 placeholder="e.g., 9704"
-                                                className="w-full px-4 py-2.5 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-slate-500 font-medium mb-1">Game Name *</label>
+                                            <label className="block text-xs text-zinc-400 font-medium mb-1">Game Name *</label>
                                             <input
                                                 type="text"
                                                 required
                                                 value={newGameName}
                                                 onChange={(e) => setNewGameName(e.target.value)}
                                                 placeholder="e.g., Slot Game"
-                                                className="w-full px-4 py-2.5 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
                                     <div className="flex justify-end pt-1">
                                         <button
                                             type="submit"
-                                            className="px-5 py-2 bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all">
+                                            className="px-5 py-2.5 bg-[#7d6df7] text-white hover:bg-[#9387ff] text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md shadow-[#7d6df7]/20">
                                             Save & Add Game
                                         </button>
+                                    </div>
                                     </div>
                                 </form>
                             )}
@@ -1023,7 +1045,7 @@ export default function CheatConsole() {
                                     <div className="text-4xl mb-3">🎮</div>
                                     <h4 className="text-sm font-bold text-slate-700 dark:text-zinc-300">Chưa có game nào trong danh sách</h4>
                                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                                        Vui lòng nhấn nút <strong className="text-red-500">➕ Create New Game</strong> ở góc trên bên phải để bắt đầu thiết lập cấu hình.
+                                        Vui lòng nhấn nút <strong className="text-[#9b8cff]">Create New Game</strong> ở góc trên bên phải để bắt đầu thiết lập cấu hình.
                                     </p>
                                 </div>
                             ) : (
@@ -1035,7 +1057,7 @@ export default function CheatConsole() {
                                             className="group relative bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
                                             <div>
                                                 <div className="flex justify-between items-start">
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-amber-500 text-white flex items-center justify-center font-bold font-mono text-sm shadow-md shadow-red-500/10">
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#5964d8] to-[#7d6df7] text-white flex items-center justify-center font-bold font-mono text-sm shadow-md shadow-[#4f57bb]/20">
                                                         {game.name.substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <button
@@ -1043,7 +1065,10 @@ export default function CheatConsole() {
                                                         onClick={(e) => handleDeleteGame(game.id, e)}
                                                         className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all cursor-pointer"
                                                         title="Xóa game">
-                                                        🗑️
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5h8M9.25 5.5h5.5l.5 2H8.75l.5-2z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 7.5l.75 10a1 1 0 001 .9h2.5a1 1 0 001-.9l.75-10" />
+                                                        </svg>
                                                     </button>
                                                 </div>
                                                 <div className="mt-4">
@@ -1055,7 +1080,7 @@ export default function CheatConsole() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="mt-4 text-xs font-semibold text-red-400 flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                                            <div className="mt-4 text-xs font-semibold text-[#b7a8ff] flex items-center gap-1 opacity-90 group-hover:text-[#d7ccff] group-hover:opacity-100 transition-opacity">
                                                 Configure Matrix <span>➔</span>
                                             </div>
                                         </div>
@@ -1095,7 +1120,12 @@ export default function CheatConsole() {
                                                             ? "bg-[#7d6df7]/12 border-[#7d6df7]/40 text-[#c2b7ff]"
                                                             : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
                                                     } cursor-pointer`}>
-                                                    {isFieldConfigOpen ? "✕ Close Config" : "⚡ Configure Fields"}
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9m-9 6h9m-9 6h9M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
+                                                        </svg>
+                                                        <span>{isFieldConfigOpen ? "Close Config" : "Configure Fields"}</span>
+                                                    </span>
                                                 </button>
                                             </div>
 
@@ -1436,10 +1466,13 @@ export default function CheatConsole() {
                                                     <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isExpanded ? "rotate-90" : ""}`}>
                                                         ▶
                                                     </span>
-                                                    <span className="text-sm">📝</span>
-                                                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
-                                                        {panel.title.trim() ? panel.title : `Matrix #${panel.id}`}
-                                                    </h3>
+                                                        <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 5.5h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1v-10a1 1 0 011-1z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9h6M9 12h4.5" />
+                                                        </svg>
+                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                                            {panel.title.trim() ? panel.title : `Matrix #${panel.id}`}
+                                                        </h3>
                                                 </button>
                                                 <div className="flex items-center gap-2">
                                                     {!panel.isExpanded && (
@@ -1450,9 +1483,34 @@ export default function CheatConsole() {
                                                             e.stopPropagation();
                                                             executePanel(panel);
                                                         }}
-                                                        className="px-2.5 py-1 text-xs bg-[#7d6df7] hover:bg-[#9387ff] text-white rounded-lg transition-all cursor-pointer font-semibold flex items-center gap-0.5 shadow-sm shadow-[#7d6df7]/20"
+                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#8e81ff]/35 bg-[#7d6df7] hover:bg-[#9387ff] text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#7d6df7]/20"
                                                         title="Run this configuration immediately">
-                                                        {executingPanelId === panel.id ? "⏳ Executing" : "⚡ Execute"}
+                                                        {executingPanelId === panel.id ? (
+                                                            <svg
+                                                                className="animate-spin h-4 w-4 text-white"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24">
+                                                                <circle
+                                                                    className="opacity-25"
+                                                                    cx="12"
+                                                                    cy="12"
+                                                                    r="10"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="4"
+                                                                />
+                                                                <path
+                                                                    className="opacity-75"
+                                                                    fill="currentColor"
+                                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                />
+                                                            </svg>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
+                                                                </svg>
+                                                            </>
+                                                        )}
                                                     </button>
                                                     )}
                                                     <button
@@ -1461,9 +1519,11 @@ export default function CheatConsole() {
                                                             e.stopPropagation();
                                                             removePanel(panel.id);
                                                         }}
-                                                        className="px-2.5 py-1 text-xs text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 rounded-lg transition-all cursor-pointer font-medium"
+                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#7b4d60] bg-[#4a2f3b] text-[#f1c8d5] hover:bg-[#5a3746] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20"
                                                         title="Xóa panel này">
-                                                        🗑️ Delete
+                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                            <path d="M9.5 4.75a1 1 0 00-1 1V7H6.25a.75.75 0 000 1.5h.53l.74 10.36A2 2 0 009.51 20.75h4.98a2 2 0 001.99-1.89l.74-10.36h.53a.75.75 0 000-1.5H15.5V5.75a1 1 0 00-1-1h-5zm4.5 2.25h-4V6.25h4V7zm-3 3.25a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm4 0a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6z" />
+                                                        </svg>
                                                     </button>
                                                 </div>
                                             </div>
@@ -1639,7 +1699,7 @@ export default function CheatConsole() {
                                                             type="button"
                                                             disabled={executingPanelId !== null}
                                                             onClick={() => executePanel(panel)}
-                                                            className={`px-5 py-2.5 bg-[#7d6df7] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/25 flex items-center justify-center gap-2 ${
+                                                            className={`h-9 w-9 bg-[#7d6df7] text-white rounded-xl transition-all shadow-md shadow-[#7d6df7]/20 inline-flex items-center justify-center ${
                                                                 executingPanelId !== null
                                                                     ? "opacity-50 cursor-not-allowed"
                                                                     : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
@@ -1664,10 +1724,11 @@ export default function CheatConsole() {
                                                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                                         />
                                                                     </svg>
-                                                                    <span>Executing...</span>
                                                                 </>
                                                             ) : (
-                                                                `⚡ Execute ${panel.title.trim() ? panel.title : `Matrix #${panel.id}`}`
+                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
+                                                                </svg>
                                                             )}
                                                         </button>
                                                     </div>
@@ -1683,22 +1744,25 @@ export default function CheatConsole() {
                                         <button
                                             type="button"
                                             onClick={addPanel}
-                                            className="px-4 py-2.5 border border-dashed border-slate-300 dark:border-zinc-600 hover:border-red-500 text-slate-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 font-semibold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer bg-slate-50/50 dark:bg-zinc-800/50 hover:bg-red-50/30 dark:hover:bg-red-900/30">
-                                            <span>➕</span> Add Matrix
+                                            className="px-4 py-2.5 border border-[#7d6df7] bg-[#7d6df7] hover:bg-[#9387ff] hover:border-[#9387ff] text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/20 flex items-center gap-1.5 cursor-pointer active:scale-[0.98]">
+                                            <svg className="h-4 w-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5.25v13.5M5.25 12h13.5" />
+                                            </svg>
+                                            <span className="text-white">Add Matrix</span>
                                         </button>
 
                                         <button
                                             type="button"
                                             disabled={clearingSession}
                                             onClick={handleClearSession}
-                                            className={`px-4 py-2.5 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${
+                                            className={`px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-400/30 text-amber-200 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${
                                                 clearingSession ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.98]"
                                             }`}
                                             title="Clear session của game hiện tại ngay tại cuối trang cấu hình">
                                             {clearingSession ? (
                                                 <>
                                                     <svg
-                                                        className="animate-spin h-3.5 w-3.5 text-rose-700"
+                                                        className="animate-spin h-3.5 w-3.5 text-amber-200"
                                                         fill="none"
                                                         viewBox="0 0 24 24">
                                                         <circle
@@ -1719,7 +1783,10 @@ export default function CheatConsole() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span>🧹</span> Clear Session
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5h16M6.5 7.5l1 10.25a1 1 0 001 .9h6a1 1 0 001-.9l1-10.25M9 7.5V5.75A1.75 1.75 0 0110.75 4h2.5A1.75 1.75 0 0115 5.75V7.5" />
+                                                    </svg>
+                                                    <span>Clear Session</span>
                                                 </>
                                             )}
                                         </button>
