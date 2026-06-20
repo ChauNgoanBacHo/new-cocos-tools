@@ -293,8 +293,8 @@ function App() {
         : "w-64 bg-white border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "opm-title text-2xl text-amber-400/90"
-        : "opm-title text-2xl text-amber-600";
+        ? "opm-title text-[1.12rem] leading-tight text-amber-400/90"
+        : "opm-title text-[1.12rem] leading-tight text-amber-600";
 
     const sidebarSubtitleClassName = isDark
         ? "opm-kicker text-zinc-500 text-[10px] mt-1"
@@ -418,7 +418,7 @@ function App() {
             </aside>
 
             {/* NỘI DUNG HIỂN THỊ CHÍNH BÊN PHẢI */}
-            <main className="flex-1 p-8 overflow-y-auto bg-slate-100 dark:bg-zinc-900">
+            <main className="flex-1 p-8 overflow-y-auto bg-slate-100 dark:bg-zinc-900 [font-family:var(--sans)]">
                 <div className="w-full h-full flex flex-col justify-between">
                     <div>
 
