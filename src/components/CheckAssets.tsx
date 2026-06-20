@@ -133,8 +133,8 @@ export default function CheckAssets() {
         <div>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
-                    <h2 className="text-2xl font-bold text-amber-500 mb-1">
-                        Check Assets
+                    <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
+                        Asset Cleanup
                     </h2>
                     <p className="text-slate-500 dark:text-zinc-400 text-xs">
                         Quét asset/script unused trong project (không được ref trong .scene/.prefab)
@@ -172,7 +172,7 @@ export default function CheckAssets() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     busy
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-transparent hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 cursor-pointer"
+                                        : "bg-transparent hover:bg-[#7d6df7]/10 border-[#7d6df7]/35 text-[#b7a8ff] cursor-pointer"
                                 }`}>
                                 Clear
                             </button>
@@ -188,7 +188,7 @@ export default function CheckAssets() {
                                     value={sourceDir}
                                     onChange={(e) => setSourceDir(e.target.value)}
                                     placeholder="e.g., /path/to/project-root"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                 />
                                 <button
                                     type="button"
@@ -217,10 +217,10 @@ export default function CheckAssets() {
                             type="button"
                             disabled={busy}
                             onClick={handleRun}
-                            className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
+                            className={`px-5 py-2.5 bg-[#7d6df7] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/25 flex items-center justify-center gap-2 ${
                                 busy
                                     ? "opacity-50 cursor-not-allowed"
-                                    : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
+                                    : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
                             }`}>
                             {isRunning ? (
                                 <>

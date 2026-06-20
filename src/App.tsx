@@ -20,7 +20,7 @@ type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "c
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     {
         id: "cheat",
-        label: "Cheat Matrix",
+        label: "Matrix Simulator",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.9 4.6L19 9.1l-3.7 3.2.9 4.9-4.2-2.4-4.2 2.4.9-4.9L5 9.1l5.1-1.5L12 3z" />
@@ -31,7 +31,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "drive-sync",
-        label: "Drive Sync",
+        label: "Drive Synchronizer",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5v1.25A2.25 2.25 0 008.25 20h7.5A2.25 2.25 0 0018 17.75V16.5" />
@@ -43,7 +43,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "anim",
-        label: "Create Anim",
+        label: "Anim Generator",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11v11h-11z" />
@@ -54,7 +54,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "sound",
-        label: "Create Sound",
+        label: "Sound Generator",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5h3.5l3-2.5v8l-3-2.5H8z" />
@@ -65,7 +65,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "check-config",
-        label: "Check Configs",
+        label: "Usage Check",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 6.5h8M8 10.5h5M8 14.5h4" />
@@ -76,7 +76,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "check-assets",
-        label: "Check Assets",
+        label: "Asset Cleanup",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.8l6.5 3.7v8.9L12 20.2l-6.5-3.8V7.5L12 3.8z" />
@@ -87,7 +87,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "spine-preview",
-        label: "Spine Preview",
+        label: "Spine Viewer",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5c4.6 0 8.2 3 9.5 7.5-1.3 4.5-4.9 7.5-9.5 7.5S3.8 16.5 2.5 12C3.8 7.5 7.4 4.5 12 4.5z" />
@@ -97,7 +97,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "code-health",
-        label: "Code Health",
+        label: "Code Monitor",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 5h7l4 4v10a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1z" />
@@ -238,11 +238,11 @@ function App() {
             <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 overflow-hidden">
                 <div className="flex flex-col items-center gap-5">
                     <div className="relative">
-                        <div className="absolute -inset-8 rounded-full bg-amber-500/10 blur-2xl" />
-                        <div className="relative w-64 rounded-3xl border border-amber-500/40 bg-zinc-900 shadow-2xl shadow-amber-950/40 p-4">
+                        <div className="absolute -inset-8 rounded-full bg-[#7d6df7]/18 blur-2xl" />
+                        <div className="relative w-64 rounded-3xl border border-[#7d6df7]/40 bg-zinc-900 shadow-2xl shadow-[#2f246f]/45 p-4">
                             <div className="flex justify-center gap-2 mb-3">
                                 {Array.from({ length: 9 }).map((_, index) => (
-                                    <span key={index} className="slot-light h-2 w-2 rounded-full bg-amber-300 shadow-sm shadow-amber-300/80" />
+                                    <span key={index} className="slot-light h-2 w-2 rounded-full bg-[#b7a8ff] shadow-sm shadow-[#a894ff]/80" />
                                 ))}
                             </div>
 
@@ -257,7 +257,7 @@ function App() {
                                                     .map((symbol, index) => (
                                                     <div
                                                         key={`${reel}-${index}`}
-                                                        className="h-12 flex items-center justify-center text-base font-black font-mono text-amber-300">
+                                                        className="h-12 flex items-center justify-center text-base font-black font-mono text-[#c2b7ff]">
                                                         {symbol}
                                                     </div>
                                                 ))}
@@ -272,15 +272,15 @@ function App() {
                                 <div className="slot-handle -mt-1 h-8 w-8 rounded-full bg-red-600 border-4 border-red-400 shadow-lg shadow-red-950/60" />
                             </div>
 
-                            <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-center">
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.28em] text-amber-300">
+                            <div className="mt-3 rounded-xl bg-[#7d6df7]/10 border border-[#7d6df7]/25 px-3 py-2 text-center">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.28em] text-[#c2b7ff]">
                                     Loading Tools
                                 </span>
                             </div>
                         </div>
                     </div>
                     <div className="text-center">
-                        <p className="text-amber-400/90 text-xs font-mono uppercase tracking-widest">Spinning up</p>
+                        <p className="text-[#b7a8ff]/95 text-xs font-mono uppercase tracking-widest">Spinning up</p>
                         <p className="text-zinc-600 text-[10px] font-mono mt-1 tracking-wide">Preparing cheat console...</p>
                     </div>
                 </div>
@@ -377,7 +377,7 @@ function App() {
                                 onClick={() => setIsDark(!isDark)}
                                 className={themeToggleButtonClassName}>
                                 {isDark ? (
-                                    <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-4 h-4 text-[#9b8cff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
                                 ) : (

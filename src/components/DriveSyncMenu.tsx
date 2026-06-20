@@ -127,7 +127,7 @@ export function DriveSyncMenu() {
     <div className="sm:col-span-2">
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
         <div className="text-left">
-          <h2 className="text-2xl font-bold text-amber-500 mb-1">Drive Sync</h2>
+          <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">Drive Synchronizer</h2>
           <p className="text-slate-500 dark:text-zinc-400 text-xs">
             Sync assets from Google Drive to local folder
           </p>
@@ -169,7 +169,7 @@ export function DriveSyncMenu() {
                   value={selectedDrive}
                   onChange={e => setSelectedDrive(e.target.value)}
                   disabled={syncing}
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 disabled:opacity-50 disabled:cursor-not-allowed">
                   <option value="">-- Choose Drive Folder --</option>
                   {folders.map(f => (
                     <option key={f.rootFolderId} value={f.rootFolderId}>{f.rootFolderName}</option>
@@ -206,14 +206,14 @@ export function DriveSyncMenu() {
               type="button"
               onClick={() => handleSync('today')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm disabled:cursor-not-allowed cursor-pointer">
+              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer">
               {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : '📅 Sync Today'}
             </button>
             <button
               type="button"
               onClick={() => handleSync('all')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm disabled:cursor-not-allowed cursor-pointer">
+              className="flex-1 px-6 py-3.5 bg-[#5f66d9] hover:bg-[#737bf0] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#5f66d9]/20 disabled:cursor-not-allowed cursor-pointer">
               {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : '💾 Full Sync'}
             </button>
             {syncing && !paused && (

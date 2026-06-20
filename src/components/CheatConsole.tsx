@@ -949,8 +949,8 @@ export default function CheatConsole() {
                         </button>
                     )}
                     <div className="text-left">
-                        <h2 className="text-2xl font-bold text-amber-500 mb-1">
-                            Cheat Matrix
+                        <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
+                            Matrix Simulator
                         </h2>
                         <p className="text-slate-400 text-xs">
                             {selectedGameId && activeGame
@@ -1091,38 +1091,38 @@ export default function CheatConsole() {
                                     <button
                                         type="button"
                                         onClick={handleClearAll}
-                                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                                        className="px-4 py-2.5 bg-[#7d6df7] hover:bg-[#9387ff] text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
                                         title="Xóa toàn bộ cấu hình form và đặt lại danh sách panel">
                                         <span>🔄</span> Reset Form Data
                                     </button>
                                 </div>
 
                                 {/* Panel Thông số chung */}
-                                <div className="p-6 space-y-4">
+                                <div className="overflow-hidden rounded-2xl border border-white/5">
                                     <button
                                         type="button"
-                                        className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
-                                            isCommonDataOpen ? "border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2" : ""
-                                        }`}
+                                        className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none"
                                         onClick={() => setIsCommonDataOpen((prev) => !prev)}>
-                                        <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isCommonDataOpen ? "rotate-90" : ""}`}>
-                                            ▶
-                                        </span>
-                                        <span className="text-sm">⚙️</span>
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                                            Common Data
-                                        </h3>
+                                        <div className="flex items-center gap-2.5">
+                                            <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isCommonDataOpen ? "rotate-90" : ""}`}>
+                                                ▶
+                                            </span>
+                                            <span className="text-sm">⚙️</span>
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                                Common Data
+                                            </h3>
+                                        </div>
                                     </button>
 
                                     {isCommonDataOpen && (
-                                        <>
+                                        <div className="p-6 space-y-4">
                                             <div className="flex justify-end">
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsFieldConfigOpen(prev => !prev)}
                                                     className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                                         isFieldConfigOpen
-                                                            ? "bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300"
+                                                            ? "bg-[#7d6df7]/12 border-[#7d6df7]/40 text-[#c2b7ff]"
                                                             : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
                                                     } cursor-pointer`}>
                                                     {isFieldConfigOpen ? "✕ Close Config" : "⚡ Configure Fields"}
@@ -1130,7 +1130,7 @@ export default function CheatConsole() {
                                             </div>
 
                                             {isFieldConfigOpen && (
-                                                <div className="bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 space-y-2">
+                                                <div className="bg-white dark:bg-zinc-900 border border-[#7d6df7]/20 rounded-xl p-4 space-y-2">
                                                     <p className="text-[10px] text-slate-500 dark:text-zinc-400 mb-2">
                                                         Chọn field hiển thị và đổi label cho Additional Data của game này.
                                                     </p>
@@ -1144,7 +1144,7 @@ export default function CheatConsole() {
                                                                     config[idx] = { ...config[idx], visible: e.target.checked };
                                                                     setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
                                                                 }}
-                                                                className="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                                                className="w-3.5 h-3.5 rounded border-slate-300 text-[#7d6df7] focus:ring-[#7d6df7] cursor-pointer"
                                                             />
                                                             <input
                                                                 type="text"
@@ -1154,7 +1154,7 @@ export default function CheatConsole() {
                                                                     config[idx] = { ...config[idx], label: e.target.value };
                                                                     setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
                                                                 }}
-                                                                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-lg text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500"
+                                                                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-lg text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7]"
                                                             />
                                                             <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-mono w-32 truncate" title={field.key as string}>
                                                                 {field.key as string}
@@ -1178,7 +1178,7 @@ export default function CheatConsole() {
                                                     setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, id: newId } : g));
                                                     setSelectedGameId(newId);
                                                 }}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 font-mono text-sm font-bold focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 font-mono text-sm font-bold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1193,7 +1193,7 @@ export default function CheatConsole() {
                                                 type="text"
                                                 value={activeGame.name}
                                                 onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, name: e.target.value } : g))}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm font-semibold focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm font-semibold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1213,7 +1213,7 @@ export default function CheatConsole() {
                                                 value={activeGame.userId}
                                                 onChange={(e) => updateActiveGameUserId(e.target.value)}
                                                 placeholder="User ID"
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                             />
                                         </div>
                                     </div>
@@ -1227,7 +1227,7 @@ export default function CheatConsole() {
                                             <select
                                                 value={activeGame.env}
                                                 onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, env: e.target.value as "staging" | "dev" } : g))}
-                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20 cursor-pointer">
+                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 cursor-pointer">
                                                 <option value="staging">Staging</option>
                                                 <option value="dev">Dev</option>
                                             </select>
@@ -1283,7 +1283,7 @@ export default function CheatConsole() {
                                             {localSocketStatus.running && (
                                                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
                                                     <span>Use</span>
-                                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
+                                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25 bg-[#7d6df7]/10 text-[#b7a8ff]">
                                                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                             <path
                                                                 strokeLinecap="round"
@@ -1304,29 +1304,29 @@ export default function CheatConsole() {
                                             )}
                                         </div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
 
                                 {localSocketEnabled && (
-                                    <div className="p-6 space-y-4">
+                                    <div className="overflow-hidden rounded-2xl border border-white/5">
                                         <button
                                             type="button"
-                                            className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
-                                                isAutoplaySequenceExpanded ? "border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2" : ""
-                                            }`}
+                                            className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none"
                                             onClick={() => setIsAutoplaySequenceExpanded((prev) => !prev)}>
-                                            <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
-                                                ▶
-                                            </span>
-                                            <span className="text-sm">🔁</span>
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                                                Autoplay Matrix Sequence
-                                            </h3>
+                                            <div className="flex items-center gap-2.5">
+                                                <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
+                                                    ▶
+                                                </span>
+                                                <span className="text-sm">🔁</span>
+                                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                                    Autoplay Matrix Sequence
+                                                </h3>
+                                            </div>
                                         </button>
 
                                         {isAutoplaySequenceExpanded && (
-                                            <>
+                                            <div className="p-6 space-y-4">
                                                 <div className="text-xs text-slate-400 dark:text-zinc-500 pb-1">
                                                     💡 Autoplay chỉ hoạt động khi Local WebSocket Server đang bật. Mỗi bước tiếp theo sẽ chờ socket event thật thay vì dùng delay.
                                                 </div>
@@ -1446,7 +1446,7 @@ export default function CheatConsole() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -1480,7 +1480,7 @@ export default function CheatConsole() {
                                                             e.stopPropagation();
                                                             executePanel(panel);
                                                         }}
-                                                        className="px-2.5 py-1 text-xs bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-all cursor-pointer font-semibold flex items-center gap-0.5"
+                                                        className="px-2.5 py-1 text-xs bg-[#7d6df7] hover:bg-[#9387ff] text-white rounded-lg transition-all cursor-pointer font-semibold flex items-center gap-0.5 shadow-sm shadow-[#7d6df7]/20"
                                                         title="Run this configuration immediately">
                                                         {executingPanelId === panel.id ? "⏳ Executing" : "⚡ Execute"}
                                                     </button>
@@ -1515,7 +1515,7 @@ export default function CheatConsole() {
                                                                 value={panel.title}
                                                                 onChange={(e) => updatePanelField(panel.id, "title", e.target.value)}
                                                                 placeholder="e.g., Free Spins, Jackpot Cheat..."
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20 font-medium"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 font-medium"
                                                             />
                                                         </div>
                                                     </div>
@@ -1535,7 +1535,7 @@ export default function CheatConsole() {
                                                                 value={panel.matrixData}
                                                                 onChange={(e) => updatePanelField(panel.id, "matrixData", e.target.value)}
                                                                 placeholder="Matrix Data"
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                                             />
                                                         </div>
                                                     </div>
@@ -1555,7 +1555,7 @@ export default function CheatConsole() {
                                                                 value={panel.tableFormat}
                                                                 onChange={(e) => updatePanelField(panel.id, "tableFormat", e.target.value)}
                                                                 placeholder="Table Format"
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                                             />
                                                         </div>
                                                     </div>
@@ -1591,13 +1591,13 @@ export default function CheatConsole() {
                                                                                                     value={value}
                                                                                                     placeholder="—"
                                                                                                     onChange={(e) => updatePanelMatrixToken(panel, tokenIndex, e.target.value)}
-                                                                                                    className={`h-9 w-full px-2 rounded-lg border text-center text-xs font-mono font-semibold transition-all duration-200 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20 hover:scale-[1.03] hover:bg-amber-50 hover:border-amber-400 hover:shadow-sm hover:shadow-amber-500/20 dark:hover:bg-amber-950/30 dark:hover:border-amber-500 ${
+                                                                                                    className={`h-9 w-full px-2 rounded-lg border text-center text-xs font-mono font-semibold transition-all duration-200 focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 hover:scale-[1.03] hover:bg-[#7d6df7]/10 hover:border-[#7d6df7]/45 hover:shadow-sm hover:shadow-[#7d6df7]/20 ${
                                                                                                         value
                                                                                                             ? "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200"
                                                                                                             : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/50 text-red-400 dark:text-red-500 placeholder-red-300 dark:placeholder-red-600"
                                                                                                     } ${
                                                                                                         isAnimated
-                                                                                                            ? "animate-pulse scale-[1.04] ring-2 ring-amber-300 dark:ring-amber-500 border-amber-400 dark:border-amber-500"
+                                                                                                            ? "animate-pulse scale-[1.04] ring-2 ring-[#a894ff] border-[#8d7ef7]"
                                                                                                             : ""
                                                                                                     }`}
                                                                                                 />
@@ -1620,17 +1620,19 @@ export default function CheatConsole() {
                                                     })()}
 
                                                     {/* Additional Data (optional) — collapsible, mặc định đóng */}
-                                                    <div className="border border-slate-200 dark:border-zinc-600 rounded-xl overflow-hidden">
+                                                    <div className="border border-white/5 rounded-xl overflow-hidden">
                                                         <button
                                                             type="button"
-                                                            className="flex w-full items-center gap-2 px-4 py-3 text-left cursor-pointer select-none focus:outline-none bg-white/5 hover:bg-white/10 transition-colors"
+                                                            className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none hover:bg-white/10 transition-colors"
                                                             onClick={() => toggleAdditionalExpand(panel.id)}>
-                                                            <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isAdditionalExpanded ? "rotate-90" : ""}`}>
-                                                                ▶
-                                                            </span>
-                                                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
-                                                                Additional Data
-                                                            </span>
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isAdditionalExpanded ? "rotate-90" : ""}`}>
+                                                                    ▶
+                                                                </span>
+                                                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-100">
+                                                                    Additional Data
+                                                                </span>
+                                                            </div>
                                                             <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal lowercase tracking-normal">
                                                                 (optional)
                                                             </span>
@@ -1652,7 +1654,7 @@ export default function CheatConsole() {
                                                                                 value={(panel[key] as string) ?? ""}
                                                                                 onChange={(e) => updatePanelField(panel.id, key, e.target.value)}
                                                                                 placeholder={label}
-                                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
                                                                             />
                                                                         </div>
                                                                     </div>
@@ -1667,10 +1669,10 @@ export default function CheatConsole() {
                                                             type="button"
                                                             disabled={executingPanelId !== null}
                                                             onClick={() => executePanel(panel)}
-                                                            className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
+                                                            className={`px-5 py-2.5 bg-[#7d6df7] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/25 flex items-center justify-center gap-2 ${
                                                                 executingPanelId !== null
                                                                     ? "opacity-50 cursor-not-allowed"
-                                                                    : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
+                                                                    : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
                                                             }`}>
                                                             {executingPanelId === panel.id ? (
                                                                 <>

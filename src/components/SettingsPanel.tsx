@@ -56,7 +56,7 @@ export function SettingsPanel({
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="text-left">
-                        <h2 className="text-2xl font-bold text-amber-500 mb-1">
+                        <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
                             Settings
                         </h2>
                         <p className="text-slate-500 dark:text-zinc-400 text-xs">
@@ -83,7 +83,7 @@ export function SettingsPanel({
                         <button
                             type="button"
                             onClick={onResetMenuOrder}
-                            className="px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-xs font-semibold text-amber-700 dark:text-amber-300 transition-all cursor-pointer">
+                            className="px-3 py-2 rounded-lg border border-[#7d6df7]/25 bg-[#7d6df7]/10 hover:bg-[#7d6df7]/18 text-xs font-semibold text-[#c2b7ff] transition-all cursor-pointer">
                             Reset Menu Order
                         </button>
                     </div>
@@ -108,7 +108,7 @@ export function SettingsPanel({
                                     onDragEnd={() => setDraggedMenuId(null)}
                                     className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all ${
                                         draggedMenuId === item.id
-                                            ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700"
+                                            ? "border-[#7d6df7]/40 bg-[#7d6df7]/10"
                                             : "border-slate-200 bg-white dark:bg-zinc-900 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600"
                                     }`}>
                                     <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export function SettingsPanel({
                                             type="checkbox"
                                             checked={!isHidden}
                                             onChange={() => onToggleMenuVisibility(item.id)}
-                                            className="rounded border-slate-300 dark:border-zinc-600 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                            className="rounded border-slate-300 dark:border-zinc-600 text-[#7d6df7] focus:ring-[#7d6df7] cursor-pointer"
                                         />
                                         Visible
                                     </label>
@@ -168,7 +168,7 @@ export function SettingsPanel({
                                 className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                                     isExporting
                                         ? "bg-slate-300 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                                        : "bg-red-600 hover:bg-red-500 text-white cursor-pointer"
+                                        : "bg-[#7d6df7] hover:bg-[#9387ff] text-white cursor-pointer shadow-md shadow-[#7d6df7]/25"
                                 }`}>
                                 {isExporting ? "Exporting..." : "Download Extension ZIP"}
                             </button>
