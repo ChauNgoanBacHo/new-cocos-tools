@@ -11,8 +11,9 @@ import CodeHealth from "./components/CodeHealth";
 import SpinePreview from "./components/SpinePreview";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
+import { SettingsPanel } from "./components/SettingsPanel";
 
-type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync";
+type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
 // rendered data-driven in the sidebar.
@@ -64,13 +65,58 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
+    const [menuOrder, setMenuOrder] = useStoredState<TabType[]>("app-menu-order", TABS.map((tab) => tab.id));
+    const [hiddenMenuIds, setHiddenMenuIds] = useStoredState<TabType[]>("app-hidden-menu-ids", []);
     const [, setCodeHealthSourcePath] = useStoredState<string>("code-health-source-path", "");
     const [, setCodeHealthAutoRunKey] = useStoredState<string>("code-health-auto-run-key", "");
+
+    const resolvedMenuItems = menuOrder
+        .map((menuId) => TABS.find((tab) => tab.id === menuId))
+        .filter((tab): tab is (typeof TABS)[number] => Boolean(tab));
+
+    const missingMenuItems = TABS.filter((tab) => !resolvedMenuItems.some((resolvedTab) => resolvedTab.id === tab.id));
+    const orderedMenuItems = [...resolvedMenuItems, ...missingMenuItems];
+    const visibleMenuItems = orderedMenuItems.filter((tab) => !hiddenMenuIds.includes(tab.id));
 
     const handleOpenCodeHealth = (sourcePath: string) => {
         setCodeHealthSourcePath(sourcePath);
         setCodeHealthAutoRunKey(`${sourcePath}::${Date.now()}`);
         setActiveTab("code-health");
+    };
+
+    const handleToggleMenuVisibility = (menuId: TabType) => {
+        setHiddenMenuIds((prev) =>
+            prev.includes(menuId)
+                ? prev.filter((id) => id !== menuId)
+                : [...prev, menuId],
+        );
+    };
+
+    const handleMoveMenuItem = (draggedId: TabType, targetId: TabType) => {
+        setMenuOrder((prev) => {
+            const normalizedOrder = [...prev];
+            if (!normalizedOrder.includes(draggedId)) {
+                normalizedOrder.push(draggedId);
+            }
+            if (!normalizedOrder.includes(targetId)) {
+                normalizedOrder.push(targetId);
+            }
+
+            const draggedIndex = normalizedOrder.indexOf(draggedId);
+            const targetIndex = normalizedOrder.indexOf(targetId);
+            if (draggedIndex < 0 || targetIndex < 0 || draggedIndex === targetIndex) {
+                return normalizedOrder;
+            }
+
+            const nextOrder = [...normalizedOrder];
+            const [draggedItem] = nextOrder.splice(draggedIndex, 1);
+            nextOrder.splice(targetIndex, 0, draggedItem);
+            return nextOrder;
+        });
+    };
+
+    const handleResetMenuOrder = () => {
+        setMenuOrder(TABS.map((tab) => tab.id));
     };
 
     useEffect(() => {
@@ -119,6 +165,17 @@ function App() {
                 return <SpinePreview />;
             case "drive-sync":
                 return <DriveSyncMenu />;
+            case "settings":
+                return (
+                    <SettingsPanel
+                        isDark={isDark}
+                        menuItems={orderedMenuItems.map((item) => ({ id: item.id, label: item.label }))}
+                        hiddenMenuIds={hiddenMenuIds}
+                        onToggleMenuVisibility={(menuId) => handleToggleMenuVisibility(menuId as TabType)}
+                        onMoveMenuItem={(draggedId, targetId) => handleMoveMenuItem(draggedId as TabType, targetId as TabType)}
+                        onResetMenuOrder={handleResetMenuOrder}
+                    />
+                );
             default:
                 return null;
         }
@@ -232,7 +289,7 @@ function App() {
                 <div>
                     <div className="mb-8 px-2">
                         <h3 className={sidebarTitleClassName}>
-                            Slot Tools
+                            One Punch Tools
                         </h3>
                         <p className={sidebarSubtitleClassName}>
                             Tool management
@@ -240,7 +297,7 @@ function App() {
                     </div>
 
                     <nav className="flex flex-col gap-2">
-                        {TABS.map((tab) => {
+                        {visibleMenuItems.map((tab) => {
                             const active = activeTab === tab.id;
                             return (
                                 <button
@@ -269,20 +326,43 @@ function App() {
 
                 <div className={sidebarFooterClassName}>
                     <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsDark(!isDark)}
-                            className={themeToggleButtonClassName}>
-                            {isDark ? (
-                                <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        <div className="relative group">
+                            <button
+                                type="button"
+                                onClick={() => setIsDark(!isDark)}
+                                className={themeToggleButtonClassName}>
+                                {isDark ? (
+                                    <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                    </svg>
+                                )}
+                            </button>
+                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                Toggle theme
+                            </span>
+                        </div>
+                        <div className="relative group">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("settings")}
+                                className={themeToggleButtonClassName}>
+                                <svg className={`w-4 h-4 ${isDark ? "text-zinc-300" : "text-slate-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                            ) : (
-                                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                </svg>
-                            )}
-                        </button>
+                            </button>
+                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                Open settings
+                            </span>
+                        </div>
                     </div>
                     <span className={footerNoteClassName}>Prompted by TiTi</span>
                     <span className={footerNoteClassName}>{appVersion}</span>

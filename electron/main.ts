@@ -13,6 +13,8 @@ import { registerBindSoundRefsHandler } from "./handlers/bindSoundRefs";
 import { registerCheckAssetsHandler } from "./handlers/checkAssets";
 import { registerSpinePreviewHandler } from "./handlers/spinePreview";
 import { registerStorageHandlers } from "./storage";
+import { registerCheatLocalSocketHandlers } from "./handlers/cheatLocalSocket";
+import { registerExportCheatExtensionHandlers } from "./handlers/exportCheatExtension";
 import { setupDriveSyncHandlers } from "../src/features/drive-sync/electron-handlers";
 
 app.commandLine.appendSwitch("use-mock-keychain");
@@ -206,6 +208,8 @@ registerBindSoundRefsHandler();
 registerCheckAssetsHandler();
 registerSpinePreviewHandler();
 registerStorageHandlers();
+registerCheatLocalSocketHandlers();
+registerExportCheatExtensionHandlers();
 
 setupDriveSyncHandlers(
     'https://drive-bot-0ahh.onrender.com',

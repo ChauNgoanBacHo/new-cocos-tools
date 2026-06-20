@@ -1,7 +1,7 @@
 {
-  "name": "cocos-internal-tools",
+  "name": "one-punch-tools",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.superapp.app",
-    "productName": "CocosTools",
+    "productName": "One Punch Tools",
     "compression": "maximum",
     "electronLanguages": [
       "en",
@@ -38,6 +38,10 @@
       {
         "from": "assets/icon.png",
         "to": "assets/icon.png"
+      },
+      {
+        "from": "one-punch-extension",
+        "to": "one-punch-extension"
       }
     ],
     "mac": {
@@ -55,7 +59,7 @@
         "AppImage",
         "deb"
       ],
-      "maintainer": "CocosTools <cocostools@users.noreply.github.com>",
+      "maintainer": "One Punch Tools <onepunchtools@users.noreply.github.com>",
       "category": "Utility"
     }
   },

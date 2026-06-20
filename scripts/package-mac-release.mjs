@@ -4,21 +4,25 @@ import { execFileSync } from "child_process";
 
 const rootDir = process.cwd();
 const packageJsonPath = path.join(rootDir, "package.json");
-const appPath = path.join(rootDir, "release", "mac-arm64", "CocosTools.app");
 
 if (!fs.existsSync(packageJsonPath)) {
     throw new Error("package.json not found");
 }
 
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+const productName = packageJson.build?.productName || packageJson.productName || "One Punch Tools";
+const version = packageJson.version;
+const appBundleName = `${productName}.app`;
+const appPath = path.join(rootDir, "release", "mac-arm64", appBundleName);
+
 if (!fs.existsSync(appPath)) {
-    throw new Error("Built app not found at release/mac-arm64/CocosTools.app");
+    throw new Error(`Built app not found at release/mac-arm64/${appBundleName}`);
 }
 
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-const version = packageJson.version;
-const zipPath = path.join(rootDir, "release", `CocosTools-${version}-arm64-mac.zip`);
+const safeProductName = String(productName).replace(/\s+/g, "-");
+const zipPath = path.join(rootDir, "release", `${safeProductName}-${version}-arm64-mac.zip`);
 
-execFileSync("zip", ["-yr", zipPath, "CocosTools.app"], {
+execFileSync("zip", ["-yr", zipPath, appBundleName], {
     cwd: path.dirname(appPath),
     stdio: "inherit",
 });

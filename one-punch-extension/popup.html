@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>One Punch Tools Connect</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-width: 364px;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .title {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 0 0 14px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #475569;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .toggle-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .toggle-label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .toggle-status {
+        font-size: 11px;
+        color: #64748b;
+      }
+
+      .switch {
+        position: relative;
+        width: 46px;
+        height: 28px;
+        border: none;
+        border-radius: 999px;
+        background: #cbd5e1;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .switch::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #ffffff;
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+      }
+
+      .switch[data-enabled="true"] {
+        background: #dc2626;
+      }
+
+      .switch[data-enabled="true"]::after {
+        transform: translateX(18px);
+      }
+
+      .meta {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #fff1f2;
+        color: #9f1239;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .meta.connected {
+        background: #ecfdf5;
+        color: #166534;
+      }
+
+      .field {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+      }
+
+      .field-help {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.5;
+      }
+
+      .textarea {
+        min-height: 92px;
+        resize: vertical;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #0f172a;
+        background: #ffffff;
+      }
+
+      .actions {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .action-button {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        background: #dc2626;
+        color: #ffffff;
+        padding: 11px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+
+      .action-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h1 class="title">One Punch Tools Connect</h1>
+      <p class="subtitle">You can turn the local socket bridge on only when using Cheat Matrix, then turn it off again when switching to other work.</p>
+      <div class="toggle-row">
+        <div class="toggle-copy">
+          <span class="toggle-label">Enable Local Socket Bridge</span>
+          <span id="toggle-status" class="toggle-status">Loading...</span>
+        </div>
+        <button id="toggle-button" class="switch" data-enabled="false" aria-pressed="false" type="button"></button>
+      </div>
+      <div id="connection-meta" class="meta">Checking bridge status...</div>
+      <div class="actions">
+        <button id="start-autoplay-button" class="action-button" type="button">Start Autoplay In Electron</button>
+        <button id="reconnect-button" class="action-button" type="button">Reconnect Now</button>
+      </div>
+      <div class="field">
+        <label class="field-label" for="autoplay-game-id">Game ID</label>
+        <p class="field-help">Electron will auto-select this game before starting autoplay.</p>
+        <input id="autoplay-game-id" class="textarea" style="min-height:auto;height:42px;resize:none;" placeholder="Game ID" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="custom-origins">Custom Links</label>
+        <p class="field-help">One origin per line. Reload the target tab after saving.</p>
+        <textarea id="custom-origins" class="textarea" placeholder="https://your-domain.example"></textarea>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+  </html>
