@@ -289,49 +289,49 @@ function App() {
     }
 
     const sidebarClassName = isDark
-        ? "w-64 bg-zinc-950 border-r border-zinc-800/50 p-5 flex flex-col justify-between shadow-lg z-10"
-        : "w-64 bg-white border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
+        ? "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-lg z-10"
+        : "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(15,23,42,0.2)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "opm-title text-[1.12rem] leading-tight text-amber-400/90"
-        : "opm-title text-[1.12rem] leading-tight text-amber-600";
+        ? "opm-title text-[1.12rem] leading-tight text-white"
+        : "opm-title text-[1.12rem] leading-tight text-white";
 
     const sidebarSubtitleClassName = isDark
-        ? "opm-kicker text-zinc-500 text-[10px] mt-1"
-        : "opm-kicker text-slate-500 text-[10px] mt-1";
+        ? "opm-kicker text-[#7b8295] text-[10px] mt-1"
+        : "opm-kicker text-[#7b8295] text-[10px] mt-1";
 
     const navItemClassName = (active: boolean) =>
         active
             ? isDark
-                ? "bg-amber-950/30 text-amber-300 border-amber-800/40 shadow-sm font-semibold"
-                : "bg-amber-100 text-amber-900 border-amber-300 shadow-sm shadow-amber-100 font-semibold"
+                ? "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.28)] font-semibold"
+                : "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.24)] font-semibold"
             : isDark
-                ? "text-zinc-400 border-transparent hover:bg-zinc-800/50 hover:text-zinc-100"
-                : "text-slate-600 border-transparent hover:bg-white hover:border-slate-200 hover:text-slate-900 hover:shadow-sm";
+                ? "text-[#8e95a7] border-transparent hover:bg-[#2b3040] hover:text-white"
+                : "text-[#8e95a7] border-transparent hover:bg-[#2b3040] hover:text-white";
 
     const navIconClassName = (active: boolean) =>
         active
             ? isDark
-                ? "text-amber-400"
-                : "text-amber-600"
+                ? "text-white"
+                : "text-white"
             : isDark
-                ? "text-zinc-500 group-hover:text-zinc-300"
-                : "text-slate-400 group-hover:text-slate-700";
+                ? "text-[#71788d] group-hover:text-white"
+                : "text-[#71788d] group-hover:text-white";
 
     const sidebarFooterClassName = isDark
-        ? "pt-4 border-t border-zinc-800/50 flex flex-col items-center gap-2"
-        : "pt-4 border-t border-slate-200 flex flex-col items-center gap-2";
+        ? "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2"
+        : "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2";
 
     const themeToggleButtonClassName = isDark
-        ? "p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
-        : "p-2 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 text-slate-500 hover:text-amber-700 transition-all cursor-pointer shadow-sm";
+        ? "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer"
+        : "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer";
 
     const footerNoteClassName = isDark
-        ? "text-[10px] text-zinc-600 font-mono tracking-wider"
-        : "text-[10px] text-slate-400 font-mono tracking-wider";
+        ? "text-[10px] text-[#6d7488] font-mono tracking-wider"
+        : "text-[10px] text-[#6d7488] font-mono tracking-wider";
 
     return (
-        <div className="flex h-screen w-screen font-sans overflow-hidden bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-200">
+        <div className="flex h-screen w-screen font-sans overflow-hidden bg-[rgb(25,27,33)] text-slate-800 dark:text-zinc-200">
             {/* MENU BÊN TRÁI */}
             <aside className={sidebarClassName}>
                 <div>
@@ -363,9 +363,6 @@ function App() {
                                         </svg>
                                         <span className="opm-nav-label">{tab.label}</span>
                                     </span>
-                                    {active && (
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                                    )}
                                 </button>
                             );
                         })}
@@ -418,7 +415,7 @@ function App() {
             </aside>
 
             {/* NỘI DUNG HIỂN THỊ CHÍNH BÊN PHẢI */}
-            <main className="flex-1 p-8 overflow-y-auto bg-slate-100 dark:bg-zinc-900 [font-family:var(--sans)]">
+            <main className="flex-1 p-8 overflow-y-auto bg-[rgb(25,27,33)] [font-family:var(--sans)]">
                 <div className="w-full h-full flex flex-col justify-between">
                     <div>
 

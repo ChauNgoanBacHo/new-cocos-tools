@@ -66,8 +66,8 @@ export function SettingsPanel({
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px] space-y-6">
-                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] min-h-[400px] overflow-hidden space-y-6">
+                <div className="p-6 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                         <span className="text-sm">🧭</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
@@ -135,7 +135,7 @@ export function SettingsPanel({
                     </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                <div className="p-6 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                         <span className="text-sm">🧩</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">

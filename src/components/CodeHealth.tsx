@@ -392,20 +392,22 @@ export default function CodeHealth() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-                <div className="space-y-6">
+            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] min-h-[400px] overflow-hidden">
+                <div className="py-6 space-y-6">
                     {status.type && (
-                        <div
+                        <div className="px-6">
+                            <div
                             className={`p-4 rounded-xl border text-sm font-medium transition-all ${
                                 status.type === "success"
                                     ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
                                     : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
                             }`}>
-                            {status.message}
+                                {status.message}
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                    <div className="p-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm">📁</span>
@@ -448,7 +450,7 @@ export default function CodeHealth() {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="px-6 flex justify-end">
                         <button
                             type="button"
                             disabled={isRunning}
@@ -463,7 +465,7 @@ export default function CodeHealth() {
                     </div>
 
                     {result && (
-                        <div className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4 space-y-4">
+                        <div className="mx-6 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4 space-y-4">
                             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                                 <div className="flex flex-wrap items-center gap-3">
                                     <span className={`text-sm font-black uppercase tracking-[0.22em] ${healthScoreTone}`}>
@@ -542,7 +544,7 @@ export default function CodeHealth() {
                     )}
 
                     {result && (
-                        <div className="space-y-6">
+                        <div className="px-6 space-y-6">
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>

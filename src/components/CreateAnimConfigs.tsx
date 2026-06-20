@@ -107,24 +107,28 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-                <div className="space-y-6">
+            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] min-h-[400px] overflow-hidden">
+                <div className="py-6 space-y-6">
                     {status.type && (
                         <div
+                            className="px-6"
+                        >
+                            <div
                             className={`p-4 rounded-xl border text-sm font-medium transition-all ${
                                 status.type === "success"
                                     ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
                                     : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
                             }`}>
-                            {status.message}
+                                {status.message}
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
+                    <div className="p-6 space-y-4">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm">📁</span>
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
                                     Configuration
                                 </h3>
                             </div>
@@ -142,7 +146,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
-                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 text-left">
                                 Spine Folder <span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
@@ -151,7 +155,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     value={spineDir}
                                     onChange={(e) => setSpineDir(e.target.value)}
                                     placeholder="e.g., /path/to/Animation"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+                                    className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
                                 />
                                 <button
                                     type="button"
@@ -233,7 +237,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="px-6 flex justify-end">
                         <button
                             type="button"
                             disabled={isRunning}
@@ -272,7 +276,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                     </div>
 
                     {result && (
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                        <div className="px-6 space-y-4 max-h-[500px] overflow-y-auto">
                             {(result.stdout || result.stderr || "No output")
                                 .split("\n")
                                 .reduce<{ title: string; lines: string[] }[]>((acc, line) => {

@@ -969,16 +969,22 @@ export default function CheatConsole() {
                 )}
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
+            <div className={`min-h-[400px] overflow-hidden ${
+                selectedGameId
+                    ? "bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
+                    : ""
+            }`}>
                 <div>
                     {status.type && (
-                        <div
-                            className={`mb-6 p-4 rounded-xl border text-sm font-medium transition-all ${
-                                status.type === "success"
-                                    ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
-                                    : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
-                            }`}>
-                            {status.message}
+                        <div className="px-6 pt-6">
+                            <div
+                                className={`mb-6 p-4 rounded-xl border text-sm font-medium transition-all ${
+                                    status.type === "success"
+                                        ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
+                                        : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
+                                }`}>
+                                {status.message}
+                            </div>
                         </div>
                     )}
 
@@ -1040,12 +1046,12 @@ export default function CheatConsole() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     {games.map((game) => (
                                         <div
                                             key={game.id}
                                             onClick={() => setSelectedGameId(game.id)}
-                                            className="group relative bg-white dark:bg-zinc-800 hover:bg-red-50/20 dark:hover:bg-red-900/20 border border-slate-200 dark:border-zinc-700 hover:border-red-300 dark:hover:border-red-700 p-5 rounded-2xl shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md flex flex-col justify-between min-h-[140px]">
+                                            className="group relative bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
                                             <div>
                                                 <div className="flex justify-between items-start">
                                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-amber-500 text-white flex items-center justify-center font-bold font-mono text-sm shadow-md shadow-red-500/10">
@@ -1054,21 +1060,21 @@ export default function CheatConsole() {
                                                     <button
                                                         type="button"
                                                         onClick={(e) => handleDeleteGame(game.id, e)}
-                                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all cursor-pointer"
+                                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all cursor-pointer"
                                                         title="Xóa game">
                                                         🗑️
                                                     </button>
                                                 </div>
                                                 <div className="mt-4">
-                                                    <h3 className="text-base font-bold text-slate-800 dark:text-zinc-200 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                    <h3 className="text-base font-bold text-zinc-100 group-hover:text-red-300 transition-colors">
                                                         {game.id} - {game.name}
                                                     </h3>
-                                                    <p className="text-xs text-slate-400 mt-0.5">
+                                                    <p className="text-xs text-zinc-400 mt-0.5">
                                                         {game.panels.length} Matrix Panels cấu hình
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="mt-3 text-xs font-semibold text-red-500 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                            <div className="mt-4 text-xs font-semibold text-red-400 flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
                                                 Configure Matrix <span>➔</span>
                                             </div>
                                         </div>
@@ -1081,7 +1087,7 @@ export default function CheatConsole() {
                         activeGame && (
                             <div className="space-y-6">
                                 {/* Action buttons bar */}
-                                <div className="flex justify-start items-center gap-4">
+                                <div className="px-6 pt-2 flex justify-start items-center gap-4">
                                     <button
                                         type="button"
                                         onClick={handleClearAll}
@@ -1092,7 +1098,7 @@ export default function CheatConsole() {
                                 </div>
 
                                 {/* Panel Thông số chung */}
-                                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                                <div className="p-6 space-y-4">
                                     <button
                                         type="button"
                                         className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
@@ -1303,7 +1309,7 @@ export default function CheatConsole() {
                                 </div>
 
                                 {localSocketEnabled && (
-                                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                                    <div className="p-6 space-y-4">
                                         <button
                                             type="button"
                                             className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
@@ -1446,11 +1452,13 @@ export default function CheatConsole() {
                                 )}
 
                                 {/* Danh sách các panel Form Data */}
-                                <div className="space-y-4">
+                                <div className="px-6 space-y-5">
                                     {activeGame.panels.map((panel) => (
-                                        <div key={panel.id} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm overflow-hidden transition-all duration-200">
+                                        <div
+                                            key={panel.id}
+                                            className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200">
                                             {/* Tiêu đề Panel */}
-                                            <div className="flex items-center justify-between bg-slate-100/50 dark:bg-zinc-700/50 px-5 py-3 border-b border-slate-200 dark:border-zinc-600">
+                                            <div className="flex items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5">
                                                 <button
                                                     type="button"
                                                     className="flex items-center gap-2.5 cursor-pointer select-none text-left focus:outline-none"
@@ -1459,7 +1467,7 @@ export default function CheatConsole() {
                                                         ▶
                                                     </span>
                                                     <span className="text-sm">📝</span>
-                                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
                                                         {panel.title.trim() ? panel.title : `Matrix #${panel.id}`}
                                                     </h3>
                                                 </button>
@@ -1492,12 +1500,12 @@ export default function CheatConsole() {
 
                                             {/* Nội dung Panel */}
                                             {panel.isExpanded && (
-                                                <div className="p-5 space-y-4">
+                                                <div className="p-6 space-y-4">
                                                     {/* Field: Title */}
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                                         <label
                                                             htmlFor={`title-${panel.id}`}
-                                                            className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                            className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                                                             Title
                                                         </label>
                                                         <div className="sm:col-span-2">
@@ -1507,7 +1515,7 @@ export default function CheatConsole() {
                                                                 value={panel.title}
                                                                 onChange={(e) => updatePanelField(panel.id, "title", e.target.value)}
                                                                 placeholder="e.g., Free Spins, Jackpot Cheat..."
-                                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20 font-medium"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20 font-medium"
                                                             />
                                                         </div>
                                                     </div>
@@ -1516,7 +1524,7 @@ export default function CheatConsole() {
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                                         <label
                                                             htmlFor={`matrixData-${panel.id}`}
-                                                            className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                            className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                                                             Matrix <span className="text-red-500">*</span>
                                                         </label>
                                                         <div className="sm:col-span-2">
@@ -1527,7 +1535,7 @@ export default function CheatConsole() {
                                                                 value={panel.matrixData}
                                                                 onChange={(e) => updatePanelField(panel.id, "matrixData", e.target.value)}
                                                                 placeholder="Matrix Data"
-                                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                                                             />
                                                         </div>
                                                     </div>
@@ -1536,7 +1544,7 @@ export default function CheatConsole() {
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                                         <label
                                                             htmlFor={`tableFormat-${panel.id}`}
-                                                            className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                            className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                                                             Table Format <span className="text-red-500">*</span>
                                                         </label>
                                                         <div className="sm:col-span-2">
@@ -1547,7 +1555,7 @@ export default function CheatConsole() {
                                                                 value={panel.tableFormat}
                                                                 onChange={(e) => updatePanelField(panel.id, "tableFormat", e.target.value)}
                                                                 placeholder="Table Format"
-                                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                                                             />
                                                         </div>
                                                     </div>
@@ -1560,7 +1568,7 @@ export default function CheatConsole() {
                                                                     Matrix Preview
                                                                 </label>
                                                                 <div className="sm:col-span-2">
-                                                                    <div className="rounded-xl border border-slate-200 dark:border-zinc-600 bg-slate-50/70 dark:bg-zinc-900/40 p-3 overflow-x-auto">
+                                                                    <div className="rounded-xl border border-white/5 bg-[#1b2029] p-3 overflow-x-auto">
                                                                         {!preview.isFormatValid ? (
                                                                             <div className="text-xs text-slate-400 dark:text-zinc-500 font-mono">
                                                                                 Invalid table format
@@ -1615,7 +1623,7 @@ export default function CheatConsole() {
                                                     <div className="border border-slate-200 dark:border-zinc-600 rounded-xl overflow-hidden">
                                                         <button
                                                             type="button"
-                                                            className="flex w-full items-center gap-2 px-4 py-3 text-left cursor-pointer select-none focus:outline-none bg-slate-50/50 dark:bg-zinc-700/30 hover:bg-slate-100/60 dark:hover:bg-zinc-700/50 transition-colors"
+                                                            className="flex w-full items-center gap-2 px-4 py-3 text-left cursor-pointer select-none focus:outline-none bg-white/5 hover:bg-white/10 transition-colors"
                                                             onClick={() => toggleAdditionalExpand(panel.id)}>
                                                             <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isAdditionalExpanded ? "rotate-90" : ""}`}>
                                                                 ▶
@@ -1629,12 +1637,12 @@ export default function CheatConsole() {
                                                         </button>
 
                                                         {panel.isAdditionalExpanded && (
-                                                            <div className="p-4 space-y-4 border-t border-slate-200 dark:border-zinc-600">
+                                                            <div className="p-4 space-y-4 border-t border-white/5">
                                                                 {getResolvedFieldConfig(activeGame.fieldConfig).filter(f => f.visible).map(({ key, label }) => (
                                                                     <div key={key} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                                                         <label
                                                                             htmlFor={`${key}-${panel.id}`}
-                                                                            className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                                            className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                                                                             {label}
                                                                         </label>
                                                                         <div className="sm:col-span-2">
@@ -1644,7 +1652,7 @@ export default function CheatConsole() {
                                                                                 value={(panel[key] as string) ?? ""}
                                                                                 onChange={(e) => updatePanelField(panel.id, key, e.target.value)}
                                                                                 placeholder={label}
-                                                                                className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                                                                             />
                                                                         </div>
                                                                     </div>
@@ -1654,7 +1662,7 @@ export default function CheatConsole() {
                                                     </div>
 
                                                     {/* Nút gửi dữ liệu của từng panel */}
-                                                    <div className="pt-3 border-t border-slate-200 dark:border-zinc-600 flex justify-end">
+                                                    <div className="pt-3 border-t border-white/5 flex justify-end">
                                                         <button
                                                             type="button"
                                                             disabled={executingPanelId !== null}
@@ -1698,8 +1706,8 @@ export default function CheatConsole() {
                                 </div>
 
                                 {/* Nút thêm panel */}
-                                <div className="pt-2 border-t border-slate-200 dark:border-zinc-700">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="px-6 pt-4 mt-2 border-t border-white/5">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                         <button
                                             type="button"
                                             onClick={addPanel}

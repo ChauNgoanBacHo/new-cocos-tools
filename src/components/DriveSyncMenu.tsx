@@ -134,21 +134,25 @@ export function DriveSyncMenu() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-        <div className="space-y-6">
+      <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] min-h-[400px] overflow-hidden">
+        <div className="py-6 space-y-6">
           {error && (
-            <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400">
-              {error}
+            <div className="px-6">
+              <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400">
+                {error}
+              </div>
             </div>
           )}
 
           {!syncing && totalFiles > 0 && (
-            <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400">
-              Found {totalFiles} files ({formatBytes(totalBytes)})
+            <div className="px-6">
+              <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400">
+                Found {totalFiles} files ({formatBytes(totalBytes)})
+              </div>
             </div>
           )}
 
-          <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+          <div className="p-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
               <span className="text-sm">☁️</span>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
@@ -197,7 +201,7 @@ export function DriveSyncMenu() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="px-6 flex gap-3">
             <button
               type="button"
               onClick={() => handleSync('today')}
@@ -223,7 +227,8 @@ export function DriveSyncMenu() {
           </div>
 
           {syncing && (
-            <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-4">
+            <div className="px-6">
+              <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-600 dark:text-zinc-400">Downloading files...</span>
                 <span className="text-xs font-mono text-amber-600 dark:text-amber-400">{progress.downloaded} / {progress.total}</span>
@@ -231,11 +236,13 @@ export function DriveSyncMenu() {
               <div className="w-full bg-slate-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 h-2 animate-pulse bg-[length:200%_100%]" style={{ width: '100%' }} />
               </div>
+              </div>
             </div>
           )}
 
           {failedFiles.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-4">
+            <div className="px-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-red-600 dark:text-red-400 font-semibold text-sm">
                   ⚠️ Failed to download {failedFiles.length} file(s)
@@ -249,6 +256,7 @@ export function DriveSyncMenu() {
                     <div className="text-red-600 dark:text-red-400 mt-1">Error: {file.error}</div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           )}
