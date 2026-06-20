@@ -913,25 +913,6 @@ export default function CheatConsole() {
         }
     };
 
-    const handleClearAll = () => {
-        if (!selectedGameId) return;
-        setGames((prev) =>
-            prev.map((g) =>
-                g.id === selectedGameId
-                    ? {
-                          ...g,
-                          userId: "",
-                          panels: [],
-                      }
-                    : g
-            )
-        );
-        setStatus({
-            type: "success",
-            message: "🧹 Đã xóa toàn bộ cấu hình form và đặt lại danh sách panel cho game này!",
-        });
-    };
-
     return (
         <div>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
@@ -969,14 +950,14 @@ export default function CheatConsole() {
                 )}
             </div>
 
-            <div className={`min-h-[400px] overflow-hidden ${
+            <div className={`overflow-hidden ${
                 selectedGameId
                     ? "bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
                     : ""
             }`}>
                 <div>
                     {status.type && (
-                        <div className="px-6 pt-6">
+                        <div className={selectedGameId ? "px-6 pt-6" : "pt-2"}>
                             <div
                                 className={`mb-6 p-4 rounded-xl border text-sm font-medium transition-all ${
                                     status.type === "success"
@@ -1086,17 +1067,6 @@ export default function CheatConsole() {
                         /* MÀN HÌNH 2: CẤU HÌNH CHI TIẾT GAME ĐÃ CHỌN */
                         activeGame && (
                             <div className="space-y-6">
-                                {/* Action buttons bar */}
-                                <div className="px-6 pt-2 flex justify-start items-center gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={handleClearAll}
-                                        className="px-4 py-2.5 bg-[#7d6df7] hover:bg-[#9387ff] text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
-                                        title="Xóa toàn bộ cấu hình form và đặt lại danh sách panel">
-                                        <span>🔄</span> Reset Form Data
-                                    </button>
-                                </div>
-
                                 {/* Panel Thông số chung */}
                                 <div className="overflow-hidden rounded-2xl border border-white/5">
                                     <button
@@ -1708,7 +1678,7 @@ export default function CheatConsole() {
                                 </div>
 
                                 {/* Nút thêm panel */}
-                                <div className="px-6 pt-4 mt-2 border-t border-white/5">
+                                <div className="px-6 pt-4 mt-2 border-t border-white/5 pb-8">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                         <button
                                             type="button"

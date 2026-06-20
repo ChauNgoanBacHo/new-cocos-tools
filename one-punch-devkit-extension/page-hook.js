@@ -285,7 +285,7 @@
 
     function patchWebSocket() {
         const NativeWebSocket = window.WebSocket;
-        if (!NativeWebSocket || NativeWebSocket.__onePunchToolsPatched) {
+        if (!NativeWebSocket || NativeWebSocket.__onePunchDevKitPatched) {
             return;
         }
 
@@ -313,7 +313,7 @@
         }
 
         WrappedWebSocket.prototype = NativeWebSocket.prototype;
-        Object.defineProperty(WrappedWebSocket, "__onePunchToolsPatched", {
+        Object.defineProperty(WrappedWebSocket, "__onePunchDevKitPatched", {
             value: true,
             configurable: false,
             enumerable: false,
@@ -328,7 +328,7 @@
 
         for (const methodName of consoleMethods) {
             const originalMethod = window.console?.[methodName];
-            if (typeof originalMethod !== "function" || originalMethod.__onePunchToolsPatched) {
+            if (typeof originalMethod !== "function" || originalMethod.__onePunchDevKitPatched) {
                 continue;
             }
 
@@ -342,7 +342,7 @@
                 return originalMethod.apply(this, args);
             };
 
-            Object.defineProperty(wrappedMethod, "__onePunchToolsPatched", {
+            Object.defineProperty(wrappedMethod, "__onePunchDevKitPatched", {
                 value: true,
                 configurable: false,
                 enumerable: false,

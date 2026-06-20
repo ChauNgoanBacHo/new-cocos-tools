@@ -76,7 +76,7 @@ export default function SpinePreview() {
                 </div>
             </div>
 
-            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] min-h-[400px] overflow-hidden">
+            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
                 <div className="py-6 space-y-6">
                     {status.type && (
                         <div className="px-6">
@@ -91,7 +91,7 @@ export default function SpinePreview() {
                         </div>
                     )}
 
-                    <div className="p-6 space-y-4">
+                    <div className="px-6 pb-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm">📁</span>

@@ -10,7 +10,7 @@ if (!fs.existsSync(packageJsonPath)) {
 }
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-const productName = packageJson.build?.productName || packageJson.productName || "One Punch Tools";
+const productName = packageJson.build?.productName || packageJson.productName || "One Punch DevKit";
 const version = packageJson.version;
 const appBundleName = `${productName}.app`;
 const appPath = path.join(rootDir, "release", "mac-arm64", appBundleName);

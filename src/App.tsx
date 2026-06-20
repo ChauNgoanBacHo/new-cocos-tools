@@ -23,9 +23,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Matrix Simulator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.9 4.6L19 9.1l-3.7 3.2.9 4.9-4.2-2.4-4.2 2.4.9-4.9L5 9.1l5.1-1.5L12 3z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v7" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.8 12h6.4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 7.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 12l6.5-3 6.5 3-6.5 3-6.5-3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 16.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
             </>
         ),
     },
@@ -34,10 +34,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Drive Synchronizer",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5v1.25A2.25 2.25 0 008.25 20h7.5A2.25 2.25 0 0018 17.75V16.5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5L12 6.5l4 4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v8" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13h3m9 0h3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 8.5a4.5 4.5 0 018.6-1.8A3.75 3.75 0 0117.25 14H7.75a3.25 3.25 0 01-.75-6.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17l2.5 2.5L14 17" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 14l-2.5-2.5L10 14" />
             </>
         ),
     },
@@ -46,9 +45,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Anim Generator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11v11h-11z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 4.5v4M14.5 15.5v4M19.5 9.5h-4M8.5 14.5h-4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.5l4 2.5-4 2.5v-5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 5.5h12a1 1 0 011 1v11a1 1 0 01-1 1H6a1 1 0 01-1-1v-11a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.5l6 3.5-6 3.5v-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 3.75v3M16 17.25v3M20.25 8H17.5M6.5 16H3.75" />
             </>
         ),
     },
@@ -57,9 +56,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Sound Generator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5h3.5l3-2.5v8l-3-2.5H8z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 9.5c1.5 1 1.5 4 0 5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.8 7.8c2.6 2.2 2.6 6.2 0 8.4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.25h3.25L15 7.5v9l-3.75-2.75H8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 9.5c1.25 1 1.25 4 0 5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 7.75c2.25 2 2.25 6.5 0 8.5" />
             </>
         ),
     },
@@ -68,9 +67,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Usage Check",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 6.5h8M8 10.5h5M8 14.5h4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 4.5h11a1 1 0 011 1v13a1 1 0 01-1 1h-11a1 1 0 01-1-1v-13a1 1 0 011-1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 14.5l1.5 1.5 3-3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 5.5h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1v-10a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9h6M9 12h3.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.75 15.25l1.5 1.5 2.75-3" />
             </>
         ),
     },
@@ -79,9 +78,10 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Asset Cleanup",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.8l6.5 3.7v8.9L12 20.2l-6.5-3.8V7.5L12 3.8z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.2l2.2 1.3v2.8L12 13.6l-2.2-1.3V9.5L12 8.2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.8v6.1" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5h8" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.25 5.5h5.5l.5 2H8.75l.5-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 7.5l.75 10a1 1 0 001 .9h2.5a1 1 0 001-.9l.75-10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 10.5v4.5M13.5 10.5v4.5" />
             </>
         ),
     },
@@ -90,8 +90,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Spine Viewer",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5c4.6 0 8.2 3 9.5 7.5-1.3 4.5-4.9 7.5-9.5 7.5S3.8 16.5 2.5 12C3.8 7.5 7.4 4.5 12 4.5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.2v5.6M12 8v8M14 9.2v5.6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5c4.75 0 8.3 3.1 9.5 7-1.2 3.9-4.75 7-9.5 7S3.7 15.9 2.5 12C3.7 8.1 7.25 5 12 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.25a2.75 2.75 0 110 5.5 2.75 2.75 0 010-5.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v1M12 15v1" />
             </>
         ),
     },
@@ -100,9 +101,9 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Code Monitor",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 5h7l4 4v10a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5v4h4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15l1.8 1.8L15 12.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11a1 1 0 011 1v8.5a1 1 0 01-1 1h-11a1 1 0 01-1-1V7.5a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 14l2.25-2.5 2 1.75 2.75-3.25" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 18.5h6" />
             </>
         ),
     },
@@ -293,8 +294,8 @@ function App() {
         : "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(15,23,42,0.2)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "opm-title text-[1.12rem] leading-tight text-white"
-        : "opm-title text-[1.12rem] leading-tight text-white";
+        ? "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap"
+        : "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap";
 
     const sidebarSubtitleClassName = isDark
         ? "opm-kicker text-[#7b8295] text-[10px] mt-1"
@@ -337,7 +338,7 @@ function App() {
                 <div>
                     <div className="mb-8 px-2">
                         <h3 className={sidebarTitleClassName}>
-                            One Punch Tools
+                            One Punch DevKit
                         </h3>
                         <p className={sidebarSubtitleClassName}>
                             Hero utility console

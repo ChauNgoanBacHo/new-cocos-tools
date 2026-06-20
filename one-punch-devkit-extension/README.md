@@ -1,4 +1,4 @@
-# One Punch Tools Connect Extension
+# One Punch DevKit Connect Extension
 
 ## Purpose
 
@@ -19,7 +19,7 @@ Default page origins:
 1. Open `chrome://extensions`
 2. Turn on `Developer mode`
 3. Click `Load unpacked`
-4. Select the `one-punch-extension/` folder
+4. Select the `one-punch-devkit-extension/` folder
 
 ## Current Behavior
 

@@ -1,5 +1,5 @@
 {
-  "name": "one-punch-tools",
+  "name": "one-punch-devkit",
   "private": true,
   "version": "0.3.0",
   "type": "module",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.superapp.app",
-    "productName": "One Punch Tools",
+    "productName": "One Punch DevKit",
     "compression": "maximum",
     "electronLanguages": [
       "en",
@@ -40,8 +40,8 @@
         "to": "assets/icon.png"
       },
       {
-        "from": "one-punch-extension",
-        "to": "one-punch-extension"
+        "from": "one-punch-devkit-extension",
+        "to": "one-punch-devkit-extension"
       }
     ],
     "mac": {
@@ -59,7 +59,7 @@
         "AppImage",
         "deb"
       ],
-      "maintainer": "One Punch Tools <onepunchtools@users.noreply.github.com>",
+      "maintainer": "One Punch DevKit <onepunchtools@users.noreply.github.com>",
       "category": "Utility"
     }
   },
