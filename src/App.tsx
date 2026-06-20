@@ -292,7 +292,7 @@ function App() {
                             One Punch Tools
                         </h3>
                         <p className={sidebarSubtitleClassName}>
-                            Tool management
+                            Hero utility console
                         </p>
                     </div>
 
