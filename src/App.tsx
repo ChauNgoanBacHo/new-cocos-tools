@@ -333,24 +333,24 @@ function App() {
 
     const sidebarClassName = isDark
         ? "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-lg z-10"
-        : "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(15,23,42,0.2)] z-10";
+        : "w-64 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
         ? "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap"
-        : "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap";
+        : "opm-title text-[1.12rem] leading-tight text-[#1c2432] whitespace-nowrap";
 
     const sidebarSubtitleClassName = isDark
         ? "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]"
-        : "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]";
+        : "text-[#7e8799] text-[10px] mt-1 uppercase tracking-[0.08em]";
 
     const navItemClassName = (active: boolean) =>
         active
             ? isDark
                 ? "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.28)] font-semibold"
-                : "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.24)] font-semibold"
+                : "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.18)] font-semibold"
             : isDark
                 ? "text-[#8e95a7] border-transparent hover:bg-[#2b3040] hover:text-white"
-                : "text-[#8e95a7] border-transparent hover:bg-[#2b3040] hover:text-white";
+                : "text-[#5f6b82] border-transparent hover:bg-[#eceffd] hover:text-[#2a3447]";
 
     const navIconClassName = (active: boolean) =>
         active
@@ -359,22 +359,42 @@ function App() {
                 : "text-white"
             : isDark
                 ? "text-[#71788d] group-hover:text-white"
-                : "text-[#71788d] group-hover:text-white";
+                : "text-[#8b95aa] group-hover:text-[#49566d]";
 
     const sidebarFooterClassName = isDark
         ? "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2"
-        : "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2";
+        : "pt-4 border-t border-[#dde3f0] flex flex-col items-center gap-2";
 
     const themeToggleButtonClassName = isDark
         ? "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer"
-        : "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer";
+        : "p-2 rounded-lg bg-[#eef2fb] hover:bg-[#e3e9f8] text-[#61708a] hover:text-[#253047] transition-all cursor-pointer";
 
     const footerNoteClassName = isDark
         ? "text-[10px] text-[#6d7488] font-mono tracking-wider"
-        : "text-[10px] text-[#6d7488] font-mono tracking-wider";
+        : "text-[10px] text-[#8791a5] font-mono tracking-wider";
+
+    const appShellClassName = isDark
+        ? "flex h-screen w-screen font-sans overflow-hidden bg-[rgb(25,27,33)] text-slate-800 dark:text-zinc-200"
+        : "flex h-screen w-screen font-sans overflow-hidden bg-[#eef3fb] text-slate-800";
+
+    const mainClassName = isDark
+        ? "flex-1 p-8 overflow-y-auto bg-[rgb(25,27,33)] [font-family:var(--sans)]"
+        : "flex-1 p-8 overflow-y-auto bg-[#eef3fb] [font-family:var(--sans)]";
+
+    const groupLabelClassName = isDark
+        ? "px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6d7488]"
+        : "px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#97a0b3]";
+
+    const tooltipClassName = isDark
+        ? "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700"
+        : "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100";
+
+    const mainFooterClassName = isDark
+        ? "text-center text-[10px] text-[#6d7488] font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wider"
+        : "text-center text-[10px] text-[#8791a5] font-mono mt-8 border-t border-[#dbe3f2] pt-4 tracking-wider";
 
     return (
-        <div className="flex h-screen w-screen font-sans overflow-hidden bg-[rgb(25,27,33)] text-slate-800 dark:text-zinc-200">
+        <div className={appShellClassName}>
             {/* MENU BÊN TRÁI */}
             <aside className={sidebarClassName}>
                 <div>
@@ -390,7 +410,7 @@ function App() {
                     <nav className="flex flex-col gap-5">
                         {visibleMenuGroups.map((group) => (
                             <div key={group.id} className="space-y-2">
-                                <div className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6d7488]">
+                                <div className={groupLabelClassName}>
                                     {group.label}
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -443,7 +463,7 @@ function App() {
                                     </svg>
                                 )}
                             </button>
-                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                            <span className={tooltipClassName}>
                                 Toggle theme
                             </span>
                         </div>
@@ -461,7 +481,7 @@ function App() {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </button>
-                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                            <span className={tooltipClassName}>
                                 Open settings
                             </span>
                         </div>
@@ -472,7 +492,7 @@ function App() {
             </aside>
 
             {/* NỘI DUNG HIỂN THỊ CHÍNH BÊN PHẢI */}
-            <main className="flex-1 p-8 overflow-y-auto bg-[rgb(25,27,33)] [font-family:var(--sans)]">
+            <main className={mainClassName}>
                 <div className="w-full h-full flex flex-col justify-between">
                     <div>
 
@@ -481,7 +501,7 @@ function App() {
                         {/* </div> */}
                     </div>
 
-                    <footer className="text-center text-[10px] text-[#6d7488] font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wider">
+                    <footer className={mainFooterClassName}>
                         Tool Cho Người Lười
                     </footer>
                 </div>

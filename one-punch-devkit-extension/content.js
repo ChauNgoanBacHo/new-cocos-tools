@@ -33,7 +33,7 @@
         chrome.runtime.sendMessage(payload, () => {
             const runtimeError = chrome.runtime.lastError;
             if (runtimeError) {
-                console.warn("[One Punch DevKit Connect] sendMessage failed:", runtimeError.message);
+                console.warn("[One Punch Assistant] sendMessage failed:", runtimeError.message);
             }
         });
     }
@@ -137,7 +137,7 @@
     chrome.storage.local.get("customAllowedOrigins", (result) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
-            console.warn("[One Punch DevKit Connect] load origins failed:", runtimeError.message);
+            console.warn("[One Punch Assistant] load origins failed:", runtimeError.message);
             window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = [];
             bootstrap();
             return;

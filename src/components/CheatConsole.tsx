@@ -960,7 +960,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                             setSelectedGameId(null);
                             setStatus({ type: null, message: "" });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-300 transition-all hover:bg-white/10 hover:text-white cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-200 hover:text-slate-900 cursor-pointer dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
                         title="Quay lại danh sách game">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -972,7 +972,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
             <div className={`overflow-hidden ${
                 selectedGameId
-                    ? "bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
+                    ? "bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
                     : ""
             }`}>
                 <div>
@@ -996,10 +996,10 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                             {isCreatingGame && (
                                 <form
                                     onSubmit={handleCreateGame}
-                                    className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden animate-in fade-in duration-200">
-                                    <div className="flex items-center gap-2 border-b border-white/5 bg-white/5 px-5 py-3">
+                                    className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden animate-in fade-in duration-200">
+                                    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-3 dark:border-white/5 dark:bg-white/5">
                                         <span className="text-sm text-[#b7a8ff]">🎮</span>
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
                                             Create New Game
                                         </h3>
                                     </div>
@@ -1013,7 +1013,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                 value={newGameId}
                                                 onChange={(e) => setNewGameId(e.target.value)}
                                                 placeholder="e.g., 9704"
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                             />
                                         </div>
                                         <div>
@@ -1024,7 +1024,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                 value={newGameName}
                                                 onChange={(e) => setNewGameName(e.target.value)}
                                                 placeholder="e.g., Slot Game"
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                             />
                                         </div>
                                     </div>
@@ -1054,7 +1054,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                         <div
                                             key={game.id}
                                             onClick={() => setSelectedGameId(game.id)}
-                                            className="group relative bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
+                                            className="group relative bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(148,163,184,0.16)] dark:shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#f6f8fc] dark:hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(148,163,184,0.2)] dark:hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
                                             <div>
                                                 <div className="flex justify-between items-start">
                                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#5964d8] to-[#7d6df7] text-white flex items-center justify-center font-bold font-mono text-sm shadow-md shadow-[#4f57bb]/20">
@@ -1063,19 +1063,18 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     <button
                                                         type="button"
                                                         onClick={(e) => handleDeleteGame(game.id, e)}
-                                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all cursor-pointer"
+                                                        className="opacity-0 group-hover:opacity-100 h-9 w-9 inline-flex items-center justify-center border border-[#87485e] bg-[#5a3242] text-[#f7d3de] hover:bg-[#6a394c] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20"
                                                         title="Xóa game">
-                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5h8M9.25 5.5h5.5l.5 2H8.75l.5-2z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 7.5l.75 10a1 1 0 001 .9h2.5a1 1 0 001-.9l.75-10" />
+                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                            <path d="M9.5 4.75a1 1 0 00-1 1V7H6.25a.75.75 0 000 1.5h.53l.74 10.36A2 2 0 009.51 20.75h4.98a2 2 0 001.99-1.89l.74-10.36h.53a.75.75 0 000-1.5H15.5V5.75a1 1 0 00-1-1h-5zm4.5 2.25h-4V6.25h4V7zm-3 3.25a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm4 0a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6z" />
                                                         </svg>
                                                     </button>
                                                 </div>
                                                 <div className="mt-4">
-                                                    <h3 className="text-base font-bold text-zinc-100 group-hover:text-red-300 transition-colors">
+                                                    <h3 className="text-base font-bold text-slate-800 group-hover:text-[#6f61df] dark:text-zinc-100 dark:group-hover:text-red-300 transition-colors">
                                                         {game.id} - {game.name}
                                                     </h3>
-                                                    <p className="text-xs text-zinc-400 mt-0.5">
+                                                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                                                         {game.panels.length} Matrix Panels cấu hình
                                                     </p>
                                                 </div>
@@ -1093,17 +1092,17 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                         activeGame && (
                             <div className="space-y-6">
                                 {/* Panel Thông số chung */}
-                                <div className="overflow-hidden rounded-2xl border border-white/5">
+                                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5">
                                     <button
                                         type="button"
-                                        className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none"
+                                        className="flex w-full items-center justify-between bg-slate-50 px-5 py-3 border-b border-slate-200 text-left cursor-pointer select-none focus:outline-none dark:bg-white/5 dark:border-white/5"
                                         onClick={() => setIsCommonDataOpen((prev) => !prev)}>
                                         <div className="flex items-center gap-2.5">
                                             <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isCommonDataOpen ? "rotate-90" : ""}`}>
                                                 ▶
                                             </span>
                                             <span className="text-sm">⚙️</span>
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
                                                 Common Data
                                             </h3>
                                         </div>
@@ -1117,9 +1116,10 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     onClick={() => setIsFieldConfigOpen(prev => !prev)}
                                                     className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                                         isFieldConfigOpen
-                                                            ? "bg-[#7d6df7]/12 border-[#7d6df7]/40 text-[#c2b7ff]"
+                                                            ? "bg-[#7d6df7]/14 border-[#7d6df7]/35 text-[#5d4fd1] dark:text-[#c2b7ff]"
                                                             : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
-                                                    } cursor-pointer`}>
+                                                    } cursor-pointer`}
+                                                >
                                                     <span className="inline-flex items-center gap-1.5">
                                                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9m-9 6h9m-9 6h9M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
@@ -1164,145 +1164,140 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                 </div>
                                             )}
 
-                                            {/* Field: Game ID */}
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                            Game ID
-                                        </label>
-                                        <div className="sm:col-span-2">
-                                            <input
-                                                type="text"
-                                                value={activeGame.id}
-                                                onChange={(e) => {
-                                                    const newId = e.target.value;
-                                                    setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, id: newId } : g));
-                                                    setSelectedGameId(newId);
-                                                }}
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 font-mono text-sm font-bold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
-                                            />
-                                        </div>
-                                    </div>
-
-                                            {/* Field: Game Name */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                            Game Name
-                                        </label>
-                                        <div className="sm:col-span-2">
-                                            <input
-                                                type="text"
-                                                value={activeGame.name}
-                                                onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, name: e.target.value } : g))}
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 text-sm font-semibold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
-                                            />
-                                        </div>
-                                    </div>
-
-                                            {/* Field 1: User Id */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <label
-                                            htmlFor="userId"
-                                            className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
-                                            User ID <span className="text-red-500">*</span>
-                                        </label>
-                                        <div className="sm:col-span-2">
-                                            <input
-                                                type="text"
-                                                id="userId"
-                                                required
-                                                value={activeGame.userId}
-                                                onChange={(e) => updateActiveGameUserId(e.target.value)}
-                                                placeholder="User ID"
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
-                                            />
-                                        </div>
-                                    </div>
-
-                                            {/* Field: Server */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
-                                            Server
-                                        </label>
-                                        <div className="sm:col-span-2">
-                                            <select
-                                                value={activeGame.env}
-                                                onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, env: e.target.value as "staging" | "dev" } : g))}
-                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 cursor-pointer">
-                                                <option value="staging">Staging</option>
-                                                <option value="dev">Dev</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
-                                            Local WS
-                                        </label>
-                                        <div className="sm:col-span-2 space-y-3">
-                                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={localSocketEnabled}
-                                                    onChange={(e) => setLocalSocketEnabled(e.target.checked)}
-                                                    className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
-                                                />
-                                                <span className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
-                                                    Enable Electron Local WebSocket Server
-                                                </span>
-                                            </label>
-
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                                    localSocketStatus.running
-                                                        ? localSocketStatus.clientCount > 0
-                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
-                                                        : "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300"
-                                                }`}>
-                                                    {localSocketStatus.running
-                                                        ? localSocketStatus.clientCount > 0
-                                                            ? "Client Connected"
-                                                            : "Listening"
-                                                        : "Off"}
-                                                </span>
-                                                <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
-                                                    ws://{localSocketStatus.host}:{localSocketStatus.port}
-                                                </span>
-                                                {localSocketStatus.lastEventType && (
-                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
-                                                        Last event: {localSocketStatus.lastEventType}
-                                                    </span>
-                                                )}
-                                                {latestSocketEventRef.current?.payload?.eventId && (
-                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
-                                                        Event ID: {latestSocketEventRef.current.payload.eventId}
-                                                    </span>
-                                                )}
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                    Game ID
+                                                </label>
+                                                <div className="sm:col-span-2">
+                                                    <input
+                                                        type="text"
+                                                        value={activeGame.id}
+                                                        onChange={(e) => {
+                                                            const newId = e.target.value;
+                                                            setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, id: newId } : g));
+                                                            setSelectedGameId(newId);
+                                                        }}
+                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-mono text-sm font-bold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100"
+                                                    />
+                                                </div>
                                             </div>
 
-                                            {localSocketStatus.running && (
-                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
-                                                    <span>Use</span>
-                                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25 bg-[#7d6df7]/10 text-[#b7a8ff]">
-                                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                                                            />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        </svg>
-                                                    </span>
-                                                    <span>to download and install the browser extension.</span>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                    Game Name
+                                                </label>
+                                                <div className="sm:col-span-2">
+                                                    <input
+                                                        type="text"
+                                                        value={activeGame.name}
+                                                        onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, name: e.target.value } : g))}
+                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100"
+                                                    />
                                                 </div>
-                                            )}
+                                            </div>
 
-                                            {localSocketStatus.lastError && (
-                                                <div className="text-[11px] font-mono text-red-500 dark:text-red-400">
-                                                    {localSocketStatus.lastError}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                                <label htmlFor="userId" className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                    User ID <span className="text-red-500">*</span>
+                                                </label>
+                                                <div className="sm:col-span-2">
+                                                    <input
+                                                        type="text"
+                                                        id="userId"
+                                                        required
+                                                        value={activeGame.userId}
+                                                        onChange={(e) => updateActiveGameUserId(e.target.value)}
+                                                        placeholder="User ID"
+                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
+                                                    />
                                                 </div>
-                                            )}
-                                        </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                                    Server
+                                                </label>
+                                                <div className="sm:col-span-2">
+                                                    <select
+                                                        value={activeGame.env}
+                                                        onChange={(e) => setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, env: e.target.value as "staging" | "dev" } : g))}
+                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 cursor-pointer dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100"
+                                                    >
+                                                        <option value="staging">Staging</option>
+                                                        <option value="dev">Dev</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
+                                                    Local WS
+                                                </label>
+                                                <div className="sm:col-span-2 space-y-3">
+                                                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={localSocketEnabled}
+                                                            onChange={(e) => setLocalSocketEnabled(e.target.checked)}
+                                                            className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                        />
+                                                        <span className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
+                                                            Enable Electron Local WebSocket Server
+                                                        </span>
+                                                    </label>
+
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                            localSocketStatus.running
+                                                                ? localSocketStatus.clientCount > 0
+                                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                                                : "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300"
+                                                        }`}>
+                                                            {localSocketStatus.running
+                                                                ? localSocketStatus.clientCount > 0
+                                                                    ? "Client Connected"
+                                                                    : "Listening"
+                                                                : "Off"}
+                                                        </span>
+                                                        <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                            ws://{localSocketStatus.host}:{localSocketStatus.port}
+                                                        </span>
+                                                        {localSocketStatus.lastEventType && (
+                                                            <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                                Last event: {localSocketStatus.lastEventType}
+                                                            </span>
+                                                        )}
+                                                        {latestSocketEventRef.current?.payload?.eventId && (
+                                                            <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                                Event ID: {latestSocketEventRef.current.payload.eventId}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {localSocketStatus.running && (
+                                                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                                                            <span>Use</span>
+                                                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25 bg-[#7d6df7]/10 text-[#b7a8ff]">
+                                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                                                    />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                </svg>
+                                                            </span>
+                                                            <span>to download and install the browser extension.</span>
+                                                        </div>
+                                                    )}
+
+                                                    {localSocketStatus.lastError && (
+                                                        <div className="text-[11px] font-mono text-red-500 dark:text-red-400">
+                                                            {localSocketStatus.lastError}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -1456,9 +1451,9 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                     {activeGame.panels.map((panel) => (
                                         <div
                                             key={panel.id}
-                                            className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200">
+                                            className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200">
                                             {/* Tiêu đề Panel */}
-                                            <div className="flex items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5">
+                                            <div className="flex items-center justify-between bg-slate-50 px-5 py-3 border-b border-slate-200 dark:bg-white/5 dark:border-white/5">
                                                 <button
                                                     type="button"
                                                     className="flex items-center gap-2.5 cursor-pointer select-none text-left focus:outline-none"
@@ -1470,7 +1465,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M7 5.5h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1v-10a1 1 0 011-1z" />
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 9h6M9 12h4.5" />
                                                         </svg>
-                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
                                                             {panel.title.trim() ? panel.title : `Matrix #${panel.id}`}
                                                         </h3>
                                                 </button>
@@ -1519,7 +1514,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                             e.stopPropagation();
                                                             removePanel(panel.id);
                                                         }}
-                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#7b4d60] bg-[#4a2f3b] text-[#f1c8d5] hover:bg-[#5a3746] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20"
+                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#87485e] bg-[#5a3242] text-[#f7d3de] hover:bg-[#6a394c] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20"
                                                         title="Xóa panel này">
                                                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                                             <path d="M9.5 4.75a1 1 0 00-1 1V7H6.25a.75.75 0 000 1.5h.53l.74 10.36A2 2 0 009.51 20.75h4.98a2 2 0 001.99-1.89l.74-10.36h.53a.75.75 0 000-1.5H15.5V5.75a1 1 0 00-1-1h-5zm4.5 2.25h-4V6.25h4V7zm-3 3.25a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm4 0a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6z" />
@@ -1545,7 +1540,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                 value={panel.title}
                                                                 onChange={(e) => updatePanelField(panel.id, "title", e.target.value)}
                                                                 placeholder="e.g., Free Spins, Jackpot Cheat..."
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 font-medium"
+                                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 font-medium dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                                             />
                                                         </div>
                                                     </div>
@@ -1565,7 +1560,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                 value={panel.matrixData}
                                                                 onChange={(e) => updatePanelField(panel.id, "matrixData", e.target.value)}
                                                                 placeholder="Matrix Data"
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                                             />
                                                         </div>
                                                     </div>
@@ -1585,7 +1580,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                 value={panel.tableFormat}
                                                                 onChange={(e) => updatePanelField(panel.id, "tableFormat", e.target.value)}
                                                                 placeholder="Table Format"
-                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                                             />
                                                         </div>
                                                     </div>
@@ -1598,7 +1593,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                     Matrix Preview
                                                                 </label>
                                                                 <div className="sm:col-span-2">
-                                                                    <div className="rounded-xl border border-white/5 bg-[#1b2029] p-3 overflow-x-auto">
+                                                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 overflow-x-auto dark:border-white/5 dark:bg-[#1b2029]">
                                                                         {!preview.isFormatValid ? (
                                                                             <div className="text-xs text-slate-400 dark:text-zinc-500 font-mono">
                                                                                 Invalid table format
@@ -1650,16 +1645,16 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     })()}
 
                                                     {/* Additional Data (optional) — collapsible, mặc định đóng */}
-                                                    <div className="border border-white/5 rounded-xl overflow-hidden">
+                                                    <div className="border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden">
                                                         <button
                                                             type="button"
-                                                            className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none hover:bg-white/10 transition-colors"
+                                                            className="flex w-full items-center justify-between bg-slate-50 px-5 py-3 border-b border-slate-200 text-left cursor-pointer select-none focus:outline-none hover:bg-slate-100 transition-colors dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10"
                                                             onClick={() => toggleAdditionalExpand(panel.id)}>
                                                             <div className="flex items-center gap-2.5">
                                                                 <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isAdditionalExpanded ? "rotate-90" : ""}`}>
                                                                     ▶
                                                                 </span>
-                                                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-100">
+                                                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-100">
                                                                     Additional Data
                                                                 </span>
                                                             </div>
@@ -1684,7 +1679,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                                 value={(panel[key] as string) ?? ""}
                                                                                 onChange={(e) => updatePanelField(panel.id, key, e.target.value)}
                                                                                 placeholder={label}
-                                                                                className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                                                             />
                                                                         </div>
                                                                     </div>
@@ -1755,7 +1750,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                             type="button"
                                             disabled={clearingSession}
                                             onClick={handleClearSession}
-                                            className={`px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-400/30 text-amber-200 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${
+                                            className={`px-4 py-2.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 dark:bg-amber-500/10 dark:hover:bg-amber-500/15 dark:border-amber-400/30 dark:text-amber-200 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${
                                                 clearingSession ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.98]"
                                             }`}
                                             title="Clear session của game hiện tại ngay tại cuối trang cấu hình">

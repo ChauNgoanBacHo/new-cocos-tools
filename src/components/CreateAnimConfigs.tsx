@@ -118,7 +118,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                 </div>
             </div>
 
-            <div className="bg-[#2b3140] border border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
+            <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
                 <div className="py-6 space-y-6">
                     {status.type && (
                         <div
@@ -136,12 +136,12 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                     )}
 
                     <div className="px-6 pb-6 space-y-4">
-                        <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2.5 mb-2">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-white/5 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
                                 <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
                                 </svg>
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
                                     Configuration
                                 </h3>
                             </div>
@@ -168,14 +168,14 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     value={spineDir}
                                     onChange={(e) => setSpineDir(e.target.value)}
                                     placeholder="e.g., /path/to/Animation"
-                                    className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectSpineDir}
                                     title="Browse spine folder"
                                     aria-label="Browse spine folder"
-                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/5 bg-[#1b2029] text-zinc-400 transition-all hover:bg-[#232938] hover:text-zinc-200 hover:border-[#7d6df7]/20 cursor-pointer">
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
                                     <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
                                     </svg>
@@ -193,14 +193,14 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     value={outputDir}
                                     onChange={(e) => setOutputDir(e.target.value)}
                                     placeholder="e.g., /path/to/scripts/DataConfig"
-                                    className="flex-1 px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectOutputDir}
                                     title="Browse output folder"
                                     aria-label="Browse output folder"
-                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/5 bg-[#1b2029] text-zinc-400 transition-all hover:bg-[#232938] hover:text-zinc-200 hover:border-[#7d6df7]/20 cursor-pointer">
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
                                     <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
                                     </svg>
@@ -218,7 +218,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     placeholder="AnimConfig9000.ts"
                                     value={animFileName}
                                     onChange={(e) => setAnimFileName(e.target.value)}
-                                    className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                             </div>
                         </div>
@@ -233,7 +233,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     placeholder="TimeConfig9000.ts"
                                     value={timeFileName}
                                     onChange={(e) => setTimeFileName(e.target.value)}
-                                    className="w-full px-4 py-3 bg-[#1b2029] border border-white/5 rounded-xl text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25"
+                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                             </div>
                         </div>

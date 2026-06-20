@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "One Punch DevKit Connect",
+  "name": "One Punch Assistant",
   "description": "Bridge game WebSocket responses to the One Punch DevKit Electron app.",
   "version": "0.1.0",
   "permissions": [
@@ -16,7 +16,7 @@
     "<all_urls>"
   ],
   "action": {
-    "default_title": "One Punch DevKit Connect",
+    "default_title": "One Punch Assistant",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icon-16.png",

@@ -1,4 +1,4 @@
-# One Punch DevKit Connect Extension
+# One Punch Assistant Extension
 
 ## Purpose
 
