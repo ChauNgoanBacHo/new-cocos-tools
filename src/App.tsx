@@ -21,42 +21,90 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     {
         id: "cheat",
         label: "Cheat Matrix",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.9 4.6L19 9.1l-3.7 3.2.9 4.9-4.2-2.4-4.2 2.4.9-4.9L5 9.1l5.1-1.5L12 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.8 12h6.4" />
+            </>
+        ),
     },
     {
         id: "drive-sync",
         label: "Drive Sync",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5v1.25A2.25 2.25 0 008.25 20h7.5A2.25 2.25 0 0018 17.75V16.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5L12 6.5l4 4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v8" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13h3m9 0h3" />
+            </>
+        ),
     },
     {
         id: "anim",
         label: "Create Anim",
-        icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113A.375.375 0 019.75 15.113V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></>,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11v11h-11z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 4.5v4M14.5 15.5v4M19.5 9.5h-4M8.5 14.5h-4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.5l4 2.5-4 2.5v-5z" />
+            </>
+        ),
     },
     {
         id: "sound",
         label: "Create Sound",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5h3.5l3-2.5v8l-3-2.5H8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 9.5c1.5 1 1.5 4 0 5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.8 7.8c2.6 2.2 2.6 6.2 0 8.4" />
+            </>
+        ),
     },
     {
         id: "check-config",
         label: "Check Configs",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 6.5h8M8 10.5h5M8 14.5h4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 4.5h11a1 1 0 011 1v13a1 1 0 01-1 1h-11a1 1 0 01-1-1v-13a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 14.5l1.5 1.5 3-3" />
+            </>
+        ),
     },
     {
         id: "check-assets",
         label: "Check Assets",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.8l6.5 3.7v8.9L12 20.2l-6.5-3.8V7.5L12 3.8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.2l2.2 1.3v2.8L12 13.6l-2.2-1.3V9.5L12 8.2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.8v6.1" />
+            </>
+        ),
     },
     {
         id: "spine-preview",
         label: "Spine Preview",
-        icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5c4.6 0 8.2 3 9.5 7.5-1.3 4.5-4.9 7.5-9.5 7.5S3.8 16.5 2.5 12C3.8 7.5 7.4 4.5 12 4.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.2v5.6M12 8v8M14 9.2v5.6" />
+            </>
+        ),
     },
     {
         id: "code-health",
         label: "Code Health",
-        icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 5h7l4 4v10a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5v4h4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15l1.8 1.8L15 12.5" />
+            </>
+        ),
     },
 ];
 
@@ -245,12 +293,12 @@ function App() {
         : "w-64 bg-white border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "text-md font-bold uppercase tracking-widest text-amber-400/90 font-mono"
-        : "text-md font-bold uppercase tracking-widest text-amber-600 font-mono";
+        ? "opm-title text-2xl text-amber-400/90"
+        : "opm-title text-2xl text-amber-600";
 
     const sidebarSubtitleClassName = isDark
-        ? "text-zinc-500 text-xs mt-1 tracking-wide"
-        : "text-slate-500 text-xs mt-1 tracking-wide";
+        ? "opm-kicker text-zinc-500 text-[10px] mt-1"
+        : "opm-kicker text-slate-500 text-[10px] mt-1";
 
     const navItemClassName = (active: boolean) =>
         active
@@ -306,14 +354,14 @@ function App() {
                                     className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
                                     <span className="flex items-center gap-3">
                                         <svg
-                                            className={`w-[18px] h-[18px] shrink-0 transition-colors ${navIconClassName(active)}`}
+                                            className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)}`}
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
-                                            strokeWidth={1.5}>
+                                            strokeWidth={1.75}>
                                             {tab.icon}
                                         </svg>
-                                        <span>{tab.label}</span>
+                                        <span className="opm-nav-label">{tab.label}</span>
                                     </span>
                                     {active && (
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>

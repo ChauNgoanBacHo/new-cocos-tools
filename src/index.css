@@ -15,9 +15,9 @@
     --shadow:
         rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-    --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-    --heading: system-ui, "Segoe UI", Roboto, sans-serif;
-    --mono: ui-monospace, Consolas, monospace;
+    --sans: "Trebuchet MS", "Avenir Next Condensed", "Segoe UI", sans-serif;
+    --heading: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+    --mono: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 
     font: 18px/145% var(--sans);
     letter-spacing: 0.18px;
@@ -164,4 +164,22 @@ code {
     line-height: 135%;
     padding: 4px 8px;
     background: var(--code-bg);
+}
+
+.opm-title {
+    font-family: var(--heading);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.opm-kicker {
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+}
+
+.opm-nav-label {
+    font-family: var(--heading);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.92rem;
 }
