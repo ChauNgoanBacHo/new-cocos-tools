@@ -14,6 +14,7 @@ import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
 
 type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
+type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
 // rendered data-driven in the sidebar.
@@ -98,7 +99,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
     {
         id: "code-health",
-        label: "Code Monitor",
+        label: "Code Health",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11a1 1 0 011 1v8.5a1 1 0 01-1 1h-11a1 1 0 01-1-1V7.5a1 1 0 011-1z" />
@@ -109,23 +110,56 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     },
 ];
 
+const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
+    {
+        id: "simulation",
+        label: "Simulation",
+        itemIds: ["cheat"],
+    },
+    {
+        id: "generators",
+        label: "Generators",
+        itemIds: ["anim", "sound"],
+    },
+    {
+        id: "analysis",
+        label: "Analysis",
+        itemIds: ["check-config", "check-assets", "code-health"],
+    },
+    {
+        id: "tools",
+        label: "Tools",
+        itemIds: ["spine-preview", "drive-sync"],
+    },
+];
+
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
-    const [menuOrder, setMenuOrder] = useStoredState<TabType[]>("app-menu-order", TABS.map((tab) => tab.id));
-    const [hiddenMenuIds, setHiddenMenuIds] = useStoredState<TabType[]>("app-hidden-menu-ids", []);
+    const [menuGroupOrder, setMenuGroupOrder] = useStoredState<MenuGroupId[]>("app-menu-group-order", MENU_GROUPS.map((group) => group.id));
+    const [hiddenMenuGroupIds, setHiddenMenuGroupIds] = useStoredState<MenuGroupId[]>("app-hidden-menu-group-ids", []);
     const [, setCodeHealthSourcePath] = useStoredState<string>("code-health-source-path", "");
     const [, setCodeHealthAutoRunKey] = useStoredState<string>("code-health-auto-run-key", "");
 
-    const resolvedMenuItems = menuOrder
-        .map((menuId) => TABS.find((tab) => tab.id === menuId))
-        .filter((tab): tab is (typeof TABS)[number] => Boolean(tab));
+    const tabMap = new Map(TABS.map((tab) => [tab.id, tab] as const));
 
-    const missingMenuItems = TABS.filter((tab) => !resolvedMenuItems.some((resolvedTab) => resolvedTab.id === tab.id));
-    const orderedMenuItems = [...resolvedMenuItems, ...missingMenuItems];
-    const visibleMenuItems = orderedMenuItems.filter((tab) => !hiddenMenuIds.includes(tab.id));
+    const resolvedMenuGroups = menuGroupOrder
+        .map((groupId) => MENU_GROUPS.find((group) => group.id === groupId))
+        .filter((group): group is (typeof MENU_GROUPS)[number] => Boolean(group));
+
+    const missingMenuGroups = MENU_GROUPS.filter((group) => !resolvedMenuGroups.some((resolvedGroup) => resolvedGroup.id === group.id));
+    const orderedMenuGroups = [...resolvedMenuGroups, ...missingMenuGroups];
+    const visibleMenuGroups = orderedMenuGroups
+        .filter((group) => !hiddenMenuGroupIds.includes(group.id))
+        .map((group) => ({
+            ...group,
+            items: group.itemIds
+                .map((itemId) => tabMap.get(itemId))
+                .filter((item): item is (typeof TABS)[number] => Boolean(item)),
+        }))
+        .filter((group) => group.items.length > 0);
 
     const handleOpenCodeHealth = (sourcePath: string) => {
         setCodeHealthSourcePath(sourcePath);
@@ -133,16 +167,16 @@ function App() {
         setActiveTab("code-health");
     };
 
-    const handleToggleMenuVisibility = (menuId: TabType) => {
-        setHiddenMenuIds((prev) =>
-            prev.includes(menuId)
-                ? prev.filter((id) => id !== menuId)
-                : [...prev, menuId],
+    const handleToggleMenuGroupVisibility = (groupId: MenuGroupId) => {
+        setHiddenMenuGroupIds((prev) =>
+            prev.includes(groupId)
+                ? prev.filter((id) => id !== groupId)
+                : [...prev, groupId],
         );
     };
 
-    const handleMoveMenuItem = (draggedId: TabType, targetId: TabType) => {
-        setMenuOrder((prev) => {
+    const handleMoveMenuGroup = (draggedId: MenuGroupId, targetId: MenuGroupId) => {
+        setMenuGroupOrder((prev) => {
             const normalizedOrder = [...prev];
             if (!normalizedOrder.includes(draggedId)) {
                 normalizedOrder.push(draggedId);
@@ -164,8 +198,8 @@ function App() {
         });
     };
 
-    const handleResetMenuOrder = () => {
-        setMenuOrder(TABS.map((tab) => tab.id));
+    const handleResetMenuGroupOrder = () => {
+        setMenuGroupOrder(MENU_GROUPS.map((group) => group.id));
     };
 
     useEffect(() => {
@@ -218,11 +252,18 @@ function App() {
                 return (
                     <SettingsPanel
                         isDark={isDark}
-                        menuItems={orderedMenuItems.map((item) => ({ id: item.id, label: item.label }))}
-                        hiddenMenuIds={hiddenMenuIds}
-                        onToggleMenuVisibility={(menuId) => handleToggleMenuVisibility(menuId as TabType)}
-                        onMoveMenuItem={(draggedId, targetId) => handleMoveMenuItem(draggedId as TabType, targetId as TabType)}
-                        onResetMenuOrder={handleResetMenuOrder}
+                        menuGroups={orderedMenuGroups.map((group) => ({
+                            id: group.id,
+                            label: group.label,
+                            items: group.itemIds
+                                .map((itemId) => tabMap.get(itemId))
+                                .filter((item): item is (typeof TABS)[number] => Boolean(item))
+                                .map((item) => ({ id: item.id, label: item.label })),
+                        }))}
+                        hiddenMenuGroupIds={hiddenMenuGroupIds}
+                        onToggleMenuGroupVisibility={(groupId) => handleToggleMenuGroupVisibility(groupId as MenuGroupId)}
+                        onMoveMenuGroup={(draggedId, targetId) => handleMoveMenuGroup(draggedId as MenuGroupId, targetId as MenuGroupId)}
+                        onResetMenuOrder={handleResetMenuGroupOrder}
                     />
                 );
             default:
@@ -298,8 +339,8 @@ function App() {
         : "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap";
 
     const sidebarSubtitleClassName = isDark
-        ? "opm-kicker text-[#7b8295] text-[10px] mt-1"
-        : "opm-kicker text-[#7b8295] text-[10px] mt-1";
+        ? "opm-kicker text-[#7b8295] text-[10px] mt-1 tracking-[0.08em]"
+        : "opm-kicker text-[#7b8295] text-[10px] mt-1 tracking-[0.08em]";
 
     const navItemClassName = (active: boolean) =>
         active
@@ -345,28 +386,37 @@ function App() {
                         </p>
                     </div>
 
-                    <nav className="flex flex-col gap-2">
-                        {visibleMenuItems.map((tab) => {
-                            const active = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
-                                    <span className="flex items-center gap-3">
-                                        <svg
-                                            className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)}`}
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth={1.75}>
-                                            {tab.icon}
-                                        </svg>
-                                        <span className="opm-nav-label">{tab.label}</span>
-                                    </span>
-                                </button>
-                            );
-                        })}
+                    <nav className="flex flex-col gap-5">
+                        {visibleMenuGroups.map((group) => (
+                            <div key={group.id} className="space-y-2">
+                                <div className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6d7488]">
+                                    {group.label}
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {group.items.map((tab) => {
+                                        const active = activeTab === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
+                                                <span className="flex items-center gap-3">
+                                                    <svg
+                                                        className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)}`}
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth={1.75}>
+                                                        {tab.icon}
+                                                    </svg>
+                                                    <span className="opm-nav-label">{tab.label}</span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </nav>
                 </div>
 
@@ -425,7 +475,7 @@ function App() {
                         {/* </div> */}
                     </div>
 
-                    <footer className="text-center text-xs text-zinc-400 dark:text-zinc-600 font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wide">
+                    <footer className="text-center text-[10px] text-[#6d7488] font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wider">
                         Tool Cho Người Lười
                     </footer>
                 </div>

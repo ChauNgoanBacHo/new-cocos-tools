@@ -384,7 +384,7 @@ export default function CodeHealth() {
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
                     <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
-                        Code Monitor
+                        Code Health
                     </h2>
                     <p className="text-slate-500 dark:text-zinc-400 text-xs">
                         Báo cáo Typescript và Eslint theo từng file
