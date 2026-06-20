@@ -209,6 +209,7 @@ export default function CheatConsole() {
     const [isAutoplaySequenceExpanded, setIsAutoplaySequenceExpanded] = useState<boolean>(false);
     const autoplayAbortRef = useRef<AbortController | null>(null);
     const matrixCellAnimationTimeoutRef = useRef<number | null>(null);
+    const [isCommonDataOpen, setIsCommonDataOpen] = useState(true);
     const [isFieldConfigOpen, setIsFieldConfigOpen] = useState(false);
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
     const [localSocketStatus, setLocalSocketStatus] = useState<CheatLocalSocketStatus>({
@@ -1092,63 +1093,73 @@ export default function CheatConsole() {
 
                                 {/* Panel Thông số chung */}
                                 <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
-                                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm">⚙️</span>
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                                                Common Data
-                                            </h3>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsFieldConfigOpen(prev => !prev)}
-                                            className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
-                                                isFieldConfigOpen
-                                                    ? "bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300"
-                                                    : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
-                                            } cursor-pointer`}>
-                                            {isFieldConfigOpen ? "✕ Close Config" : "⚡ Configure Fields"}
-                                        </button>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
+                                            isCommonDataOpen ? "border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2" : ""
+                                        }`}
+                                        onClick={() => setIsCommonDataOpen((prev) => !prev)}>
+                                        <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isCommonDataOpen ? "rotate-90" : ""}`}>
+                                            ▶
+                                        </span>
+                                        <span className="text-sm">⚙️</span>
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                            Common Data
+                                        </h3>
+                                    </button>
 
-                                    {/* Field Config Panel */}
-                                    {isFieldConfigOpen && (
-                                        <div className="bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 space-y-2">
-                                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 mb-2">
-                                                Chọn field hiển thị và đổi label cho Additional Data của game này.
-                                            </p>
-                                            {getResolvedFieldConfig(activeGame.fieldConfig).map((field, idx) => (
-                                                <div key={field.key} className="flex items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={field.visible}
-                                                        onChange={(e) => {
-                                                            const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
-                                                            config[idx] = { ...config[idx], visible: e.target.checked };
-                                                            setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
-                                                        }}
-                                                        className="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={field.label}
-                                                        onChange={(e) => {
-                                                            const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
-                                                            config[idx] = { ...config[idx], label: e.target.value };
-                                                            setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
-                                                        }}
-                                                        className="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-lg text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500"
-                                                    />
-                                                    <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-mono w-32 truncate" title={field.key as string}>
-                                                        {field.key as string}
-                                                    </span>
+                                    {isCommonDataOpen && (
+                                        <>
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsFieldConfigOpen(prev => !prev)}
+                                                    className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
+                                                        isFieldConfigOpen
+                                                            ? "bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300"
+                                                            : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
+                                                    } cursor-pointer`}>
+                                                    {isFieldConfigOpen ? "✕ Close Config" : "⚡ Configure Fields"}
+                                                </button>
+                                            </div>
+
+                                            {isFieldConfigOpen && (
+                                                <div className="bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 space-y-2">
+                                                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mb-2">
+                                                        Chọn field hiển thị và đổi label cho Additional Data của game này.
+                                                    </p>
+                                                    {getResolvedFieldConfig(activeGame.fieldConfig).map((field, idx) => (
+                                                        <div key={field.key} className="flex items-center gap-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={field.visible}
+                                                                onChange={(e) => {
+                                                                    const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
+                                                                    config[idx] = { ...config[idx], visible: e.target.checked };
+                                                                    setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
+                                                                }}
+                                                                className="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={field.label}
+                                                                onChange={(e) => {
+                                                                    const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
+                                                                    config[idx] = { ...config[idx], label: e.target.value };
+                                                                    setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
+                                                                }}
+                                                                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-lg text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500"
+                                                            />
+                                                            <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-mono w-32 truncate" title={field.key as string}>
+                                                                {field.key as string}
+                                                            </span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    
-                                    {/* Field: Game ID */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                            )}
+
+                                            {/* Field: Game ID */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                                             Game ID
                                         </label>
@@ -1166,8 +1177,8 @@ export default function CheatConsole() {
                                         </div>
                                     </div>
 
-                                    {/* Field: Game Name */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                            {/* Field: Game Name */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                                             Game Name
                                         </label>
@@ -1181,8 +1192,8 @@ export default function CheatConsole() {
                                         </div>
                                     </div>
 
-                                    {/* Field 1: User Id */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                            {/* Field 1: User Id */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <label
                                             htmlFor="userId"
                                             className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
@@ -1201,8 +1212,8 @@ export default function CheatConsole() {
                                         </div>
                                     </div>
 
-                                    {/* Field: Server */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                            {/* Field: Server */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                                             Server
                                         </label>
@@ -1217,7 +1228,7 @@ export default function CheatConsole() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
                                             Local WS
                                         </label>
@@ -1297,7 +1308,9 @@ export default function CheatConsole() {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {localSocketEnabled && (
