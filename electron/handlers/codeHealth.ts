@@ -13,6 +13,12 @@ type CodeHealthSeverity = "error" | "warning";
 const HEALTH_SCORE_MAX = 100;
 const HEALTH_WEIGHT_CRITICAL = 12;
 const HEALTH_WEIGHT_MINOR = 4;
+const NICE_TO_HAVE_RULE_IDS = new Set([
+    "max-lines-per-function",
+    "max-params",
+    "complexity",
+    "max-depth",
+]);
 const MIN_TYPESCRIPT_LIBS = [
     "lib.es5.d.ts",
     "lib.es2015.d.ts",
@@ -216,6 +222,12 @@ function createEmptyTypescriptResult(): TypescriptScanResult {
         errorCount: 0,
         files: [],
     };
+}
+
+function isNiceToHaveIssue(issue: CodeHealthIssue) {
+    return issue.source === "eslint"
+        && issue.severity === "warning"
+        && NICE_TO_HAVE_RULE_IDS.has(issue.ruleId);
 }
 
 export async function runEslintScan(sourcePath: string): Promise<EslintScanResult> {
@@ -910,10 +922,14 @@ export function registerCodeHealthHandler() {
         const totalIssueCount = fileReports.reduce((sum, file) => sum + file.errorCount + file.warningCount, 0);
         const eslintErrorCount = eslintResult.errorCount;
         const eslintWarningCount = eslintResult.warningCount;
+        const primaryEslintWarningCount = fileReports
+            .flatMap((file) => file.issues)
+            .filter((issue) => issue.source === "eslint" && issue.severity === "warning" && !isNiceToHaveIssue(issue))
+            .length;
         const typescriptErrorCount = typescriptResult.errorCount;
         const totalPenalty = (typescriptErrorCount * HEALTH_WEIGHT_CRITICAL)
             + (eslintErrorCount * HEALTH_WEIGHT_CRITICAL)
-            + (eslintWarningCount * HEALTH_WEIGHT_MINOR);
+            + (primaryEslintWarningCount * HEALTH_WEIGHT_MINOR);
         const healthScore = Math.max(0, HEALTH_SCORE_MAX - totalPenalty);
 
         return {
