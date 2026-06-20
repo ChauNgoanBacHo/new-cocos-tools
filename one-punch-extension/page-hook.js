@@ -1,5 +1,5 @@
 (function () {
-    const BRIDGE_EVENT_TYPE = "COCOSTOOLS_SOCKET_EVENT";
+    const BRIDGE_EVENT_TYPE = "ONE_PUNCH_TOOLS_SOCKET_EVENT";
     const ACCEPTED_EVENT_NAMES = new Set(["n", "f"]);
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
@@ -285,7 +285,7 @@
 
     function patchWebSocket() {
         const NativeWebSocket = window.WebSocket;
-        if (!NativeWebSocket || NativeWebSocket.__cocostoolsPatched) {
+        if (!NativeWebSocket || NativeWebSocket.__onePunchToolsPatched) {
             return;
         }
 
@@ -313,7 +313,7 @@
         }
 
         WrappedWebSocket.prototype = NativeWebSocket.prototype;
-        Object.defineProperty(WrappedWebSocket, "__cocostoolsPatched", {
+        Object.defineProperty(WrappedWebSocket, "__onePunchToolsPatched", {
             value: true,
             configurable: false,
             enumerable: false,
@@ -328,7 +328,7 @@
 
         for (const methodName of consoleMethods) {
             const originalMethod = window.console?.[methodName];
-            if (typeof originalMethod !== "function" || originalMethod.__cocostoolsPatched) {
+            if (typeof originalMethod !== "function" || originalMethod.__onePunchToolsPatched) {
                 continue;
             }
 
@@ -342,7 +342,7 @@
                 return originalMethod.apply(this, args);
             };
 
-            Object.defineProperty(wrappedMethod, "__cocostoolsPatched", {
+            Object.defineProperty(wrappedMethod, "__onePunchToolsPatched", {
                 value: true,
                 configurable: false,
                 enumerable: false,

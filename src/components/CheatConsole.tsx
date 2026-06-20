@@ -1274,33 +1274,22 @@ export default function CheatConsole() {
                                                 )}
                                             </div>
 
-                                            <div className="flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        void window.electronAPI.cheatExtension.exportZip()
-                                                            .then((result) => {
-                                                                if (!result.ok) {
-                                                                    return;
-                                                                }
-                                                                setStatus({
-                                                                    type: "success",
-                                                                    message: `🚀 Đã export Extension ZIP: ${result.filePath}`,
-                                                                });
-                                                            })
-                                                            .catch((error) => {
-                                                                setStatus({
-                                                                    type: "error",
-                                                                    message: error instanceof Error
-                                                                        ? `❌ Export Extension ZIP thất bại: ${error.message}`
-                                                                        : "❌ Export Extension ZIP thất bại.",
-                                                                });
-                                                            });
-                                                    }}
-                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 border border-red-600 text-white text-[11px] font-semibold rounded-lg transition-all cursor-pointer">
-                                                    Export Extension ZIP
-                                                </button>
-                                            </div>
+                                            {localSocketStatus.running && (
+                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                                                    <span>Use</span>
+                                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
+                                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                                            />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg>
+                                                    </span>
+                                                    <span>to download and install the browser extension.</span>
+                                                </div>
+                                            )}
 
                                             {localSocketStatus.lastError && (
                                                 <div className="text-[11px] font-mono text-red-500 dark:text-red-400">

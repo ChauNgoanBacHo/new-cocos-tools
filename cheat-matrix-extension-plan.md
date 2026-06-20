@@ -239,7 +239,7 @@ On timeout:
 ### Folder Structure
 
 ```text
-browser-extension/
+one-punch-extension/
   manifest.json
   content.js
   page-hook.js
@@ -359,19 +359,19 @@ So the zip is for transport/sharing, not direct one-click installation.
 
 ### Browser Extension
 
-#### `browser-extension/manifest.json`
+#### `one-punch-extension/manifest.json`
 
 - MV3 definition
 
-#### `browser-extension/content.js`
+#### `one-punch-extension/content.js`
 
 - bridge and localhost client
 
-#### `browser-extension/page-hook.js`
+#### `one-punch-extension/page-hook.js`
 
 - WebSocket interception in page context
 
-#### `browser-extension/background.js`
+#### `one-punch-extension/background.js`
 
 - optional debug/reconnect support
 

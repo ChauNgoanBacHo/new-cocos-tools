@@ -1,4 +1,4 @@
-# CocosTools Cheat Matrix Bridge Extension
+# One Punch Tools Connect Extension
 
 ## Purpose
 
@@ -19,7 +19,7 @@ Default page origins:
 1. Open `chrome://extensions`
 2. Turn on `Developer mode`
 3. Click `Load unpacked`
-4. Select the `browser-extension/` folder
+4. Select the `one-punch-extension/` folder
 
 ## Current Behavior
 

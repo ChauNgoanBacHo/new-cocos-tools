@@ -8,13 +8,13 @@ function getProjectRoot() {
 }
 
 function getExtensionSourceDir() {
-    return path.join(getProjectRoot(), "browser-extension");
+    return path.join(getProjectRoot(), "one-punch-extension");
 }
 
 function ensureExtensionExists() {
     const extensionDir = getExtensionSourceDir();
     if (!fs.existsSync(extensionDir)) {
-        throw new Error("Không tìm thấy thư mục browser-extension.");
+        throw new Error("Không tìm thấy thư mục one-punch-extension.");
     }
     return extensionDir;
 }
@@ -45,7 +45,7 @@ export function registerExportCheatExtensionHandlers() {
 
     ipcMain.handle("cheat-extension:export-zip", async () => {
         const extensionDir = ensureExtensionExists();
-        const defaultPath = path.join(app.getPath("downloads"), "cocostools-cheat-extension.zip");
+        const defaultPath = path.join(app.getPath("downloads"), "one-punch-tools-extension.zip");
 
         const result = await dialog.showSaveDialog({
             title: "Export Cheat Matrix Extension ZIP",
@@ -68,4 +68,3 @@ export function registerExportCheatExtensionHandlers() {
         };
     });
 }
-
