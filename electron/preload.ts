@@ -32,6 +32,26 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("delete-assets", sourceDir, files),
     spinePreview: (sourceDir: string) =>
         ipcRenderer.invoke("spine-preview", sourceDir),
+    cheatLocalSocket: {
+        start: (port?: number) => ipcRenderer.invoke("cheat-local-socket:start", port),
+        stop: () => ipcRenderer.invoke("cheat-local-socket:stop"),
+        status: () => ipcRenderer.invoke("cheat-local-socket:status"),
+        emitTest: (payload?: Record<string, unknown>) => ipcRenderer.invoke("cheat-local-socket:emit-test", payload),
+        onStatus: (listener: (status: unknown) => void) => {
+            const wrapped = (_event: unknown, status: unknown) => listener(status);
+            ipcRenderer.on("cheat-local-socket:status", wrapped);
+            return () => ipcRenderer.removeListener("cheat-local-socket:status", wrapped);
+        },
+        onEvent: (listener: (event: unknown) => void) => {
+            const wrapped = (_event: unknown, payload: unknown) => listener(payload);
+            ipcRenderer.on("cheat-local-socket:event", wrapped);
+            return () => ipcRenderer.removeListener("cheat-local-socket:event", wrapped);
+        },
+    },
+    cheatExtension: {
+        exportZip: () => ipcRenderer.invoke("cheat-extension:export-zip"),
+        openFolder: () => ipcRenderer.invoke("cheat-extension:open-folder"),
+    },
     driveSync: {
         init: () => ipcRenderer.invoke("drive-sync:init"),
         getSyncPlan: (rootFolderId: string, scope?: 'today' | 'all') => ipcRenderer.invoke("drive-sync:sync-plan", rootFolderId, scope),

@@ -38,6 +38,10 @@
       {
         "from": "assets/icon.png",
         "to": "assets/icon.png"
+      },
+      {
+        "from": "browser-extension",
+        "to": "browser-extension"
       }
     ],
     "mac": {

@@ -154,6 +154,67 @@ interface ElectronAPI {
         exitCode: number;
         error?: string;
     }>;
+    cheatLocalSocket: {
+        start: (port?: number) => Promise<{
+            enabled: boolean;
+            running: boolean;
+            host: string;
+            port: number;
+            clientCount: number;
+            lastEventAt: number | null;
+            lastEventType: string | null;
+            lastError: string | null;
+        }>;
+        stop: () => Promise<{
+            enabled: boolean;
+            running: boolean;
+            host: string;
+            port: number;
+            clientCount: number;
+            lastEventAt: number | null;
+            lastEventType: string | null;
+            lastError: string | null;
+        }>;
+        status: () => Promise<{
+            enabled: boolean;
+            running: boolean;
+            host: string;
+            port: number;
+            clientCount: number;
+            lastEventAt: number | null;
+            lastEventType: string | null;
+            lastError: string | null;
+        }>;
+        emitTest: (payload?: Record<string, unknown>) => Promise<{ ok: true }>;
+        onStatus: (
+            listener: (status: {
+                enabled: boolean;
+                running: boolean;
+                host: string;
+                port: number;
+                clientCount: number;
+                lastEventAt: number | null;
+                lastEventType: string | null;
+                lastError: string | null;
+            }) => void,
+        ) => () => void;
+        onEvent: (
+            listener: (event: {
+                type: string;
+                [key: string]: unknown;
+            }) => void,
+        ) => () => void;
+    };
+    cheatExtension: {
+        exportZip: () => Promise<
+            | { ok: true; filePath: string }
+            | { ok: false; cancelled: true }
+        >;
+        openFolder: () => Promise<{
+            ok: true;
+            path: string;
+        }>;
+    };
     driveSync: {
         init: () => Promise<Array<{
             rootFolderId: string;

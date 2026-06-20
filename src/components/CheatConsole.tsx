@@ -1,6 +1,44 @@
 import { useState, useEffect, useRef } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 
+interface CheatLocalSocketStatus {
+    enabled: boolean;
+    running: boolean;
+    host: string;
+    port: number;
+    clientCount: number;
+    lastEventAt: number | null;
+    lastEventType: string | null;
+    lastError: string | null;
+}
+
+interface CheatSocketEventPayload {
+    type: string;
+    command?: string;
+    source?: string;
+    debugType?: string;
+    gameId?: string | null;
+    eventName?: string;
+    timestamp?: number;
+    payload?: {
+        gameId?: string | null;
+        serviceId?: string;
+        eventId?: string | null;
+        data?: {
+            gameId?: string | null;
+            mx?: string[];
+            [key: string]: unknown;
+        };
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
+const ACCEPTED_AUTOPLAY_EVENT_NAMES = new Set(["n", "f"]);
+const SHOW_AUTOPLAY_DEBUG_LOGS = false;
+const LOCAL_SOCKET_CLIENT_WAIT_MS = 4000;
+const LOCAL_SOCKET_CLIENT_POLL_MS = 250;
+
 interface PanelData {
     id: string;
     title: string;
@@ -11,6 +49,8 @@ interface PanelData {
     delay?: number;
     // Additional Data (tất cả optional), hiển thị trong section có thể expand
     isAdditionalExpanded?: boolean;
+    stackedReel1?: string;
+    stackedReel5?: string;
     stackedCodeReel1?: string;
     stackedCodeReel5?: string;
     megaSymbolCode?: string;
@@ -23,6 +63,8 @@ interface PanelData {
 
 // Các field optional trong mục Additional Data. `key` cũng chính là tên field POST lên server.
 const ADDITIONAL_FIELDS: { key: keyof PanelData; label: string }[] = [
+    { key: "stackedReel1", label: "Stacked Reel 1" },
+    { key: "stackedReel5", label: "Stacked Reel 5" },
     { key: "stackedCodeReel1", label: "Stacked Code Reel 1" },
     { key: "stackedCodeReel5", label: "Stacked Code Reel 5" },
     { key: "megaSymbolCode", label: "Mega Symbol Code" },
@@ -42,6 +84,21 @@ interface FieldConfig {
 
 function getDefaultFieldConfig(): FieldConfig[] {
     return ADDITIONAL_FIELDS.map(f => ({ ...f, visible: true }));
+}
+
+function getResolvedFieldConfig(fieldConfig?: FieldConfig[]): FieldConfig[] {
+    if (!fieldConfig || fieldConfig.length === 0) {
+        return getDefaultFieldConfig();
+    }
+
+    const fieldConfigMap = new Map(fieldConfig.map((field) => [field.key, field]));
+
+    return ADDITIONAL_FIELDS.map((field) => {
+        const savedField = fieldConfigMap.get(field.key);
+        return savedField
+            ? { ...field, ...savedField }
+            : { ...field, visible: true };
+    });
 }
 
 // Append mọi field Additional Data có giá trị vào body POST (chỉ field visible).
@@ -127,6 +184,7 @@ interface GameData {
 export default function CheatConsole() {
     const [games, setGames] = useStoredState<GameData[]>("games", []);
     const [selectedGameId, setSelectedGameId] = useStoredState<string | null>("selectedGameId", null);
+    const [localSocketEnabled, setLocalSocketEnabled] = useStoredState<boolean>("cheat-matrix-local-ws-enabled", false);
 
     const activeGame = games.find((g) => g.id === selectedGameId);
 
@@ -153,6 +211,89 @@ export default function CheatConsole() {
     const matrixCellAnimationTimeoutRef = useRef<number | null>(null);
     const [isFieldConfigOpen, setIsFieldConfigOpen] = useState(false);
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
+    const [localSocketStatus, setLocalSocketStatus] = useState<CheatLocalSocketStatus>({
+        enabled: false,
+        running: false,
+        host: "127.0.0.1",
+        port: 17381,
+        clientCount: 0,
+        lastEventAt: null,
+        lastEventType: null,
+        lastError: null,
+    });
+    const latestSocketEventRef = useRef<CheatSocketEventPayload | null>(null);
+    const socketEventSequenceRef = useRef(0);
+    const gamesRef = useRef<GameData[]>(games);
+    const selectedGameIdRef = useRef<string | null>(selectedGameId);
+    const activeGameRef = useRef<GameData | undefined>(activeGame);
+    const localSocketStatusRef = useRef<CheatLocalSocketStatus>(localSocketStatus);
+    const autoplaySelectedIdsRef = useRef<string[]>(autoplaySelectedIds);
+
+    const appendAutoplayLog = (message: string, options?: { debug?: boolean }) => {
+        if (options?.debug && !SHOW_AUTOPLAY_DEBUG_LOGS) {
+            return;
+        }
+
+        setAutoplayLogs((prev) => [...prev, message]);
+    };
+
+    const resolveExtensionRequestedGameId = (event: CheatSocketEventPayload) => {
+        if (typeof event.gameId === "string" && event.gameId.trim()) {
+            return event.gameId.trim();
+        }
+
+        if (typeof event.payload?.gameId === "string" && event.payload.gameId.trim()) {
+            return event.payload.gameId.trim();
+        }
+
+        if (typeof event.payload?.data?.gameId === "string" && event.payload.data.gameId.trim()) {
+            return event.payload.data.gameId.trim();
+        }
+
+        return null;
+    };
+
+    const isAcceptedAutoplaySocketEvent = (event: CheatSocketEventPayload | null | undefined, gameId: string) => {
+        if (!event || event.type !== "game-socket-response") {
+            return false;
+        }
+
+        if (!event.eventName || !ACCEPTED_AUTOPLAY_EVENT_NAMES.has(event.eventName)) {
+            return false;
+        }
+
+        const eventGameId = typeof event.gameId === "string"
+            ? event.gameId
+            : typeof event.payload?.serviceId === "string"
+                ? event.payload.serviceId
+                : null;
+
+        if (eventGameId && eventGameId !== gameId) {
+            return false;
+        }
+
+        return true;
+    };
+
+    useEffect(() => {
+        gamesRef.current = games;
+    }, [games]);
+
+    useEffect(() => {
+        selectedGameIdRef.current = selectedGameId;
+    }, [selectedGameId]);
+
+    useEffect(() => {
+        activeGameRef.current = activeGame;
+    }, [activeGame]);
+
+    useEffect(() => {
+        localSocketStatusRef.current = localSocketStatus;
+    }, [localSocketStatus]);
+
+    useEffect(() => {
+        autoplaySelectedIdsRef.current = autoplaySelectedIds;
+    }, [autoplaySelectedIds]);
 
     useEffect(() => {
         if (activeGame) {
@@ -191,6 +332,176 @@ export default function CheatConsole() {
             }
         };
     }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        let removeStatusListener = () => {};
+        let removeEventListener = () => {};
+
+        void window.electronAPI.cheatLocalSocket.status().then((nextStatus) => {
+            if (isMounted) {
+                setLocalSocketStatus(nextStatus);
+            }
+        });
+
+        removeStatusListener = window.electronAPI.cheatLocalSocket.onStatus((nextStatus) => {
+            if (isMounted) {
+                setLocalSocketStatus(nextStatus);
+            }
+        });
+
+        removeEventListener = window.electronAPI.cheatLocalSocket.onEvent((event) => {
+            if (!isMounted) return;
+
+            latestSocketEventRef.current = event as CheatSocketEventPayload;
+            socketEventSequenceRef.current += 1;
+
+            const eventType = typeof event?.type === "string" ? event.type : "unknown";
+            const eventName = typeof event?.eventName === "string" ? event.eventName : null;
+            const eventGameId = typeof event?.gameId === "string" ? event.gameId : null;
+            const debugType = typeof event?.debugType === "string" ? event.debugType : null;
+            const socketPayload = event?.payload as CheatSocketEventPayload["payload"] | undefined;
+            const eventId = typeof socketPayload?.eventId === "string" ? socketPayload.eventId : null;
+            const displayLabel = [eventType, debugType, eventName, eventGameId, eventId].filter(Boolean).join(" / ");
+            const preview = typeof socketPayload?.preview === "string" ? socketPayload.preview : null;
+
+            if (eventType === "extension-command" && (event as CheatSocketEventPayload).command === "start-autoplay") {
+                runAutoplayFromExtension(resolveExtensionRequestedGameId(event as CheatSocketEventPayload));
+                return;
+            }
+
+            appendAutoplayLog(
+                `📡 Received socket event: ${displayLabel || "unknown"}${preview ? ` | ${preview}` : ""}`,
+                {
+                    debug: eventType !== "game-socket-response",
+                },
+            );
+        });
+
+        return () => {
+            isMounted = false;
+            removeStatusListener();
+            removeEventListener();
+        };
+    }, []);
+
+    useEffect(() => {
+        void (async () => {
+            try {
+                if (localSocketEnabled) {
+                    const nextStatus = await window.electronAPI.cheatLocalSocket.start();
+                    setLocalSocketStatus(nextStatus);
+                    const connectedStatus = await waitForLocalSocketClient(nextStatus);
+                    setLocalSocketStatus(connectedStatus);
+
+                    if (connectedStatus.clientCount > 0) {
+                        setStatus({
+                            type: "success",
+                            message: "🔌 Electron Local WebSocket Server đã bật và web client đã kết nối.",
+                        });
+                    } else {
+                        setStatus({
+                            type: "success",
+                            message: "🟡 Electron Local WebSocket Server đã bật, nhưng chưa thấy web client kết nối. Hãy kiểm tra extension đang bật và reload tab game nếu cần.",
+                        });
+                    }
+                    return;
+                }
+
+                const nextStatus = await window.electronAPI.cheatLocalSocket.stop();
+                setLocalSocketStatus(nextStatus);
+            } catch (error) {
+                setStatus({
+                    type: "error",
+                    message: error instanceof Error
+                        ? `❌ Local WebSocket error: ${error.message}`
+                        : "❌ Không thể cập nhật Local WebSocket Server.",
+                });
+            }
+        })();
+    }, [localSocketEnabled]);
+
+    const waitForLocalSocketClient = async (initialStatus: CheatLocalSocketStatus) => {
+        if (initialStatus.clientCount > 0) {
+            return initialStatus;
+        }
+
+        const startedAt = Date.now();
+        let latestStatus = initialStatus;
+
+        while (Date.now() - startedAt < LOCAL_SOCKET_CLIENT_WAIT_MS) {
+            await new Promise<void>((resolve) => {
+                window.setTimeout(resolve, LOCAL_SOCKET_CLIENT_POLL_MS);
+            });
+
+            latestStatus = await window.electronAPI.cheatLocalSocket.status();
+            if (latestStatus.clientCount > 0 || !latestStatus.running) {
+                return latestStatus;
+            }
+        }
+
+        return latestStatus;
+    };
+
+    const runAutoplayFromExtension = (requestedGameId?: string | null) => {
+        if (isAutoplayRunning) {
+            setAutoplayLogs((prev) => [...prev, "📥 Received extension command: start-autoplay (ignored because autoplay is already running)."]);
+            return;
+        }
+
+        const targetGameId = typeof requestedGameId === "string" && requestedGameId.trim()
+            ? requestedGameId.trim()
+            : selectedGameIdRef.current;
+        const targetGame = targetGameId
+            ? gamesRef.current.find((game) => game.id === targetGameId)
+            : activeGameRef.current ?? null;
+
+        if (!targetGame) {
+            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay${targetGameId ? ` for game ${targetGameId}` : ""}.`]);
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: game was not found in Electron."]);
+            return;
+        }
+
+        if (selectedGameIdRef.current !== targetGame.id) {
+            setSelectedGameId(targetGame.id);
+        }
+
+        if (!localSocketStatusRef.current.running) {
+            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: Electron Local WebSocket Server is not running."]);
+            return;
+        }
+
+        if (targetGame.panels.length === 0) {
+            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: selected game has no configured panels."]);
+            return;
+        }
+
+        if (autoplaySelectedIdsRef.current.length === 0) {
+            setAutoplaySelectedIds(targetGame.panels.map((panel) => panel.id));
+        }
+
+        if ((autoplaySelectedIdsRef.current.length === 0 ? targetGame.panels.length : autoplaySelectedIdsRef.current.length) === 0) {
+            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: no autoplay steps are selected."]);
+            return;
+        }
+
+        if (!targetGame.userId.trim()) {
+            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: User ID is empty."]);
+            return;
+        }
+
+        setStatus({
+            type: "success",
+            message: "⚡ Extension đã gửi lệnh Start Autoplay cho Electron app.",
+        });
+        setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
+        setAutoplayLogs((prev) => [...prev, "⚡ Electron is starting autoplay from extension command..."]);
+        void runAutoplay(targetGame);
+    };
 
     const updateActiveGameUserId = (val: string) => {
         setGames((prev) =>
@@ -252,12 +563,6 @@ export default function CheatConsole() {
     const updatePanelField = (panelId: string, field: keyof PanelData, value: string) => {
         updateActiveGamePanels((prev) =>
             prev.map((p) => (p.id === panelId ? { ...p, [field]: value } : p))
-        );
-    };
-
-    const updatePanelDelay = (panelId: string, value: number) => {
-        updateActiveGamePanels((prev) =>
-            prev.map((p) => (p.id === panelId ? { ...p, delay: value } : p))
         );
     };
 
@@ -336,7 +641,7 @@ export default function CheatConsole() {
         urlEncodedData.append("userId", userId);
         urlEncodedData.append("matrixData", panel.matrixData);
         urlEncodedData.append("tableFormat", panel.tableFormat);
-        appendAdditionalData(urlEncodedData, panel, activeGame.fieldConfig ?? getDefaultFieldConfig());
+        appendAdditionalData(urlEncodedData, panel, getResolvedFieldConfig(activeGame.fieldConfig));
 
         try {
             const response = await fetch(submitTargetUrl, {
@@ -426,16 +731,42 @@ export default function CheatConsole() {
         setAutoplayLogs((prev) => [...prev, "🛑 Đã dừng chạy tự động."]);
     };
 
-    const runAutoplay = async () => {
-        if (!activeGame) return;
-        if (autoplaySelectedIds.length === 0) {
-            setStatus({ type: "error", message: "❌ Vui lòng chọn ít nhất 1 bước để Autoplay!" });
+    const runAutoplay = async (overrideGame?: GameData) => {
+        const gameToRun = overrideGame ?? activeGameRef.current;
+        const isExternalOverride = Boolean(overrideGame);
+        if (!gameToRun) {
+            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay: no active game is available in Electron."]);
             return;
         }
-        const userId = activeGame.userId;
+        if (!localSocketStatusRef.current.running) {
+            setStatus({
+                type: "error",
+                message: "❌ Autoplay chỉ hoạt động khi Local WebSocket Server đang bật.",
+            });
+            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: Electron Local WebSocket Server is not running.`]);
+            return;
+        }
+        const selectedIds = autoplaySelectedIdsRef.current.length > 0
+            ? autoplaySelectedIdsRef.current
+            : gameToRun.panels.map((panel) => panel.id);
+
+        if (selectedIds.length === 0) {
+            setStatus({ type: "error", message: "❌ Vui lòng chọn ít nhất 1 bước để Autoplay!" });
+            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: no autoplay steps are selected.`]);
+            return;
+        }
+        const userId = gameToRun.userId;
         if (!userId.trim()) {
             setStatus({ type: "error", message: "❌ Vui lòng nhập User ID trước khi chạy Autoplay!" });
+            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: User ID is empty.`]);
             return;
+        }
+
+        if (!isExternalOverride && selectedGameIdRef.current !== gameToRun.id) {
+            setSelectedGameId(gameToRun.id);
+        }
+        if (!isExternalOverride && autoplaySelectedIdsRef.current.length === 0) {
+            setAutoplaySelectedIds(selectedIds);
         }
 
         setIsAutoplayRunning(true);
@@ -445,8 +776,8 @@ export default function CheatConsole() {
         autoplayAbortRef.current = controller;
 
         try {
-            const panelsToExecute = activeGame.panels.filter((p) =>
-                autoplaySelectedIds.includes(p.id)
+            const panelsToExecute = gameToRun.panels.filter((p) =>
+                selectedIds.includes(p.id)
             );
 
             for (let i = 0; i < panelsToExecute.length; i++) {
@@ -455,33 +786,16 @@ export default function CheatConsole() {
 
                 if (controller.signal.aborted) break;
 
-                // Step 1 does not need delay
-                const delayForStep = panel.delay ?? 2;
-                if (i > 0 && delayForStep > 0) {
-                    setAutoplayLogs((prev) => [
-                        ...prev,
-                        `⏳ Đang đợi ${delayForStep} giây trước khi chạy bước tiếp theo...`
-                    ]);
-                    await new Promise<void>((resolve, reject) => {
-                        const timeout = setTimeout(resolve, delayForStep * 1000);
-                        controller.signal.addEventListener("abort", () => {
-                            clearTimeout(timeout);
-                            reject(new Error("aborted"));
-                        });
-                    });
-                }
-
-                if (controller.signal.aborted) break;
-
                 const displayName = panel.title.trim() ? panel.title : `Matrix #${panel.id}`;
                 setAutoplayLogs((prev) => [...prev, `⚡ Đang chạy: ${displayName}...`]);
+                const socketSequenceBeforeSubmit = socketEventSequenceRef.current;
 
-                const submitTargetUrl = `https://cheat.${activeGame.env}.enostd.gay/${activeGame.id}/inputed`;
+                const submitTargetUrl = `https://cheat.${gameToRun.env}.enostd.gay/${gameToRun.id}/inputed`;
                 const urlEncodedData = new URLSearchParams();
                 urlEncodedData.append("userId", userId);
                 urlEncodedData.append("matrixData", panel.matrixData);
                 urlEncodedData.append("tableFormat", panel.tableFormat);
-                appendAdditionalData(urlEncodedData, panel, activeGame.fieldConfig ?? getDefaultFieldConfig());
+                appendAdditionalData(urlEncodedData, panel, getResolvedFieldConfig(gameToRun.fieldConfig));
 
                 const response = await fetch(submitTargetUrl, {
                     method: "POST",
@@ -495,8 +809,80 @@ export default function CheatConsole() {
                 if (response.ok) {
                     setAutoplayLogs((prev) => [
                         ...prev,
-                        `✅ Thành công: ${displayName}`
+                        `✅ Thành công: ${displayName}`,
+                        "⏳ Waiting for local socket event before next step...",
                     ]);
+
+                    if (i < panelsToExecute.length - 1) {
+                        await new Promise<void>((resolve, reject) => {
+                            let resolved = false;
+                            const latestEvent = latestSocketEventRef.current;
+                            const socketSequenceAfterSubmit = socketEventSequenceRef.current;
+
+                            if (
+                                socketSequenceAfterSubmit > socketSequenceBeforeSubmit &&
+                                isAcceptedAutoplaySocketEvent(latestEvent, gameToRun.id)
+                            ) {
+                                setAutoplayLogs((prev) => [
+                                    ...prev,
+                                    "🧭 Detected matching socket event arrived during request. Continuing immediately.",
+                                ]);
+                                resolve();
+                                return;
+                            }
+
+                            const removeListener = window.electronAPI.cheatLocalSocket.onEvent((event) => {
+                                const socketEvent = event as CheatSocketEventPayload;
+                                if (socketEvent.type !== "game-socket-response") {
+                                    appendAutoplayLog(`🪵 Ignored socket event type: ${socketEvent.type || "unknown"}`, {
+                                        debug: true,
+                                    });
+                                    return;
+                                }
+                                if (!socketEvent.eventName || !ACCEPTED_AUTOPLAY_EVENT_NAMES.has(socketEvent.eventName)) {
+                                    appendAutoplayLog(`🪵 Ignored socket event name: ${socketEvent.eventName || "unknown"}`, {
+                                        debug: true,
+                                    });
+                                    return;
+                                }
+
+                                const eventGameId = typeof socketEvent.gameId === "string"
+                                    ? socketEvent.gameId
+                                    : typeof socketEvent.payload?.serviceId === "string"
+                                        ? socketEvent.payload.serviceId
+                                        : null;
+
+                                if (eventGameId && eventGameId !== gameToRun.id) {
+                                    appendAutoplayLog(`🪵 Ignored socket event for game: ${eventGameId}`, {
+                                        debug: true,
+                                    });
+                                    return;
+                                }
+
+                                if (resolved) return;
+                                resolved = true;
+                                removeListener();
+                                clearTimeout(timeoutId);
+                                setAutoplayLogs((prev) => [...prev, `✅ Accepted socket event: ${socketEvent.eventName || "unknown"}`]);
+                                resolve();
+                            });
+
+                            const timeoutId = window.setTimeout(() => {
+                                if (resolved) return;
+                                resolved = true;
+                                removeListener();
+                                reject(new Error("socket-timeout"));
+                            }, 15000);
+
+                            controller.signal.addEventListener("abort", () => {
+                                if (resolved) return;
+                                resolved = true;
+                                removeListener();
+                                clearTimeout(timeoutId);
+                                reject(new Error("aborted"));
+                            }, { once: true });
+                        });
+                    }
                 } else {
                     setAutoplayLogs((prev) => [
                         ...prev,
@@ -512,7 +898,9 @@ export default function CheatConsole() {
             if (error.name !== "AbortError" && error.message !== "aborted") {
                 setAutoplayLogs((prev) => [
                     ...prev,
-                    `❌ Gặp lỗi trong quá trình Autoplay: ${error.message || error}`
+                    error.message === "socket-timeout"
+                        ? "❌ Timeout khi chờ socket event để chạy bước tiếp theo."
+                        : `❌ Gặp lỗi trong quá trình Autoplay: ${error.message || error}`
                 ]);
             }
         } finally {
@@ -729,13 +1117,13 @@ export default function CheatConsole() {
                                             <p className="text-[10px] text-slate-500 dark:text-zinc-400 mb-2">
                                                 Chọn field hiển thị và đổi label cho Additional Data của game này.
                                             </p>
-                                            {(activeGame.fieldConfig ?? getDefaultFieldConfig()).map((field, idx) => (
+                                            {getResolvedFieldConfig(activeGame.fieldConfig).map((field, idx) => (
                                                 <div key={field.key} className="flex items-center gap-2">
                                                     <input
                                                         type="checkbox"
                                                         checked={field.visible}
                                                         onChange={(e) => {
-                                                            const config = [...(activeGame.fieldConfig ?? getDefaultFieldConfig())];
+                                                            const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
                                                             config[idx] = { ...config[idx], visible: e.target.checked };
                                                             setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
                                                         }}
@@ -745,7 +1133,7 @@ export default function CheatConsole() {
                                                         type="text"
                                                         value={field.label}
                                                         onChange={(e) => {
-                                                            const config = [...(activeGame.fieldConfig ?? getDefaultFieldConfig())];
+                                                            const config = [...getResolvedFieldConfig(activeGame.fieldConfig)];
                                                             config[idx] = { ...config[idx], label: e.target.value };
                                                             setGames(prev => prev.map(g => g.id === selectedGameId ? { ...g, fieldConfig: config } : g));
                                                         }}
@@ -828,136 +1216,203 @@ export default function CheatConsole() {
                                             </select>
                                         </div>
                                     </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
+                                            Local WS
+                                        </label>
+                                        <div className="sm:col-span-2 space-y-3">
+                                            <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={localSocketEnabled}
+                                                    onChange={(e) => setLocalSocketEnabled(e.target.checked)}
+                                                    className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                />
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
+                                                    Enable Electron Local WebSocket Server
+                                                </span>
+                                            </label>
+
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                    localSocketStatus.running
+                                                        ? localSocketStatus.clientCount > 0
+                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        : "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300"
+                                                }`}>
+                                                    {localSocketStatus.running
+                                                        ? localSocketStatus.clientCount > 0
+                                                            ? "Client Connected"
+                                                            : "Listening"
+                                                        : "Off"}
+                                                </span>
+                                                <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                    ws://{localSocketStatus.host}:{localSocketStatus.port}
+                                                </span>
+                                                {localSocketStatus.lastEventType && (
+                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                        Last event: {localSocketStatus.lastEventType}
+                                                    </span>
+                                                )}
+                                                {latestSocketEventRef.current?.payload?.eventId && (
+                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                                                        Event ID: {latestSocketEventRef.current.payload.eventId}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        void window.electronAPI.cheatExtension.exportZip()
+                                                            .then((result) => {
+                                                                if (!result.ok) {
+                                                                    return;
+                                                                }
+                                                                setStatus({
+                                                                    type: "success",
+                                                                    message: `🚀 Đã export Extension ZIP: ${result.filePath}`,
+                                                                });
+                                                            })
+                                                            .catch((error) => {
+                                                                setStatus({
+                                                                    type: "error",
+                                                                    message: error instanceof Error
+                                                                        ? `❌ Export Extension ZIP thất bại: ${error.message}`
+                                                                        : "❌ Export Extension ZIP thất bại.",
+                                                                });
+                                                            });
+                                                    }}
+                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 border border-red-600 text-white text-[11px] font-semibold rounded-lg transition-all cursor-pointer">
+                                                    Export Extension ZIP
+                                                </button>
+                                            </div>
+
+                                            {localSocketStatus.lastError && (
+                                                <div className="text-[11px] font-mono text-red-500 dark:text-red-400">
+                                                    {localSocketStatus.lastError}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Panel Autoplay Sequence */}
-                                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
-                                    <button
-                                        type="button"
-                                        className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
-                                            isAutoplaySequenceExpanded ? "border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2" : ""
-                                        }`}
-                                        onClick={() => setIsAutoplaySequenceExpanded((prev) => !prev)}>
-                                        <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
-                                            ▶
-                                        </span>
-                                        <span className="text-sm">🔁</span>
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                                            Autoplay Matrix Sequence
-                                        </h3>
-                                    </button>
+                                {localSocketEnabled && (
+                                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                                        <button
+                                            type="button"
+                                            className={`flex w-full items-center gap-2 text-left cursor-pointer select-none focus:outline-none ${
+                                                isAutoplaySequenceExpanded ? "border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2" : ""
+                                            }`}
+                                            onClick={() => setIsAutoplaySequenceExpanded((prev) => !prev)}>
+                                            <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
+                                                ▶
+                                            </span>
+                                            <span className="text-sm">🔁</span>
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                                Autoplay Matrix Sequence
+                                            </h3>
+                                        </button>
 
-                                    {isAutoplaySequenceExpanded && (
-                                        <>
-                                            <div className="text-xs text-slate-400 dark:text-zinc-500 pb-1">
-                                                💡 Bước đầu tiên trong chuỗi sẽ chạy ngay lập tức, các bước tiếp theo sẽ delay theo cấu hình riêng của từng bước.
-                                            </div>
+                                        {isAutoplaySequenceExpanded && (
+                                            <>
+                                                <div className="text-xs text-slate-400 dark:text-zinc-500 pb-1">
+                                                    💡 Autoplay chỉ hoạt động khi Local WebSocket Server đang bật. Mỗi bước tiếp theo sẽ chờ socket event thật thay vì dùng delay.
+                                                </div>
 
-                                            {/* Selection of steps */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
-                                                    Chọn các bước
-                                                </label>
-                                                <div className="sm:col-span-2 space-y-2">
-                                                    <div className="flex gap-2 mb-2">
-                                                        <button
-                                                            type="button"
-                                                            disabled={isAutoplayRunning}
-                                                            onClick={() => setAutoplaySelectedIds(activeGame.panels.map(p => p.id))}
-                                                            className="px-2.5 py-1 text-[10px] bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 rounded-lg text-slate-700 dark:text-zinc-300 transition-all font-semibold cursor-pointer">
-                                                            Chọn tất cả
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={isAutoplayRunning}
-                                                            onClick={() => setAutoplaySelectedIds([])}
-                                                            className="px-2.5 py-1 text-[10px] bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 rounded-lg text-slate-700 dark:text-zinc-300 transition-all font-semibold cursor-pointer">
-                                                            Bỏ chọn tất cả
-                                                        </button>
-                                                    </div>
-                                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                                        {activeGame.panels.map((panel, index) => {
-                                                            const isChecked = autoplaySelectedIds.includes(panel.id);
-                                                            const displayName = panel.title.trim() ? panel.title : `Matrix #${panel.id}`;
-                                                            return (
-                                                                <div
-                                                                    key={panel.id}
-                                                                    className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border text-sm transition-all ${
-                                                                        isChecked
-                                                                            ? "bg-red-50/20 dark:bg-red-950/10 border-red-200 dark:border-red-800/60"
-                                                                            : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700/50"
-                                                                    }`}>
-                                                                    <label className={`flex items-center gap-3 flex-1 cursor-pointer select-none ${isAutoplayRunning ? "opacity-60 cursor-not-allowed" : ""}`}>
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            disabled={isAutoplayRunning}
-                                                                            checked={isChecked}
-                                                                            onChange={(e) => {
-                                                                                if (e.target.checked) {
-                                                                                    setAutoplaySelectedIds(prev => [...prev, panel.id]);
-                                                                                } else {
-                                                                                    setAutoplaySelectedIds(prev => prev.filter(id => id !== panel.id));
-                                                                                }
-                                                                            }}
-                                                                            className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
-                                                                        />
-                                                                        <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 font-mono">
-                                                                            {displayName}
-                                                                        </span>
-                                                                        {autoplayCurrentId === panel.id && (
-                                                                            <span className="flex h-2 w-2 relative">
-                                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                                            </span>
-                                                                        )}
-                                                                    </label>
-
-                                                                    {index > 0 && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Delay:</span>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                                                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
+                                                        Chọn các bước
+                                                    </label>
+                                                    <div className="sm:col-span-2 space-y-2">
+                                                        <div className="flex gap-2 mb-2">
+                                                            <button
+                                                                type="button"
+                                                                disabled={isAutoplayRunning}
+                                                                onClick={() => setAutoplaySelectedIds(activeGame.panels.map((p) => p.id))}
+                                                                className="px-2.5 py-1 text-[10px] bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 rounded-lg text-slate-700 dark:text-zinc-300 transition-all font-semibold cursor-pointer">
+                                                                Chọn tất cả
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={isAutoplayRunning}
+                                                                onClick={() => setAutoplaySelectedIds([])}
+                                                                className="px-2.5 py-1 text-[10px] bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 rounded-lg text-slate-700 dark:text-zinc-300 transition-all font-semibold cursor-pointer">
+                                                                Bỏ chọn tất cả
+                                                            </button>
+                                                        </div>
+                                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                                            {activeGame.panels.map((panel) => {
+                                                                const isChecked = autoplaySelectedIds.includes(panel.id);
+                                                                const displayName = panel.title.trim() ? panel.title : `Matrix #${panel.id}`;
+                                                                return (
+                                                                    <div
+                                                                        key={panel.id}
+                                                                        className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border text-sm transition-all ${
+                                                                            isChecked
+                                                                                ? "bg-red-50/20 dark:bg-red-950/10 border-red-200 dark:border-red-800/60"
+                                                                                : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700/50"
+                                                                        }`}>
+                                                                        <label className={`flex items-center gap-3 flex-1 cursor-pointer select-none ${isAutoplayRunning ? "opacity-60 cursor-not-allowed" : ""}`}>
                                                                             <input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                step="0.5"
+                                                                                type="checkbox"
                                                                                 disabled={isAutoplayRunning}
-                                                                                value={panel.delay ?? 2}
+                                                                                checked={isChecked}
                                                                                 onChange={(e) => {
-                                                                                    const val = parseFloat(e.target.value);
-                                                                                    updatePanelDelay(panel.id, isNaN(val) ? 0 : val);
+                                                                                    if (e.target.checked) {
+                                                                                        setAutoplaySelectedIds((prev) => [...prev, panel.id]);
+                                                                                    } else {
+                                                                                        setAutoplaySelectedIds((prev) => prev.filter((id) => id !== panel.id));
+                                                                                    }
                                                                                 }}
-                                                                                className="w-16 px-2 py-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-650 rounded-lg text-slate-800 dark:text-zinc-200 font-mono text-xs text-center focus:outline-none focus:border-red-500"
+                                                                                className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
                                                                             />
-                                                                            <span className="text-[10px] text-slate-450 dark:text-zinc-500 font-semibold font-mono">s</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                            <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 font-mono">
+                                                                                {displayName}
+                                                                            </span>
+                                                                            {autoplayCurrentId === panel.id && (
+                                                                                <span className="flex h-2 w-2 relative">
+                                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                                                </span>
+                                                                            )}
+                                                                        </label>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Action Buttons & Logs */}
-                                            <div className="pt-2 flex flex-col gap-4">
-                                                <div className="flex gap-3">
-                                                    {!isAutoplayRunning ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={runAutoplay}
-                                                            className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-red-500/10 flex items-center gap-1.5 cursor-pointer active:scale-[0.98]">
-                                                            <span>▶</span> Bắt đầu Autoplay
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={stopAutoplay}
-                                                            className="px-5 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-[0.98]">
-                                                            <span>⏹</span> Dừng Autoplay
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                <div className="pt-2 flex flex-col gap-4">
+                                                    <div className="flex gap-3">
+                                                        {!isAutoplayRunning ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    void runAutoplay();
+                                                                }}
+                                                                disabled={!localSocketStatus.running}
+                                                                className={`px-5 py-2.5 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-red-500/10 flex items-center gap-1.5 active:scale-[0.98] ${
+                                                                    localSocketStatus.running
+                                                                        ? "bg-red-600 hover:bg-red-500 cursor-pointer"
+                                                                        : "bg-slate-400 cursor-not-allowed"
+                                                                }`}>
+                                                                <span>▶</span> Bắt đầu Autoplay
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={stopAutoplay}
+                                                                className="px-5 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-[0.98]">
+                                                                <span>⏹</span> Dừng Autoplay
+                                                            </button>
+                                                        )}
+                                                    </div>
 
-                                                {autoplayLogs.length > 0 && (
                                                     <div className="border border-slate-200 dark:border-zinc-700 rounded-xl overflow-hidden shadow-inner">
                                                         <div className="bg-slate-100 dark:bg-zinc-800 px-4 py-2 border-b border-slate-200 dark:border-zinc-700 flex justify-between items-center">
                                                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 font-mono">
@@ -971,18 +1426,22 @@ export default function CheatConsole() {
                                                             </button>
                                                         </div>
                                                         <div className="bg-zinc-950 p-4 text-xs font-mono text-emerald-400 h-40 overflow-y-auto space-y-1.5 scrollbar-thin">
-                                                            {autoplayLogs.map((log, idx) => (
+                                                            {autoplayLogs.length > 0 ? autoplayLogs.map((log, idx) => (
                                                                 <div key={idx} className={log.startsWith("❌") ? "text-red-400" : log.startsWith("✅") ? "text-emerald-400" : log.includes("⏳") ? "text-amber-400/90" : "text-zinc-400"}>
                                                                     {log}
                                                                 </div>
-                                                            ))}
+                                                            )) : (
+                                                                <div className="text-zinc-500">
+                                                                    Waiting for autoplay activity...
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Danh sách các panel Form Data */}
                                 <div className="space-y-4">
@@ -1169,7 +1628,7 @@ export default function CheatConsole() {
 
                                                         {panel.isAdditionalExpanded && (
                                                             <div className="p-4 space-y-4 border-t border-slate-200 dark:border-zinc-600">
-                                                                {(activeGame.fieldConfig ?? getDefaultFieldConfig()).filter(f => f.visible).map(({ key, label }) => (
+                                                                {getResolvedFieldConfig(activeGame.fieldConfig).filter(f => f.visible).map(({ key, label }) => (
                                                                     <div key={key} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                                                         <label
                                                                             htmlFor={`${key}-${panel.id}`}
