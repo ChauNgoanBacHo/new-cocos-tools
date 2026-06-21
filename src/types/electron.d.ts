@@ -349,10 +349,6 @@ interface ElectronAPI {
                 publishedBy: string | null;
             };
         }>;
-        openHostedGame: (gameId: string) => Promise<{
-            ok: boolean;
-            error?: string;
-        }>;
     };
 }
 

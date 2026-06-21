@@ -69,6 +69,19 @@ function createWindow() {
         },
     });
 
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        void shell.openExternal(url);
+        return { action: "deny" };
+    });
+
+    mainWindow.webContents.on("will-navigate", (event, url) => {
+        const currentUrl = mainWindow?.webContents.getURL();
+        if (currentUrl && url !== currentUrl) {
+            event.preventDefault();
+            void shell.openExternal(url);
+        }
+    });
+
     if (process.env.VITE_DEV_SERVER_URL) {
         mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
         mainWindow.webContents.openDevTools();
@@ -144,35 +157,6 @@ ipcMain.handle("open-external-link", async (_event, url: string) => {
         return {
             ok: false,
             error: error instanceof Error ? error.message : "Failed to open external link.",
-        };
-    }
-});
-
-ipcMain.handle("matrix-sync:open-hosted-game", async (_event, gameId: string) => {
-    try {
-        const normalizedGameId = String(gameId || "").trim();
-        if (!normalizedGameId) {
-            return {
-                ok: false,
-                error: "Game ID is required.",
-            };
-        }
-
-        const targetUrl = `${INTERNAL_API_BASE_URL}/matrix-simulator/games/${encodeURIComponent(normalizedGameId)}`;
-        const opened = await shell.openExternal(targetUrl);
-
-        if (opened === "") {
-            return { ok: true };
-        }
-
-        return {
-            ok: false,
-            error: opened,
-        };
-    } catch (error: unknown) {
-        return {
-            ok: false,
-            error: error instanceof Error ? error.message : "Failed to open hosted game page.",
         };
     }
 });
