@@ -1655,10 +1655,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                                     {template.title || template.slug}
                                                                                 </div>
                                                                                 <div className="mt-1 text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
-                                                                                    v{template.version} • {template.tableFormat}
-                                                                                </div>
-                                                                                <div className="mt-1 text-[11px] text-slate-400 dark:text-zinc-500">
-                                                                                    {template.updatedAt}
+                                                                                    {template.tableFormat}
                                                                                 </div>
                                                                             </button>
                                                                         );
