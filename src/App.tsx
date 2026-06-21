@@ -348,8 +348,8 @@ function App() {
         : "w-64 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap"
-        : "opm-title text-[1.12rem] leading-tight text-[#1c2432] whitespace-nowrap";
+        ? "opm-title text-[1.12rem] leading-tight whitespace-nowrap text-[#ff5a36] drop-shadow-[0_0_18px_rgba(255,90,54,0.28)]"
+        : "opm-title text-[1.12rem] leading-tight whitespace-nowrap text-[#ff5a36]";
 
     const sidebarSubtitleClassName = isDark
         ? "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]"
