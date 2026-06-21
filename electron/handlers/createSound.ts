@@ -3,8 +3,14 @@ import fs from "fs";
 import path from "path";
 
 export function registerCreateSoundHandler() {
-    ipcMain.handle("create-sound-config", async (_event, soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean) => {
+    ipcMain.handle("create-sound-config", async (_event, soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean, excludeList?: string[]) => {
         try {
+            const normalizedExcludeList = new Set(
+                Array.isArray(excludeList)
+                    ? excludeList.map((item) => String(item || "").trim().toUpperCase()).filter(Boolean)
+                    : [],
+            );
+
             function walkMp3Files(dir: string): string[] {
                 const results: string[] = [];
                 const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -35,9 +41,12 @@ export function registerCreateSoundHandler() {
                     key = key.slice(prefixMatch[0].length);
                 }
                 key = key.toUpperCase();
-                const relativePath = filePath.replace(soundDir + "/", "");
+                if (normalizedExcludeList.has(key)) {
+                    lines.push(`  SKIP: ${file} ${key}`);
+                    continue;
+                }
                 configLines.push(`    ${key}: '${key}',`);
-                lines.push(`  ${relativePath} → ${key}`);
+                lines.push(`  ${file} ${key}`);
             }
 
             configLines.push("};");

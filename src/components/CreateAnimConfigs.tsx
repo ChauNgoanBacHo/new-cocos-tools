@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 import ActionPromptModal from "./ActionPromptModal";
+import { DEFAULT_ANIM_EXCLUDE_LIST } from "../constants/generatorExcludes";
 
 interface AnimResult {
     stdout: string;
@@ -47,6 +48,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
     const [animFileName, setAnimFileName] = useStoredState<string>("anim-file-name", "AnimConfig9000.ts");
     const [timeFileName, setTimeFileName] = useStoredState<string>("time-file-name", "TimeConfig9000.ts");
     const [overwrite, setOverwrite] = useStoredState<boolean>("anim-overwrite", false);
+    const [excludeList] = useStoredState<string[]>("anim-generator-exclude-list", DEFAULT_ANIM_EXCLUDE_LIST);
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<AnimResult | null>(null);
     const [pendingCodeHealthPath, setPendingCodeHealthPath] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
 
         try {
             const res: AnimResult = await window.electronAPI.createAnimConfig(
-                spineDir, outputDir, animFileName, timeFileName, overwrite
+                spineDir, outputDir, animFileName, timeFileName, overwrite, excludeList
             );
             setResult(res);
             if (res.exitCode === 0) {
@@ -274,6 +276,36 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                 </label>
                             </div>
                         </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-start">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left pt-1">
+                                Exclude List
+                            </label>
+                            <div className="text-left">
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs leading-6 text-amber-700 dark:text-amber-300/90">
+                                    <span>
+                                        {excludeList.length > 0
+                                            ? `${excludeList.length} exclude keys are active. Go to`
+                                            : "No exclude key is active. Go to"}
+                                    </span>
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-300/70 bg-amber-50 text-amber-700 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300">
+                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                            />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </span>
+                                    <span>
+                                        {excludeList.length > 0
+                                            ? "to add or remove items."
+                                            : "if you want to define one."}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="px-6 flex justify-end">
@@ -348,16 +380,16 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                                 return (
                                                     <div className="space-y-3">
                                                         {detailLines.length > 0 && (
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                                                            <div className="divide-y divide-slate-200 dark:divide-white/5">
                                                                 {detailLines.map((item, j) => (
                                                                     <div
                                                                         key={`detail-${j}`}
-                                                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/5 dark:bg-[#1b2029]"
+                                                                        className="flex items-center gap-3 py-2"
                                                                     >
-                                                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+                                                                        <div className="w-[150px] shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
                                                                             {item.detail?.key}
                                                                         </div>
-                                                                        <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-zinc-100">
+                                                                        <div className="min-w-0 flex-1 text-sm font-semibold text-slate-800 dark:text-zinc-100">
                                                                             {item.detail?.value}
                                                                         </div>
                                                                     </div>

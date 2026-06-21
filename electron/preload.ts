@@ -20,10 +20,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("run-code-health", sourcePath, mode),
     checkConfig: (configFilePath: string, sourcePath: string) =>
         ipcRenderer.invoke("check-config", configFilePath, sourcePath),
-    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean) =>
-        ipcRenderer.invoke("create-anim-config", spineDir, outputDir, animFileName, timeFileName, overwrite),
-    createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean) =>
-        ipcRenderer.invoke("create-sound-config", soundDir, outputDir, soundFileName, overwrite),
+    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) =>
+        ipcRenderer.invoke("create-anim-config", spineDir, outputDir, animFileName, timeFileName, overwrite, excludeList),
+    createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean, excludeList?: string[]) =>
+        ipcRenderer.invoke("create-sound-config", soundDir, outputDir, soundFileName, overwrite, excludeList),
     selectSceneFile: () => ipcRenderer.invoke("select-scene-file"),
     bindSoundRefs: (soundDir: string, sceneFilePath: string, componentHash: string) =>
         ipcRenderer.invoke("bind-sound-refs", soundDir, sceneFilePath, componentHash),

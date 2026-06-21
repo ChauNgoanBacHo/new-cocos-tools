@@ -103,12 +103,12 @@ interface ElectronAPI {
         stderr: string;
         exitCode: number;
     }>;
-    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean) => Promise<{
+    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) => Promise<{
         stdout: string;
         stderr: string;
         exitCode: number;
     }>;
-    createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean) => Promise<{
+    createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean, excludeList?: string[]) => Promise<{
         stdout: string;
         stderr: string;
         exitCode: number;

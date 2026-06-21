@@ -1,4 +1,10 @@
 import { useMemo, useState } from "react";
+import { useStoredState } from "../hooks/useStoredState";
+import {
+    DEFAULT_ANIM_EXCLUDE_LIST,
+    DEFAULT_SOUND_EXCLUDE_LIST,
+    normalizeExcludeList,
+} from "../constants/generatorExcludes";
 
 type MenuItem = {
     id: string;
@@ -31,6 +37,14 @@ export function SettingsPanel({
     const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string>("");
+    const [soundExcludeList, setSoundExcludeList] = useStoredState<string[]>(
+        "sound-generator-exclude-list",
+        DEFAULT_SOUND_EXCLUDE_LIST,
+    );
+    const [animExcludeList, setAnimExcludeList] = useStoredState<string[]>(
+        "anim-generator-exclude-list",
+        DEFAULT_ANIM_EXCLUDE_LIST,
+    );
 
     const hiddenGroupSet = useMemo(() => new Set(hiddenMenuGroupIds), [hiddenMenuGroupIds]);
 
@@ -55,6 +69,64 @@ export function SettingsPanel({
         } finally {
             setIsExporting(false);
         }
+    };
+
+    const renderExcludeListEditor = (
+        title: string,
+        description: string,
+        values: string[],
+        onChange: (nextValues: string[]) => void,
+        defaultValues: string[],
+    ) => {
+        const normalizedValues = normalizeExcludeList(values);
+
+        return (
+            <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-3">
+                <div>
+                    <div className="text-sm font-semibold text-slate-700 dark:text-zinc-200">{title}</div>
+                    <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{description}</div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {normalizedValues.map((item) => (
+                        <span
+                            key={item}
+                            className="inline-flex items-center gap-2 rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
+                            <span>{item}</span>
+                            <button
+                                type="button"
+                                onClick={() => onChange(normalizedValues.filter((value) => value !== item))}
+                                className="text-[10px] text-amber-700/80 opacity-70 hover:opacity-100 cursor-pointer dark:text-amber-200/85">
+                                ×
+                            </button>
+                        </span>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    <input
+                        type="text"
+                        placeholder="Add exclude key and press Enter"
+                        className="min-w-[240px] flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                        onKeyDown={(event) => {
+                            if (event.key !== "Enter") return;
+                            event.preventDefault();
+                            const input = event.currentTarget;
+                            const nextValue = input.value.trim().toUpperCase();
+                            if (!nextValue) return;
+                            onChange(normalizeExcludeList([...normalizedValues, nextValue]));
+                            input.value = "";
+                        }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => onChange(defaultValues)}
+                        className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-200 dark:hover:bg-[#232938]">
+                        Reset Default
+                    </button>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -143,6 +215,32 @@ export function SettingsPanel({
                                 </div>
                             );
                         })}
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
+                        <span className="text-sm">🧪</span>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                            Generator Exclude List
+                        </h3>
+                    </div>
+
+                    <div className="space-y-4">
+                        {renderExcludeListEditor(
+                            "Anim Generator",
+                            "Những key/object trong danh sách này sẽ bị bỏ qua khi quét animation.",
+                            animExcludeList,
+                            (nextValues) => setAnimExcludeList(normalizeExcludeList(nextValues)),
+                            DEFAULT_ANIM_EXCLUDE_LIST,
+                        )}
+                        {renderExcludeListEditor(
+                            "Sound Generator",
+                            "Những key trong danh sách này sẽ bị bỏ qua khi quét sound.",
+                            soundExcludeList,
+                            (nextValues) => setSoundExcludeList(normalizeExcludeList(nextValues)),
+                            DEFAULT_SOUND_EXCLUDE_LIST,
+                        )}
                     </div>
                 </div>
 

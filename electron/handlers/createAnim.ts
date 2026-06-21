@@ -3,8 +3,18 @@ import fs from "fs";
 import path from "path";
 
 export function registerCreateAnimHandler() {
-    ipcMain.handle("create-anim-config", async (_event, spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean) => {
+    ipcMain.handle("create-anim-config", async (_event, spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) => {
         try {
+            const normalizedExcludeList = new Set(
+                Array.isArray(excludeList)
+                    ? excludeList.map((item) => String(item || "").trim().toUpperCase()).filter(Boolean)
+                    : [],
+            );
+
+            function normalizeLineEndings(value: string): string {
+                return value.replace(/\r\n/g, "\n");
+            }
+
             function getAnimationDuration(obj: unknown): number {
                 let maxTime = 0;
                 function scan(data: unknown): void {
@@ -53,12 +63,89 @@ export function registerCreateAnimHandler() {
                 return files;
             }
 
+            function parseObjectExports(fileContent: string): Map<string, Map<string, string>> {
+                const objectExports = new Map<string, Map<string, string>>();
+                const normalizedContent = normalizeLineEndings(fileContent);
+                const exportRegex = /export const\s+([A-Z0-9_]+)\s*=\s*\{([\s\S]*?)\n\};/g;
+
+                for (const match of normalizedContent.matchAll(exportRegex)) {
+                    const constName = match[1];
+                    const objectBody = match[2] ?? "";
+                    const entries = new Map<string, string>();
+                    const lines = objectBody.split("\n");
+
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine) {
+                            continue;
+                        }
+
+                        const entryMatch = trimmedLine.match(/^([A-Z0-9_]+)\s*:\s*(.+?)(?:,)?$/);
+                        if (!entryMatch) {
+                            continue;
+                        }
+
+                        entries.set(entryMatch[1], entryMatch[2].trim());
+                    }
+
+                    objectExports.set(constName, entries);
+                }
+
+                return objectExports;
+            }
+
+            function readLocalObjectExports(filePath: string): Map<string, Map<string, string>> {
+                if (!fs.existsSync(filePath)) {
+                    return new Map();
+                }
+
+                const content = fs.readFileSync(filePath, "utf-8");
+                return parseObjectExports(content);
+            }
+
+            function mergeGeneratedEntries(
+                generatedEntries: Array<[string, string]>,
+                localEntries?: Map<string, string>,
+            ) {
+                const mergedEntries = [...generatedEntries];
+                const mergedKeys: string[] = [];
+
+                if (!localEntries || localEntries.size === 0) {
+                    return { mergedEntries, mergedKeys };
+                }
+
+                const generatedKeySet = new Set(generatedEntries.map(([key]) => key));
+                for (const [key, value] of localEntries.entries()) {
+                    if (!generatedKeySet.has(key)) {
+                        mergedEntries.push([key, value]);
+                        mergedKeys.push(key);
+                    }
+                }
+
+                return { mergedEntries, mergedKeys };
+            }
+
+            function renderObjectExport(constName: string, entries: Array<[string, string]>): string {
+                const lines = [`export const ${constName} = {\n`];
+                for (const [key, value] of entries) {
+                    lines.push(`    ${key}: ${value},\n`);
+                }
+                lines.push("};\n\n");
+                return lines.join("");
+            }
+
             const jsonFiles = walkJsonFiles(spineDir);
             const lines: string[] = [];
             const timeLines: string[] = [];
             const animLines: string[] = [];
             let foundTime = false;
             let foundAnim = false;
+            const localTimeExports = overwrite
+                ? readLocalObjectExports(path.join(outputDir, timeFileName))
+                : new Map<string, Map<string, string>>();
+            const localAnimExports = overwrite
+                ? readLocalObjectExports(path.join(outputDir, animFileName))
+                : new Map<string, Map<string, string>>();
 
             for (const filePath of jsonFiles) {
                 const fileName = path.basename(filePath);
@@ -84,34 +171,44 @@ export function registerCreateAnimHandler() {
 
                 const timeConst = toConstName(fileName, "_TIME");
                 const animConst = toConstName(fileName, "_ANIM");
-                const animResults: Record<string, number> = {};
+                const animResults = new Map<string, number>();
 
                 for (const [animName, animData] of Object.entries(animations)) {
                     const duration = getAnimationDuration(animData);
                     const key = animName.toUpperCase();
-                    animResults[key] = duration;
+                    animResults.set(key, duration);
                     lines.push(`  ${key}: ${duration}s`);
                 }
 
-                const timeKeys = Object.entries(animResults);
-                if (timeKeys.length === 1) {
-                    timeLines.push(`export const ${timeConst} = ${timeKeys[0][1]};\n\n`);
-                } else {
-                    timeLines.push(`export const ${timeConst} = {\n`);
-                    for (const [k, v] of timeKeys) {
-                        timeLines.push(`    ${k}: ${v},\n`);
-                    }
-                    timeLines.push(`};\n\n`);
+                const generatedTimeEntries = Array.from(animResults.entries()).map(([key, value]) => [key, String(value)] as const);
+                if (normalizedExcludeList.has(timeConst)) {
+                    lines.push(`  SKIP: ${timeConst} (excluded in Settings)`);
+                    continue;
+                }
+                const localTimeEntries = localTimeExports.get(timeConst);
+                const mergedTime = mergeGeneratedEntries(generatedTimeEntries, localTimeEntries);
+
+                timeLines.push(renderObjectExport(timeConst, mergedTime.mergedEntries));
+                if (mergedTime.mergedKeys.length > 0) {
+                    lines.push(`  Merged local time keys: ${mergedTime.mergedKeys.join(", ")}`);
                 }
                 foundTime = true;
 
-                animLines.push(`export const ${animConst} = {\n`);
-                for (const animName of Object.keys(animations)) {
+                const generatedAnimEntries = Object.keys(animations).map((animName) => {
                     const key = animName.toUpperCase();
-                    const value = animName.toLowerCase();
-                    animLines.push(`    ${key}: '${value}',\n`);
+                    return [key, `'${animName.toLowerCase()}'`] as const;
+                });
+                if (normalizedExcludeList.has(animConst)) {
+                    lines.push(`  SKIP: ${animConst} (excluded in Settings)`);
+                    continue;
                 }
-                animLines.push(`};\n\n`);
+                const localAnimEntries = localAnimExports.get(animConst);
+                const mergedAnim = mergeGeneratedEntries(generatedAnimEntries, localAnimEntries);
+
+                animLines.push(renderObjectExport(animConst, mergedAnim.mergedEntries));
+                if (mergedAnim.mergedKeys.length > 0) {
+                    lines.push(`  Merged local anim keys: ${mergedAnim.mergedKeys.join(", ")}`);
+                }
                 foundAnim = true;
             }
 

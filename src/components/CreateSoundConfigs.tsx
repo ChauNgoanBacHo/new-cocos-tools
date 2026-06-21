@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 import ActionPromptModal from "./ActionPromptModal";
+import { DEFAULT_SOUND_EXCLUDE_LIST } from "../constants/generatorExcludes";
 
 interface SoundResult {
     stdout: string;
@@ -42,11 +43,26 @@ function compressUuid(uuid: string): string {
     return result;
 }
 
+function parseSoundDetailLine(line: string) {
+    const trimmed = line.trim();
+    const detailMatch = trimmed.match(/^(.+\.mp3)\s+([A-Z0-9_]+)$/);
+
+    if (!detailMatch) {
+        return null;
+    }
+
+    return {
+        key: detailMatch[1],
+        value: detailMatch[2],
+    };
+}
+
 export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConfigsProps) {
     const [soundDir, setSoundDir] = useStoredState<string>("sound-dir", "");
     const [outputDir, setOutputDir] = useStoredState<string>("sound-output-dir", "");
     const [soundFileName, setSoundFileName] = useStoredState<string>("sound-file-name", "SoundConfig9000.ts");
     const [overwrite, setOverwrite] = useStoredState<boolean>("sound-overwrite", false);
+    const [excludeList] = useStoredState<string[]>("sound-generator-exclude-list", DEFAULT_SOUND_EXCLUDE_LIST);
     const [addRef, setAddRef] = useStoredState<boolean>("sound-add-ref", false);
     const [scenePath, setScenePath] = useStoredState<string>("sound-scene-path", "");
     const [componentHash, setComponentHash] = useStoredState<string>("sound-component-hash", "03514d7d-70f6-4f78-8a17-cb1687d00ec0");
@@ -95,7 +111,7 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
 
         try {
             const res: SoundResult = await window.electronAPI.createSoundConfig(
-                soundDir, outputDir, soundFileName, overwrite
+                soundDir, outputDir, soundFileName, overwrite, excludeList
             );
             setResult(res);
 
@@ -291,6 +307,36 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-start">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left pt-1">
+                                Exclude List
+                            </label>
+                            <div className="text-left">
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs leading-6 text-amber-700 dark:text-amber-300/90">
+                                    <span>
+                                        {excludeList.length > 0
+                                            ? `${excludeList.length} exclude keys are active. Go to`
+                                            : "No exclude key is active. Go to"}
+                                    </span>
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-amber-300/70 bg-amber-50 text-amber-700 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300">
+                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                            />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </span>
+                                    <span>
+                                        {excludeList.length > 0
+                                            ? "to add or remove items."
+                                            : "if you want to define one."}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Add Sound Ref
@@ -429,16 +475,50 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                                             <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">{section.title}</span>
                                         </div>
                                         <div className="p-4 text-sm font-mono text-left">
-                                            {section.lines.map((line, j) => (
-                                                <div key={j} className={`py-1 ${
-                                                    line.includes("ERROR:") ? "text-red-600 dark:text-red-400" :
-                                                    line.includes("Generated:") || line.includes("Bound") ? "text-emerald-600 dark:text-emerald-400" :
-                                                    line.includes("SKIP:") || line.includes("not written") ? "text-yellow-600 dark:text-yellow-400" :
-                                                    "text-slate-700 dark:text-zinc-200"
-                                                }`}>
-                                                    {line.trim()}
-                                                </div>
-                                            ))}
+                                            {(() => {
+                                                const parsedLines = section.lines.map((line) => ({
+                                                    raw: line,
+                                                    detail: parseSoundDetailLine(line),
+                                                }));
+                                                const detailLines = parsedLines.filter((item) => item.detail);
+                                                const plainLines = parsedLines.filter((item) => !item.detail);
+
+                                                return (
+                                                    <div className="space-y-3">
+                                                        {detailLines.length > 0 && (
+                                                            <div className="divide-y divide-slate-200 dark:divide-white/5">
+                                                                {detailLines.map((item, j) => (
+                                                                    <div
+                                                                        key={`detail-${j}`}
+                                                                        className="flex items-center gap-3 py-2">
+                                                                        <div className="w-[220px] shrink-0 text-[10px] font-bold tracking-wide text-slate-500 dark:text-zinc-500 truncate">
+                                                                            {item.detail?.key}
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1 text-sm font-semibold text-slate-800 dark:text-zinc-100">
+                                                                            {item.detail?.value}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {plainLines.length > 0 && (
+                                                            <div>
+                                                                {plainLines.map((item, j) => (
+                                                                    <div key={`plain-${j}`} className={`py-1 ${
+                                                                        item.raw.includes("ERROR:") ? "text-red-600 dark:text-red-400" :
+                                                                        item.raw.includes("Generated:") || item.raw.includes("Bound") ? "text-emerald-600 dark:text-emerald-400" :
+                                                                        item.raw.includes("SKIP:") || item.raw.includes("not written") ? "text-yellow-600 dark:text-yellow-400" :
+                                                                        "text-slate-700 dark:text-zinc-200"
+                                                                    }`}>
+                                                                        {item.raw.trim()}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 ))}
