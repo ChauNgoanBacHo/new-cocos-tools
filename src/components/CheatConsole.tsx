@@ -232,7 +232,7 @@ interface CheatConsoleProps {
 export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [games, setGames] = useStoredState<GameData[]>("games", []);
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-    const [localSocketEnabled, setLocalSocketEnabled] = useStoredState<boolean>("cheat-matrix-local-ws-enabled", false);
+    const [localSocketEnabled, setLocalSocketEnabled] = useState<boolean>(false);
 
     const activeGame = games.find((g) => g.id === selectedGameId);
 
@@ -367,6 +367,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         setIsAutoplayRunning(false);
         setAutoplayLogs([]);
         setAutoplayCurrentId(null);
+        setLocalSocketEnabled(false);
     }, [selectedGameId]);
 
     useEffect(() => {
@@ -1537,17 +1538,26 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     Local WS
                                                 </label>
                                                 <div className="sm:col-span-2 space-y-3">
-                                                    <label className="flex items-center gap-3 cursor-pointer select-none">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={localSocketEnabled}
-                                                            onChange={(e) => setLocalSocketEnabled(e.target.checked)}
-                                                            className="rounded border-slate-300 dark:border-zinc-600 text-red-600 focus:ring-red-500 cursor-pointer"
-                                                        />
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setLocalSocketEnabled((prev) => !prev)}
+                                                            aria-pressed={localSocketEnabled}
+                                                            className={`relative inline-flex h-8 w-[58px] items-center px-1 rounded-full transition-all duration-200 cursor-pointer ${
+                                                                localSocketEnabled
+                                                                    ? "bg-emerald-500 hover:bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"
+                                                                    : "bg-slate-300 hover:bg-slate-400 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                                                            }`}>
+                                                            <span
+                                                                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                                                                    localSocketEnabled ? "translate-x-[26px]" : "translate-x-0"
+                                                                }`}
+                                                            />
+                                                        </button>
                                                         <span className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
-                                                            Enable Electron Local WebSocket Server
+                                                            Electron Local WebSocket Server {localSocketEnabled ? "On" : "Off"}
                                                         </span>
-                                                    </label>
+                                                    </div>
 
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
