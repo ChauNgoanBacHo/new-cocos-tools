@@ -3,13 +3,14 @@ import punchImage from "../../assets/punch.png";
 
 export function ChargeUpLoadingScreen({ brandLogo }: LoadingScreenProps) {
     return (
-        <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[#07080d] text-white">
+        <div className="splash-container relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[#07080d] text-white [animation:charge-screen-shake_0.42s_1.14s_cubic-bezier(0.22,1,0.36,1)_both]">
             <div className="pointer-events-none absolute inset-0 opacity-0 [background:radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.22)_78%,rgba(0,0,0,0.5)_100%)] [animation:charge-vignette_0.75s_1.08s_ease-out_forwards]" />
+            <div className="pointer-events-none absolute inset-0 z-[4] opacity-0 [background:radial-gradient(circle_at_center,rgba(255,52,102,0.34)_0%,rgba(255,23,79,0.16)_26%,rgba(255,23,79,0.08)_48%,transparent_72%)] [animation:charge-impact-flash_0.28s_1.14s_cubic-bezier(0.22,1,0.36,1)_forwards]" />
             <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center overflow-hidden">
                 <img
                     src={punchImage}
                     alt="Charge up punch"
-                    className="h-full w-full object-cover opacity-0 [animation:charge-punch-reveal_0.9s_1.12s_ease-out_forwards]"
+                    className="punch-background h-full w-full object-cover opacity-0 scale-[0.74] [animation:charge-punch-reveal_0.86s_0.98s_cubic-bezier(0.175,0.885,0.32,1.275)_forwards]"
                 />
             </div>
 
@@ -23,10 +24,11 @@ export function ChargeUpLoadingScreen({ brandLogo }: LoadingScreenProps) {
                             <div className="pointer-events-none absolute inset-0 overflow-hidden">
                                 <div className="absolute inset-y-[-12%] left-[-22%] z-20 w-16 skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/85 to-transparent opacity-0 blur-sm [animation:charge-logo-sweep_0.95s_1.9s_ease-out_forwards]" />
                             </div>
+                            <div className="pointer-events-none absolute inset-[-10%] z-0 rounded-full opacity-0 blur-2xl [background:radial-gradient(circle,rgba(255,23,79,0.45)_0%,rgba(255,23,79,0.16)_42%,transparent_72%)] [animation:charge-logo-flare_0.6s_1.16s_ease-out_forwards]" />
                             <img
                                 src={brandLogo}
                                 alt="One Punch DevKit"
-                                className="relative z-10 block w-full drop-shadow-[0_0_28px_rgba(255,23,79,0.32)] [animation:charge-logo-hero_0.8s_1.48s_cubic-bezier(0.22,1,0.36,1)_forwards]"
+                                className="relative z-10 block w-full drop-shadow-[0_0_28px_rgba(255,23,79,0.32)] [animation:charge-logo-impact_0.72s_1.12s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
                             />
                         </div>
                         <div className="flex flex-col items-center gap-5 [animation:charge-ui-fade-out_0.55s_1.1s_cubic-bezier(0.4,0,0.2,1)_forwards]">

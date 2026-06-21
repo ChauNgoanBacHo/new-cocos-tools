@@ -212,15 +212,23 @@ body {
 @keyframes charge-punch-reveal {
     0% {
         opacity: 0;
+        transform: scale(0.74);
     }
-    38% {
+    30% {
         opacity: 0;
+        transform: scale(0.79);
     }
-    72% {
-        opacity: 0.42;
+    66% {
+        opacity: 0.82;
+        transform: scale(1.09);
+    }
+    82% {
+        opacity: 0.95;
+        transform: scale(0.985);
     }
     100% {
         opacity: 0.96;
+        transform: scale(1);
     }
 }
 
@@ -272,12 +280,75 @@ body {
     }
 }
 
-@keyframes charge-logo-hero {
+@keyframes charge-logo-impact {
     0% {
         transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(255, 23, 79, 0));
+    }
+    58% {
+        transform: scale(1.26);
+        filter: drop-shadow(0 0 34px rgba(255, 52, 102, 0.82));
+    }
+    78% {
+        transform: scale(1.13);
+        filter: drop-shadow(0 0 22px rgba(255, 52, 102, 0.58));
     }
     100% {
-        transform: scale(2);
+        transform: scale(1.16);
+        filter: drop-shadow(0 0 20px rgba(255, 52, 102, 0.52));
+    }
+}
+
+@keyframes charge-logo-flare {
+    0% {
+        opacity: 0;
+        transform: scale(0.82);
+    }
+    35% {
+        opacity: 0.92;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.24);
+    }
+}
+
+@keyframes charge-impact-flash {
+    0% {
+        opacity: 0;
+    }
+    35% {
+        opacity: 0.92;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes charge-screen-shake {
+    0% {
+        transform: translate(0, 0);
+    }
+    14% {
+        transform: translate(-5px, 3px);
+    }
+    28% {
+        transform: translate(5px, -3px);
+    }
+    42% {
+        transform: translate(-4px, -4px);
+    }
+    56% {
+        transform: translate(4px, 3px);
+    }
+    70% {
+        transform: translate(-2px, 1px);
+    }
+    84% {
+        transform: translate(2px, -1px);
+    }
+    100% {
+        transform: translate(0, 0);
     }
 }
 
