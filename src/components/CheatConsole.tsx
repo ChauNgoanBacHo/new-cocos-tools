@@ -1428,7 +1428,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                             )}
 
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                                                     Game ID
                                                 </label>
                                                 <div className="sm:col-span-2">
@@ -1446,7 +1446,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                                                     Game Name
                                                 </label>
                                                 <div className="sm:col-span-2">
