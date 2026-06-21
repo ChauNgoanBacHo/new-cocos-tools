@@ -447,7 +447,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     useEffect(() => {
         void (async () => {
             try {
-                if (localSocketEnabled) {
+                if (localSocketEnabled && selectedGameId) {
                     const nextStatus = await window.electronAPI.cheatLocalSocket.start();
                     setLocalSocketStatus(nextStatus);
                     const connectedStatus = await waitForLocalSocketClient(nextStatus);
@@ -469,6 +469,9 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
                 const nextStatus = await window.electronAPI.cheatLocalSocket.stop();
                 setLocalSocketStatus(nextStatus);
+                if (!selectedGameId) {
+                    setStatus((prev) => (prev.type === null ? prev : { type: null, message: "" }));
+                }
             } catch (error) {
                 setStatus({
                     type: "error",
@@ -478,7 +481,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 });
             }
         })();
-    }, [localSocketEnabled]);
+    }, [localSocketEnabled, selectedGameId]);
 
     const waitForLocalSocketClient = async (initialStatus: CheatLocalSocketStatus) => {
         if (initialStatus.clientCount > 0) {
