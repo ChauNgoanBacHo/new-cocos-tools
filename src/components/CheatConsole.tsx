@@ -334,6 +334,10 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     };
 
     useEffect(() => {
+        setSelectedGameId(null);
+    }, [setSelectedGameId]);
+
+    useEffect(() => {
         gamesRef.current = games;
     }, [games]);
 
