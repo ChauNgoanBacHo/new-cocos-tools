@@ -14,7 +14,6 @@ export interface MatrixTemplateListItem {
 export interface MatrixTemplateDetail extends MatrixTemplateListItem {
   matrixData: string;
   additionalData: Record<string, string>;
-  notes: string;
 }
 
 export interface MatrixTemplateValidationError {
@@ -27,7 +26,7 @@ export interface MatrixTemplateValidationError {
 export interface MatrixTemplateListResponse {
   ok: true;
   gameId: string;
-  items: MatrixTemplateListItem[];
+  items: MatrixTemplateDetail[];
   nextCursor: string | null;
   total: number;
 }
@@ -44,7 +43,6 @@ export interface MatrixTemplateMutationPayload {
   tableFormat: string;
   additionalData?: Record<string, string>;
   tags?: string[];
-  notes?: string;
   publishedBy?: string | null;
   version?: number;
 }

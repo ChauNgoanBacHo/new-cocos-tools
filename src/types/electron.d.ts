@@ -266,7 +266,9 @@ interface ElectronAPI {
                 gameId: string;
                 slug: string;
                 title: string;
+                matrixData: string;
                 tableFormat: string;
+                additionalData: Record<string, string>;
                 tags: string[];
                 version: number;
                 updatedAt: string;
@@ -287,7 +289,6 @@ interface ElectronAPI {
                 tableFormat: string;
                 additionalData: Record<string, string>;
                 tags: string[];
-                notes: string;
                 version: number;
                 updatedAt: string;
                 createdAt: string;
@@ -301,7 +302,6 @@ interface ElectronAPI {
             tableFormat: string;
             additionalData?: Record<string, string>;
             tags?: string[];
-            notes?: string;
             publishedBy?: string | null;
         }) => Promise<{
             ok: true;
@@ -314,7 +314,6 @@ interface ElectronAPI {
                 tableFormat: string;
                 additionalData: Record<string, string>;
                 tags: string[];
-                notes: string;
                 version: number;
                 updatedAt: string;
                 createdAt: string;
@@ -328,7 +327,6 @@ interface ElectronAPI {
             tableFormat: string;
             additionalData?: Record<string, string>;
             tags?: string[];
-            notes?: string;
             publishedBy?: string | null;
             version?: number;
         }) => Promise<{
@@ -342,7 +340,6 @@ interface ElectronAPI {
                 tableFormat: string;
                 additionalData: Record<string, string>;
                 tags: string[];
-                notes: string;
                 version: number;
                 updatedAt: string;
                 createdAt: string;

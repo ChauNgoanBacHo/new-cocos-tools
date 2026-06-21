@@ -189,7 +189,9 @@ interface RemoteMatrixTemplateListItem {
     gameId: string;
     slug: string;
     title: string;
+    matrixData: string;
     tableFormat: string;
+    additionalData: Record<string, string>;
     tags: string[];
     version: number;
     updatedAt: string;
@@ -197,11 +199,7 @@ interface RemoteMatrixTemplateListItem {
     publishedBy: string | null;
 }
 
-interface RemoteMatrixTemplateDetail extends RemoteMatrixTemplateListItem {
-    matrixData: string;
-    additionalData: Record<string, string>;
-    notes: string;
-}
+type RemoteMatrixTemplateDetail = RemoteMatrixTemplateListItem;
 
 interface PanelStatusState {
     type: "success" | "error" | null;
@@ -646,21 +644,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
     const handleSelectRemoteTemplate = async (templateId: string) => {
         setSelectedRemoteTemplateId(templateId);
-        setIsLoadingRemoteTemplateDetail(true);
+        const selectedTemplate = remoteTemplates.find((template) => template.id === templateId) || null;
+        setSelectedRemoteTemplateDetail(selectedTemplate);
 
-        try {
-            const response = await window.electronAPI.matrixSync.getTemplate(templateId);
-            setSelectedRemoteTemplateDetail(response.item);
-        } catch (error) {
-            setSelectedRemoteTemplateDetail(null);
+        if (!selectedTemplate) {
             setStatus({
                 type: "error",
-                message: error instanceof Error
-                    ? `❌ Không thể tải chi tiết matrix remote: ${error.message}`
-                    : "❌ Không thể tải chi tiết matrix remote.",
+                message: "❌ Không tìm thấy dữ liệu matrix remote trong danh sách đã tải.",
             });
-        } finally {
-            setIsLoadingRemoteTemplateDetail(false);
         }
     };
 
