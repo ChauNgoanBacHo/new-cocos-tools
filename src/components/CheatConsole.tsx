@@ -231,7 +231,7 @@ interface CheatConsoleProps {
 
 export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [games, setGames] = useStoredState<GameData[]>("games", []);
-    const [selectedGameId, setSelectedGameId] = useStoredState<string | null>("selectedGameId", null);
+    const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
     const [localSocketEnabled, setLocalSocketEnabled] = useStoredState<boolean>("cheat-matrix-local-ws-enabled", false);
 
     const activeGame = games.find((g) => g.id === selectedGameId);
@@ -332,10 +332,6 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
         return true;
     };
-
-    useEffect(() => {
-        setSelectedGameId(null);
-    }, [setSelectedGameId]);
 
     useEffect(() => {
         gamesRef.current = games;
