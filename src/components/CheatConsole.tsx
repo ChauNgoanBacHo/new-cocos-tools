@@ -259,7 +259,6 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [remoteTemplates, setRemoteTemplates] = useState<RemoteMatrixTemplateListItem[]>([]);
     const [selectedRemoteTemplateId, setSelectedRemoteTemplateId] = useState<string | null>(null);
     const [selectedRemoteTemplateDetail, setSelectedRemoteTemplateDetail] = useState<RemoteMatrixTemplateDetail | null>(null);
-    const [isLoadingRemoteTemplateDetail, setIsLoadingRemoteTemplateDetail] = useState(false);
     const [publishingPanelId, setPublishingPanelId] = useState<string | null>(null);
     const [panelStatuses, setPanelStatuses] = useState<Record<string, PanelStatusState>>({});
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
@@ -1663,11 +1662,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                 </div>
 
                                                                 <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/5 dark:bg-[#232938]">
-                                                                    {isLoadingRemoteTemplateDetail ? (
-                                                                        <div className="text-sm text-slate-500 dark:text-zinc-400">
-                                                                            Loading remote template detail...
-                                                                        </div>
-                                                                    ) : selectedRemoteTemplateDetail ? (
+                                                                    {selectedRemoteTemplateDetail ? (
                                                                         <div className="space-y-3 text-left">
                                                                             <div>
                                                                                 <div className="text-sm font-bold text-slate-800 dark:text-zinc-100">
