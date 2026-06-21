@@ -2,7 +2,7 @@
     const BRIDGE_EVENT_TYPE = "ONE_PUNCH_TOOLS_SOCKET_EVENT";
     const HANDSHAKE_EVENT_TYPE = "extension-handshake";
     const CONTENT_BOOTSTRAP_MARKER = "__ONE_PUNCH_TOOLS_BRIDGE_BOOTSTRAPPED__";
-    const PAGE_HOOK_MARKER = "data-one-punch-tools-bridge";
+    const PAGE_HOOK_MARKER = "data-one-punch-devkit-bridge";
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
         "https://iframe-tektale.staging.enostd.gay",
@@ -33,7 +33,7 @@
         chrome.runtime.sendMessage(payload, () => {
             const runtimeError = chrome.runtime.lastError;
             if (runtimeError) {
-                console.warn("[One Punch Tools Connect] sendMessage failed:", runtimeError.message);
+                console.warn("[One Punch Assistant] sendMessage failed:", runtimeError.message);
             }
         });
     }
@@ -48,7 +48,7 @@
         const script = document.createElement("script");
         script.src = chrome.runtime.getURL("page-hook.js");
         script.async = false;
-        script.dataset.onePunchToolsBridge = "true";
+        script.dataset.onePunchDevKitBridge = "true";
         script.dataset.allowedOrigins = JSON.stringify(getAllowedOrigins());
         (document.documentElement || document.head || document.body).appendChild(script);
         script.remove();
@@ -137,7 +137,7 @@
     chrome.storage.local.get("customAllowedOrigins", (result) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
-            console.warn("[One Punch Tools Connect] load origins failed:", runtimeError.message);
+            console.warn("[One Punch Assistant] load origins failed:", runtimeError.message);
             window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = [];
             bootstrap();
             return;

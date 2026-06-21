@@ -8,13 +8,13 @@ function getProjectRoot() {
 }
 
 function getExtensionSourceDir() {
-    return path.join(getProjectRoot(), "one-punch-extension");
+    return path.join(getProjectRoot(), "one-punch-devkit-extension");
 }
 
 function ensureExtensionExists() {
     const extensionDir = getExtensionSourceDir();
     if (!fs.existsSync(extensionDir)) {
-        throw new Error("Không tìm thấy thư mục one-punch-extension.");
+        throw new Error("Không tìm thấy thư mục one-punch-devkit-extension.");
     }
     return extensionDir;
 }
@@ -45,7 +45,7 @@ export function registerExportCheatExtensionHandlers() {
 
     ipcMain.handle("cheat-extension:export-zip", async () => {
         const extensionDir = ensureExtensionExists();
-        const defaultPath = path.join(app.getPath("downloads"), "one-punch-tools-extension.zip");
+        const defaultPath = path.join(app.getPath("downloads"), "one-punch-devkit-extension.zip");
 
         const result = await dialog.showSaveDialog({
             title: "Export Cheat Matrix Extension ZIP",

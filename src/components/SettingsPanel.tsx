@@ -5,28 +5,34 @@ type MenuItem = {
     label: string;
 };
 
+type MenuGroup = {
+    id: string;
+    label: string;
+    items: MenuItem[];
+};
+
 type SettingsPanelProps = {
     isDark: boolean;
-    menuItems: MenuItem[];
-    hiddenMenuIds: string[];
-    onToggleMenuVisibility: (menuId: string) => void;
-    onMoveMenuItem: (draggedId: string, targetId: string) => void;
+    menuGroups: MenuGroup[];
+    hiddenMenuGroupIds: string[];
+    onToggleMenuGroupVisibility: (groupId: string) => void;
+    onMoveMenuGroup: (draggedId: string, targetId: string) => void;
     onResetMenuOrder: () => void;
 };
 
 export function SettingsPanel({
     isDark,
-    menuItems,
-    hiddenMenuIds,
-    onToggleMenuVisibility,
-    onMoveMenuItem,
+    menuGroups,
+    hiddenMenuGroupIds,
+    onToggleMenuGroupVisibility,
+    onMoveMenuGroup,
     onResetMenuOrder,
 }: SettingsPanelProps) {
-    const [draggedMenuId, setDraggedMenuId] = useState<string | null>(null);
+    const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string>("");
 
-    const hiddenMenuSet = useMemo(() => new Set(hiddenMenuIds), [hiddenMenuIds]);
+    const hiddenGroupSet = useMemo(() => new Set(hiddenMenuGroupIds), [hiddenMenuGroupIds]);
 
     const handleDownloadExtension = async () => {
         setIsExporting(true);
@@ -56,7 +62,7 @@ export function SettingsPanel({
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="text-left">
-                        <h2 className="text-2xl font-bold text-amber-500 mb-1">
+                        <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
                             Settings
                         </h2>
                         <p className="text-slate-500 dark:text-zinc-400 text-xs">
@@ -66,8 +72,8 @@ export function SettingsPanel({
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px] space-y-6">
-                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+            <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden space-y-6">
+                <div className="p-6 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                         <span className="text-sm">🧭</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
@@ -76,56 +82,61 @@ export function SettingsPanel({
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-zinc-400">
-                        Drag and drop to reorder menu items. Toggle any item off if you want to hide it from the main sidebar.
+                        Drag and drop to reorder menu groups. Toggle any group off if you want to hide that whole section from the main sidebar.
                     </p>
 
                     <div className="flex flex-wrap gap-2">
                         <button
                             type="button"
                             onClick={onResetMenuOrder}
-                            className="px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-xs font-semibold text-amber-700 dark:text-amber-300 transition-all cursor-pointer">
+                            className="px-3 py-2 rounded-lg border border-[#7d6df7]/25 bg-[#f3efff] hover:bg-[#ebe4ff] text-xs font-semibold text-[#6d57f3] transition-all cursor-pointer dark:bg-[#7d6df7]/10 dark:hover:bg-[#7d6df7]/18 dark:text-[#c2b7ff]">
                             Reset Menu Order
                         </button>
                     </div>
 
                     <div className="space-y-2">
-                        {menuItems.map((item) => {
-                            const isHidden = hiddenMenuSet.has(item.id);
+                        {menuGroups.map((group) => {
+                            const isHidden = hiddenGroupSet.has(group.id);
                             return (
                                 <div
-                                    key={item.id}
+                                    key={group.id}
                                     draggable
-                                    onDragStart={() => setDraggedMenuId(item.id)}
+                                    onDragStart={() => setDraggedGroupId(group.id)}
                                     onDragOver={(event) => {
                                         event.preventDefault();
                                     }}
                                     onDrop={() => {
-                                        if (draggedMenuId && draggedMenuId !== item.id) {
-                                            onMoveMenuItem(draggedMenuId, item.id);
+                                        if (draggedGroupId && draggedGroupId !== group.id) {
+                                            onMoveMenuGroup(draggedGroupId, group.id);
                                         }
-                                        setDraggedMenuId(null);
+                                        setDraggedGroupId(null);
                                     }}
-                                    onDragEnd={() => setDraggedMenuId(null)}
+                                    onDragEnd={() => setDraggedGroupId(null)}
                                     className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all ${
-                                        draggedMenuId === item.id
-                                            ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700"
+                                        draggedGroupId === group.id
+                                            ? "border-[#7d6df7]/40 bg-[#7d6df7]/10"
                                             : "border-slate-200 bg-white dark:bg-zinc-900 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600"
                                     }`}>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-start gap-3">
                                         <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-grab text-sm font-bold">
                                             ⋮⋮
                                         </span>
-                                        <span className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
-                                            {item.label}
-                                        </span>
+                                        <div className="space-y-1">
+                                            <div className="text-sm font-semibold text-slate-700 dark:text-zinc-200">
+                                                {group.label}
+                                            </div>
+                                            <div className="text-xs text-slate-500 dark:text-zinc-400">
+                                                {group.items.map((item) => item.label).join(" • ")}
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={!isHidden}
-                                            onChange={() => onToggleMenuVisibility(item.id)}
-                                            className="rounded border-slate-300 dark:border-zinc-600 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                            onChange={() => onToggleMenuGroupVisibility(group.id)}
+                                            className="rounded border-slate-300 dark:border-zinc-600 text-[#7d6df7] focus:ring-[#7d6df7] cursor-pointer"
                                         />
                                         Visible
                                     </label>
@@ -135,7 +146,7 @@ export function SettingsPanel({
                     </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                <div className="p-6 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                         <span className="text-sm">🧩</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
@@ -168,7 +179,7 @@ export function SettingsPanel({
                                 className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                                     isExporting
                                         ? "bg-slate-300 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                                        : "bg-red-600 hover:bg-red-500 text-white cursor-pointer"
+                                        : "bg-[#7d6df7] hover:bg-[#9387ff] text-white cursor-pointer shadow-md shadow-[#7d6df7]/25"
                                 }`}>
                                 {isExporting ? "Exporting..." : "Download Extension ZIP"}
                             </button>

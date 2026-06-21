@@ -127,45 +127,51 @@ export function DriveSyncMenu() {
     <div className="sm:col-span-2">
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
         <div className="text-left">
-          <h2 className="text-2xl font-bold text-amber-500 mb-1">Drive Sync</h2>
+          <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">Drive Synchronizer</h2>
           <p className="text-slate-500 dark:text-zinc-400 text-xs">
             Sync assets from Google Drive to local folder
           </p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-        <div className="space-y-6">
+      <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
+        <div className="py-6 space-y-6">
           {error && (
-            <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400">
-              {error}
+            <div className="px-6">
+              <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400">
+                {error}
+              </div>
             </div>
           )}
 
           {!syncing && totalFiles > 0 && (
-            <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400">
-              Found {totalFiles} files ({formatBytes(totalBytes)})
+            <div className="px-6">
+              <div className="p-4 rounded-xl border text-sm font-medium transition-all bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400">
+                Found {totalFiles} files ({formatBytes(totalBytes)})
+              </div>
             </div>
           )}
 
-          <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+          <div className="px-6 pb-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
-              <span className="text-sm">☁️</span>
+              <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+              </svg>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                Sync Configuration
+                Configuration
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
-                Drive Source <span className="text-red-500">*</span>
+                Path <span className="text-red-500">*</span>
               </label>
               <div>
                 <select
                   value={selectedDrive}
                   onChange={e => setSelectedDrive(e.target.value)}
                   disabled={syncing}
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100">
                   <option value="">-- Choose Drive Folder --</option>
                   {folders.map(f => (
                     <option key={f.rootFolderId} value={f.rootFolderId}>{f.rootFolderName}</option>
@@ -176,7 +182,7 @@ export function DriveSyncMenu() {
 
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
-                Local Folder <span className="text-red-500">*</span>
+                Output Folder <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
                 <input
@@ -184,46 +190,68 @@ export function DriveSyncMenu() {
                   value={localRoot}
                   readOnly
                   placeholder="Click Browse to select folder"
-                  className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none"
+                  className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                 />
                 <button
                   type="button"
                   onClick={handleSelectFolder}
+                  title="Browse output folder"
+                  aria-label="Browse output folder"
                   disabled={syncing}
-                  className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                  Browse
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                  </svg>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="px-6 flex gap-3">
             <button
               type="button"
               onClick={() => handleSync('today')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm disabled:cursor-not-allowed cursor-pointer">
-              {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : '📅 Sync Today'}
+              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m0 0l-5-5m5 5l5-5" />
+                  </svg>
+                  <span>Sync Today</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={() => handleSync('all')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm disabled:cursor-not-allowed cursor-pointer">
-              {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : '💾 Full Sync'}
+              className="flex-1 px-6 py-3.5 bg-[#39435a] hover:bg-[#46506a] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-black/10 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0113.08-4.95M19.5 12a7.5 7.5 0 01-13.08 4.95M16.5 4.5h1.5v1.5M6 18H4.5v-1.5" />
+                  </svg>
+                  <span>Full Sync</span>
+                </>
+              )}
             </button>
             {syncing && !paused && (
               <button
                 type="button"
                 onClick={handlePause}
-                className="px-6 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-xl transition-all shadow-sm cursor-pointer">
-                ⏸️ Pause
+                className="px-6 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v10.5M15 6.75v10.5" />
+                </svg>
+                <span>Pause</span>
               </button>
             )}
           </div>
 
           {syncing && (
-            <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-4">
+            <div className="px-6">
+              <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-600 dark:text-zinc-400">Downloading files...</span>
                 <span className="text-xs font-mono text-amber-600 dark:text-amber-400">{progress.downloaded} / {progress.total}</span>
@@ -231,11 +259,13 @@ export function DriveSyncMenu() {
               <div className="w-full bg-slate-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 h-2 animate-pulse bg-[length:200%_100%]" style={{ width: '100%' }} />
               </div>
+              </div>
             </div>
           )}
 
           {failedFiles.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-4">
+            <div className="px-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-red-600 dark:text-red-400 font-semibold text-sm">
                   ⚠️ Failed to download {failedFiles.length} file(s)
@@ -249,6 +279,7 @@ export function DriveSyncMenu() {
                     <div className="text-red-600 dark:text-red-400 mt-1">Error: {file.error}</div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           )}

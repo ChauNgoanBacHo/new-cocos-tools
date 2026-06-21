@@ -431,7 +431,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                         </button>
                     </div>
                     <div className="text-left min-w-0 flex-1 mx-3">
-                        <h3 className="text-sm font-bold text-amber-500 truncate">
+                        <h3 className="text-sm font-bold text-[#9b8cff] truncate">
                             {item.fileName}
                         </h3>
                         <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
@@ -486,7 +486,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 <select
                                     value={currentAnim}
                                     onChange={(e) => handleSelectAnim(e.target.value)}
-                                    className="px-3 py-2 rounded-xl bg-black/70 backdrop-blur-md border border-amber-500/40 text-[12px] text-amber-100 font-mono font-semibold focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 cursor-pointer hover:bg-black/80 hover:border-amber-400/60 transition-all shadow-lg">
+                                    className="px-3 py-2 rounded-xl bg-black/70 backdrop-blur-md border border-[#7d6df7]/40 text-[12px] text-[#e0d9ff] font-mono font-semibold focus:outline-none focus:border-[#9b8cff] focus:ring-2 focus:ring-[#7d6df7]/20 cursor-pointer hover:bg-black/80 hover:border-[#9b8cff]/70 transition-all shadow-lg">
                                     {item.animations.map(a => (
                                         <option key={a} value={a} className="bg-zinc-800 text-zinc-100">{a}</option>
                                     ))}
@@ -533,7 +533,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                     type="button"
                                     onClick={handlePauseToggle}
                                     title={paused ? "Play (Space)" : "Pause (Space)"}
-                                    className="w-7 h-7 flex items-center justify-center text-white rounded-lg bg-amber-500/80 hover:bg-amber-500 transition-all cursor-pointer">
+                                    className="w-7 h-7 flex items-center justify-center text-white rounded-lg bg-[#7d6df7]/85 hover:bg-[#7d6df7] transition-all cursor-pointer">
                                     {paused ? (
                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M8 5v14l11-7z" />
@@ -558,7 +558,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                     onClick={() => handleToggleLoop(!loop)}
                                     title={loop ? "Loop ON (click to disable)" : "Loop OFF (click to enable)"}
                                     className={`w-7 h-7 flex items-center justify-center text-white rounded-lg transition-all cursor-pointer ${
-                                        loop ? "bg-amber-500/80 hover:bg-amber-500" : "bg-white/10 hover:bg-white/20"
+                                        loop ? "bg-[#7d6df7]/85 hover:bg-[#7d6df7]" : "bg-white/10 hover:bg-white/20"
                                     }`}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -573,10 +573,10 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                         step={0.1}
                                         value={timeScale}
                                         onChange={(e) => handleTimeScale(parseFloat(e.target.value))}
-                                        className="w-20 accent-amber-500 cursor-pointer"
+                                        className="w-20 accent-[#7d6df7] cursor-pointer"
                                     />
                                 </label>
-                                <span className="text-[11px] text-amber-300 font-mono tabular-nums">
+                                <span className="text-[11px] text-[#d2caff] font-mono tabular-nums">
                                     {formatTime(elapsed)} / {formatTime(duration)}s
                                 </span>
                             </div>
@@ -592,14 +592,14 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 style={{ touchAction: "none" }}>
                                 <div className="w-full h-1.5 rounded-full bg-zinc-600/60 overflow-hidden">
                                     <div
-                                        className="h-full bg-amber-400"
+                                        className="h-full bg-[#8f80ff]"
                                         style={{ width: `${duration > 0 ? Math.min(100, (elapsed / duration) * 100) : 0}%` }}
                                     />
                                 </div>
                                 {/* Draggable handle */}
                                 {duration > 0 && (
                                     <div
-                                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-300 border border-amber-600 shadow transition-transform ${isScrubbing ? "scale-125" : "group-hover:scale-110"}`}
+                                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#d2caff] border border-[#7d6df7] shadow transition-transform ${isScrubbing ? "scale-125" : "group-hover:scale-110"}`}
                                         style={{ left: `${Math.min(100, (elapsed / duration) * 100)}%` }}
                                     />
                                 )}
@@ -615,13 +615,13 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                             <label className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                                 <span>Play animation</span>
                                 {duration > 0 && (
-                                    <span className="text-amber-500 font-mono normal-case">{formatTime(duration)}s</span>
+                                    <span className="text-[#9b8cff] font-mono normal-case">{formatTime(duration)}s</span>
                                 )}
                             </label>
                             <select
                                 value={currentAnim}
                                 onChange={(e) => handleSelectAnim(e.target.value)}
-                                className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500 cursor-pointer">
+                                className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7] cursor-pointer">
                                 {item.animations.map(a => (
                                     <option key={a} value={a}>{a}</option>
                                 ))}
@@ -637,7 +637,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 <select
                                     value={currentSkin}
                                     onChange={(e) => handleSelectSkin(e.target.value)}
-                                    className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500 cursor-pointer">
+                                    className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7] cursor-pointer">
                                     {item.skins.map(s => (
                                         <option key={s} value={s}>{s}</option>
                                     ))}
@@ -664,7 +664,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                         const spine = singleSpineRef.current;
                                         if (spine) SpineStage.setDefaultMix(spine, v);
                                     }}
-                                    className="w-full px-2 py-1.5 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
+                                    className="w-full px-2 py-1.5 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7] font-mono"
                                 />
                             </div>
                             {/* Add custom rule */}
@@ -672,7 +672,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 <select
                                     value={mixFrom}
                                     onChange={(e) => setMixFrom(e.target.value)}
-                                    className="flex-1 px-2 py-1.5 text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500 cursor-pointer">
+                                    className="flex-1 px-2 py-1.5 text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7] cursor-pointer">
                                     <option value="">From...</option>
                                     {item.animations.map(a => (
                                         <option key={a} value={a}>{a}</option>
@@ -682,7 +682,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                 <select
                                     value={mixTo}
                                     onChange={(e) => setMixTo(e.target.value)}
-                                    className="flex-1 px-2 py-1.5 text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-amber-500 cursor-pointer">
+                                    className="flex-1 px-2 py-1.5 text-[10px] rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-[#7d6df7] cursor-pointer">
                                     <option value="">To...</option>
                                     {item.animations.map(a => (
                                         <option key={a} value={a}>{a}</option>
@@ -703,7 +703,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                     className={`px-2 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
                                         !mixFrom || !mixTo
                                             ? "opacity-40 cursor-not-allowed bg-slate-200 dark:bg-zinc-800 text-slate-400"
-                                            : "bg-amber-500 text-white hover:bg-amber-400 cursor-pointer"
+                                            : "bg-[#7d6df7] text-white hover:bg-[#9387ff] cursor-pointer"
                                     }`}>
                                     + Add
                                 </button>
@@ -726,7 +726,7 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                                                     if (spine) SpineStage.setMix(spine, rule.from, rule.to, v);
                                                     setMixRules(prev => prev.map((r, j) => j === i ? { ...r, duration: v } : r));
                                                 }}
-                                                className="w-14 px-1.5 py-0.5 text-[10px] rounded bg-white dark:bg-zinc-700 border border-slate-200 dark:border-zinc-600 text-center font-mono focus:outline-none focus:border-amber-500 mx-1.5"
+                                                className="w-14 px-1.5 py-0.5 text-[10px] rounded bg-white dark:bg-zinc-700 border border-slate-200 dark:border-zinc-600 text-center font-mono focus:outline-none focus:border-[#7d6df7] mx-1.5"
                                             />
                                             <span className="text-slate-400 mr-1">s</span>
                                             <button

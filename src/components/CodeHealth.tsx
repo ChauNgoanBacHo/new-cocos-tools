@@ -306,16 +306,16 @@ export default function CodeHealth() {
             return (
                 <div
                     key={file.filePath}
-                    className="rounded-2xl border border-slate-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                    className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm dark:border-white/5 dark:bg-[#1f2430]">
                     <button
                         type="button"
                         onClick={() => toggleExpanded(file.filePath)}
-                        className="w-full px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 transition-all text-left">
+                        className="w-full flex flex-col gap-3 bg-slate-50 px-5 py-3 border-b border-slate-200 hover:bg-[#f3f0ff] transition-all text-left dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-3 min-w-0">
                             <span className="flex items-center justify-center">
                                 <ChevronIcon expanded={isExpanded} />
                             </span>
-                            <span className="font-semibold text-slate-800 dark:text-zinc-100 break-all">
+                            <span className="font-semibold text-slate-800 break-all dark:text-zinc-100">
                                 {file.filePath}
                             </span>
                         </div>
@@ -330,7 +330,7 @@ export default function CodeHealth() {
                     {isExpanded && (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
-                                <thead className="bg-slate-100 dark:bg-zinc-900 border-y border-slate-200 dark:border-zinc-700">
+                                <thead className="bg-slate-50 border-y border-slate-200 dark:bg-[#1b2029] dark:border-white/5">
                                     <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
                                         <th className="px-4 py-3 font-mono w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">Source</th>
                                         <th className="px-4 py-3 font-mono w-[140px] min-w-[140px] max-w-[140px] whitespace-nowrap">Location</th>
@@ -342,7 +342,7 @@ export default function CodeHealth() {
                                     {file.issues.map((issue, index) => (
                                         <tr
                                             key={`${file.filePath}-${issue.ruleId}-${index}`}
-                                            className="border-b border-slate-200 dark:border-zinc-800 last:border-0 align-top">
+                                            className="border-b border-slate-200 last:border-0 align-top dark:border-white/5">
                                             <td className="px-4 py-3 w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">
                                                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                                                     issue.source === "typescript"
@@ -354,18 +354,18 @@ export default function CodeHealth() {
                                                     {issue.source === "typescript" ? "TypeScript" : "ESLint"}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-600 dark:text-zinc-300 font-mono whitespace-nowrap w-[140px] min-w-[140px] max-w-[140px]">
+                                            <td className="px-4 py-3 text-slate-600 font-mono whitespace-nowrap w-[140px] min-w-[140px] max-w-[140px] dark:text-zinc-300">
                                                 <button
                                                     type="button"
                                                     onClick={() => void handleOpenInVSCode(file, issue)}
-                                                    className="text-left text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline cursor-pointer">
+                                                    className="text-left text-[#c2b7ff] hover:text-[#ddd6ff] hover:underline cursor-pointer">
                                                     {issue.location.label}
                                                 </button>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-800 dark:text-zinc-100">
+                                            <td className="px-4 py-3 text-slate-700 dark:text-zinc-100">
                                                 {issue.message}
                                             </td>
-                                            <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 font-mono whitespace-nowrap min-w-[112px]">
+                                            <td className="px-4 py-3 text-slate-500 font-mono whitespace-nowrap min-w-[112px] dark:text-zinc-400">
                                                 {issue.ruleId}
                                             </td>
                                         </tr>
@@ -383,7 +383,7 @@ export default function CodeHealth() {
         <div>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
-                    <h2 className="text-2xl font-bold text-amber-500 mb-1">
+                    <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
                         Code Health
                     </h2>
                     <p className="text-slate-500 dark:text-zinc-400 text-xs">
@@ -392,23 +392,27 @@ export default function CodeHealth() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-                <div className="space-y-6">
+            <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
+                <div className="py-6 space-y-6">
                     {status.type && (
-                        <div
+                        <div className="px-6">
+                            <div
                             className={`p-4 rounded-xl border text-sm font-medium transition-all ${
                                 status.type === "success"
                                     ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
                                     : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
                             }`}>
-                            {status.message}
+                                {status.message}
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                    <div className="px-6 pb-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm">📁</span>
+                                <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                </svg>
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                                     Configuration
                                 </h3>
@@ -420,7 +424,7 @@ export default function CodeHealth() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     isRunning
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-transparent hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 cursor-pointer"
+                                        : "bg-red-50 hover:bg-red-100 border-red-200 text-red-600 cursor-pointer dark:bg-red-500/10 dark:hover:bg-red-500/15 dark:border-red-400/30 dark:text-red-300"
                                 }`}>
                                 Clear
                             </button>
@@ -436,34 +440,38 @@ export default function CodeHealth() {
                                     value={sourcePath}
                                     onChange={(e) => setSourcePath(e.target.value)}
                                     placeholder="e.g., /path/to/source-code-folder"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectSourcePath}
-                                    className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer">
-                                    Browse
+                                    title="Browse source folder"
+                                    aria-label="Browse source folder"
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="px-6 flex justify-end">
                         <button
                             type="button"
                             disabled={isRunning}
                             onClick={() => runScan("full")}
-                            className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
+                            className={`px-5 py-2.5 bg-[#7d6df7] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/25 flex items-center justify-center gap-2 ${
                                 isRunning
                                     ? "opacity-50 cursor-not-allowed"
-                                    : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
+                                    : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
                             }`}>
-                            {isRunning && activeMode === "full" ? "Running Health Check..." : "⚡ Run Health Check"}
+                            {isRunning && activeMode === "full" ? "Scanning..." : "Scan"}
                         </button>
                     </div>
 
                     {result && (
-                        <div className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4 space-y-4">
+                        <div className="mx-6 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4 space-y-4">
                             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                                 <div className="flex flex-wrap items-center gap-3">
                                     <span className={`text-sm font-black uppercase tracking-[0.22em] ${healthScoreTone}`}>
@@ -542,7 +550,7 @@ export default function CodeHealth() {
                     )}
 
                     {result && (
-                        <div className="space-y-6">
+                        <div className="px-6 space-y-6">
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>

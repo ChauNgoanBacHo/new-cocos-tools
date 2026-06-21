@@ -80,29 +80,6 @@ export default function CheckAssets() {
         return true;
     };
 
-    const handleClearAll = async () => {
-        if (totalUnused === 0) return;
-        const allFiles = sections.flatMap(s => s.unused.flatMap(u => u.files));
-        const confirmed = window.confirm(
-            `Xoá toàn bộ ${totalUnused} mục unused (${allFiles.length} files) trong:\n${sourceDir}\n\nThao tác này không thể hoàn tác. Tiếp tục?`
-        );
-        if (!confirmed) return;
-
-        setIsClearing(true);
-        try {
-            const ok = await deleteFiles(allFiles);
-            if (ok) {
-                setStatus({ type: "success", message: `Đã xoá ${totalUnused} mục unused (${allFiles.length} files).` });
-            }
-            // Drop unused entries from every section; keep counts/used for reference.
-            setSections(prev => prev.map(s => ({ ...s, unused: [] })));
-        } catch {
-            setStatus({ type: "error", message: "Lỗi khi xoá files." });
-        } finally {
-            setIsClearing(false);
-        }
-    };
-
     const handleClearSection = async (sectionKey: string) => {
         const section = sections.find(s => s.key === sectionKey);
         if (!section || section.unused.length === 0) return;
@@ -133,8 +110,8 @@ export default function CheckAssets() {
         <div>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
-                    <h2 className="text-2xl font-bold text-amber-500 mb-1">
-                        Check Assets
+                    <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
+                        Asset Cleanup
                     </h2>
                     <p className="text-slate-500 dark:text-zinc-400 text-xs">
                         Quét asset/script unused trong project (không được ref trong .scene/.prefab)
@@ -142,23 +119,27 @@ export default function CheckAssets() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl shadow-sm min-h-[400px]">
-                <div className="space-y-6">
+            <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
+                <div className="py-6 space-y-6">
                     {status.type && (
-                        <div
+                        <div className="px-6">
+                            <div
                             className={`p-4 rounded-xl border text-sm font-medium transition-all ${
                                 status.type === "success"
                                     ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-400"
                                     : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-400"
                             }`}>
-                            {status.message}
+                                {status.message}
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl space-y-4 shadow-sm">
+                    <div className="px-6 pb-6 space-y-4">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm">📁</span>
+                                <svg className="h-4 w-4 text-[#b7a8ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                </svg>
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                                     Configuration
                                 </h3>
@@ -170,7 +151,7 @@ export default function CheckAssets() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     busy
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-transparent hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 cursor-pointer"
+                                        : "bg-red-50 hover:bg-red-100 border-red-200 text-red-600 cursor-pointer dark:bg-red-500/10 dark:hover:bg-red-500/15 dark:border-red-400/30 dark:text-red-300"
                                 }`}>
                                 Clear
                             </button>
@@ -186,39 +167,31 @@ export default function CheckAssets() {
                                     value={sourceDir}
                                     onChange={(e) => setSourceDir(e.target.value)}
                                     placeholder="e.g., /path/to/project-root"
-                                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSelectSourceDir}
-                                    className="px-3 py-2 bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-zinc-600 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all cursor-pointer">
-                                    Browse
+                                    title="Browse source folder"
+                                    aria-label="Browse source folder"
+                                    className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            disabled={busy || totalUnused === 0}
-                            onClick={handleClearAll}
-                            title={totalUnused === 0 ? "Không có file unused để xoá" : "Xoá toàn bộ file unused"}
-                            className={`px-5 py-2.5 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 border ${
-                                busy || totalUnused === 0
-                                    ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                    : "bg-red-600 hover:bg-red-500 text-white border-red-600 shadow-md shadow-red-500/10 active:scale-[0.99] cursor-pointer"
-                            }`}>
-                            {isClearing ? "Clearing..." : `🗑 Clear All${totalUnused > 0 ? ` (${totalUnused})` : ""}`}
-                        </button>
+                    <div className="px-6 flex justify-end gap-2">
                         <button
                             type="button"
                             disabled={busy}
                             onClick={handleRun}
-                            className={`px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/10 flex items-center justify-center gap-2 ${
+                            className={`px-5 py-2.5 bg-[#7d6df7] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#7d6df7]/25 flex items-center justify-center gap-2 ${
                                 busy
                                     ? "opacity-50 cursor-not-allowed"
-                                    : "hover:bg-teal-500 active:scale-[0.99] cursor-pointer"
+                                    : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
                             }`}>
                             {isRunning ? (
                                 <>
@@ -243,13 +216,13 @@ export default function CheckAssets() {
                                     <span>Scanning...</span>
                                 </>
                             ) : (
-                                "Run"
+                                "Scan"
                             )}
                         </button>
                     </div>
 
                     {sections.length > 0 && (
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                        <div className="px-6 space-y-4 max-h-[500px] overflow-y-auto">
                             <div className={`rounded-2xl overflow-hidden border ${
                                 totalUnused > 0
                                     ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/50"

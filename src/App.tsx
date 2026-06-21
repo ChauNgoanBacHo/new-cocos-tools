@@ -14,84 +14,86 @@ import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
 
 type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
+type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
 // rendered data-driven in the sidebar.
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     {
         id: "cheat",
-        label: "Cheat Matrix",
+        label: "Matrix Simulator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.9 4.6L19 9.1l-3.7 3.2.9 4.9-4.2-2.4-4.2 2.4.9-4.9L5 9.1l5.1-1.5L12 3z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v7" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.8 12h6.4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 7.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 12l6.5-3 6.5 3-6.5 3-6.5-3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 16.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
             </>
         ),
     },
     {
         id: "drive-sync",
-        label: "Drive Sync",
+        label: "Drive Synchronizer",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5v1.25A2.25 2.25 0 008.25 20h7.5A2.25 2.25 0 0018 17.75V16.5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5L12 6.5l4 4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v8" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13h3m9 0h3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 8.5a4.5 4.5 0 018.6-1.8A3.75 3.75 0 0117.25 14H7.75a3.25 3.25 0 01-.75-6.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17l2.5 2.5L14 17" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 14l-2.5-2.5L10 14" />
             </>
         ),
     },
     {
         id: "anim",
-        label: "Create Anim",
+        label: "Anim Generator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11v11h-11z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 4.5v4M14.5 15.5v4M19.5 9.5h-4M8.5 14.5h-4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.5l4 2.5-4 2.5v-5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 5.5h12a1 1 0 011 1v11a1 1 0 01-1 1H6a1 1 0 01-1-1v-11a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.5l6 3.5-6 3.5v-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 3.75v3M16 17.25v3M20.25 8H17.5M6.5 16H3.75" />
             </>
         ),
     },
     {
         id: "sound",
-        label: "Create Sound",
+        label: "Sound Generator",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5h3.5l3-2.5v8l-3-2.5H8z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 9.5c1.5 1 1.5 4 0 5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.8 7.8c2.6 2.2 2.6 6.2 0 8.4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10.25h3.25L15 7.5v9l-3.75-2.75H8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 9.5c1.25 1 1.25 4 0 5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 7.75c2.25 2 2.25 6.5 0 8.5" />
             </>
         ),
     },
     {
         id: "check-config",
-        label: "Check Configs",
+        label: "Usage Check",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 6.5h8M8 10.5h5M8 14.5h4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 4.5h11a1 1 0 011 1v13a1 1 0 01-1 1h-11a1 1 0 01-1-1v-13a1 1 0 011-1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 14.5l1.5 1.5 3-3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 5.5h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1v-10a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9h6M9 12h3.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.75 15.25l1.5 1.5 2.75-3" />
             </>
         ),
     },
     {
         id: "check-assets",
-        label: "Check Assets",
+        label: "Asset Cleanup",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.8l6.5 3.7v8.9L12 20.2l-6.5-3.8V7.5L12 3.8z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.2l2.2 1.3v2.8L12 13.6l-2.2-1.3V9.5L12 8.2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.8v6.1" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5h8" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.25 5.5h5.5l.5 2H8.75l.5-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 7.5l.75 10a1 1 0 001 .9h2.5a1 1 0 001-.9l.75-10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 10.5v4.5M13.5 10.5v4.5" />
             </>
         ),
     },
     {
         id: "spine-preview",
-        label: "Spine Preview",
+        label: "Spine Viewer",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5c4.6 0 8.2 3 9.5 7.5-1.3 4.5-4.9 7.5-9.5 7.5S3.8 16.5 2.5 12C3.8 7.5 7.4 4.5 12 4.5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9.2v5.6M12 8v8M14 9.2v5.6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5c4.75 0 8.3 3.1 9.5 7-1.2 3.9-4.75 7-9.5 7S3.7 15.9 2.5 12C3.7 8.1 7.25 5 12 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.25a2.75 2.75 0 110 5.5 2.75 2.75 0 010-5.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v1M12 15v1" />
             </>
         ),
     },
@@ -100,31 +102,67 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
         label: "Code Health",
         icon: (
             <>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 5h7l4 4v10a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5v4h4" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15l1.8 1.8L15 12.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5h11a1 1 0 011 1v8.5a1 1 0 01-1 1h-11a1 1 0 01-1-1V7.5a1 1 0 011-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 14l2.25-2.5 2 1.75 2.75-3.25" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 18.5h6" />
             </>
         ),
     },
 ];
 
+const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
+    {
+        id: "simulation",
+        label: "Simulation",
+        itemIds: ["cheat"],
+    },
+    {
+        id: "generators",
+        label: "Generators",
+        itemIds: ["anim", "sound"],
+    },
+    {
+        id: "analysis",
+        label: "Analysis",
+        itemIds: ["check-config", "check-assets", "code-health"],
+    },
+    {
+        id: "tools",
+        label: "Tools",
+        itemIds: ["spine-preview", "drive-sync"],
+    },
+];
+
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
+    const [menuPulseTab, setMenuPulseTab] = useState<TabType>("cheat");
+    const [menuPulseTick, setMenuPulseTick] = useState(0);
+    const [cheatViewResetKey, setCheatViewResetKey] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
-    const [menuOrder, setMenuOrder] = useStoredState<TabType[]>("app-menu-order", TABS.map((tab) => tab.id));
-    const [hiddenMenuIds, setHiddenMenuIds] = useStoredState<TabType[]>("app-hidden-menu-ids", []);
+    const [menuGroupOrder, setMenuGroupOrder] = useStoredState<MenuGroupId[]>("app-menu-group-order", MENU_GROUPS.map((group) => group.id));
+    const [hiddenMenuGroupIds, setHiddenMenuGroupIds] = useStoredState<MenuGroupId[]>("app-hidden-menu-group-ids", []);
     const [, setCodeHealthSourcePath] = useStoredState<string>("code-health-source-path", "");
     const [, setCodeHealthAutoRunKey] = useStoredState<string>("code-health-auto-run-key", "");
 
-    const resolvedMenuItems = menuOrder
-        .map((menuId) => TABS.find((tab) => tab.id === menuId))
-        .filter((tab): tab is (typeof TABS)[number] => Boolean(tab));
+    const tabMap = new Map(TABS.map((tab) => [tab.id, tab] as const));
 
-    const missingMenuItems = TABS.filter((tab) => !resolvedMenuItems.some((resolvedTab) => resolvedTab.id === tab.id));
-    const orderedMenuItems = [...resolvedMenuItems, ...missingMenuItems];
-    const visibleMenuItems = orderedMenuItems.filter((tab) => !hiddenMenuIds.includes(tab.id));
+    const resolvedMenuGroups = menuGroupOrder
+        .map((groupId) => MENU_GROUPS.find((group) => group.id === groupId))
+        .filter((group): group is (typeof MENU_GROUPS)[number] => Boolean(group));
+
+    const missingMenuGroups = MENU_GROUPS.filter((group) => !resolvedMenuGroups.some((resolvedGroup) => resolvedGroup.id === group.id));
+    const orderedMenuGroups = [...resolvedMenuGroups, ...missingMenuGroups];
+    const visibleMenuGroups = orderedMenuGroups
+        .filter((group) => !hiddenMenuGroupIds.includes(group.id))
+        .map((group) => ({
+            ...group,
+            items: group.itemIds
+                .map((itemId) => tabMap.get(itemId))
+                .filter((item): item is (typeof TABS)[number] => Boolean(item)),
+        }))
+        .filter((group) => group.items.length > 0);
 
     const handleOpenCodeHealth = (sourcePath: string) => {
         setCodeHealthSourcePath(sourcePath);
@@ -132,16 +170,16 @@ function App() {
         setActiveTab("code-health");
     };
 
-    const handleToggleMenuVisibility = (menuId: TabType) => {
-        setHiddenMenuIds((prev) =>
-            prev.includes(menuId)
-                ? prev.filter((id) => id !== menuId)
-                : [...prev, menuId],
+    const handleToggleMenuGroupVisibility = (groupId: MenuGroupId) => {
+        setHiddenMenuGroupIds((prev) =>
+            prev.includes(groupId)
+                ? prev.filter((id) => id !== groupId)
+                : [...prev, groupId],
         );
     };
 
-    const handleMoveMenuItem = (draggedId: TabType, targetId: TabType) => {
-        setMenuOrder((prev) => {
+    const handleMoveMenuGroup = (draggedId: MenuGroupId, targetId: MenuGroupId) => {
+        setMenuGroupOrder((prev) => {
             const normalizedOrder = [...prev];
             if (!normalizedOrder.includes(draggedId)) {
                 normalizedOrder.push(draggedId);
@@ -163,8 +201,18 @@ function App() {
         });
     };
 
-    const handleResetMenuOrder = () => {
-        setMenuOrder(TABS.map((tab) => tab.id));
+    const handleResetMenuGroupOrder = () => {
+        setMenuGroupOrder(MENU_GROUPS.map((group) => group.id));
+    };
+
+    const triggerMenuSelection = (tabId: TabType) => {
+        setActiveTab(tabId);
+        setMenuPulseTab(tabId);
+        setMenuPulseTick((prev) => prev + 1);
+
+        if (tabId === "cheat") {
+            setCheatViewResetKey((prev) => prev + 1);
+        }
     };
 
     useEffect(() => {
@@ -198,7 +246,7 @@ function App() {
     const renderContent = () => {
         switch (activeTab) {
             case "cheat":
-                return <CheatConsole />;
+                return <CheatConsole resetSignal={cheatViewResetKey} />;
             case "anim":
                 return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":
@@ -217,11 +265,18 @@ function App() {
                 return (
                     <SettingsPanel
                         isDark={isDark}
-                        menuItems={orderedMenuItems.map((item) => ({ id: item.id, label: item.label }))}
-                        hiddenMenuIds={hiddenMenuIds}
-                        onToggleMenuVisibility={(menuId) => handleToggleMenuVisibility(menuId as TabType)}
-                        onMoveMenuItem={(draggedId, targetId) => handleMoveMenuItem(draggedId as TabType, targetId as TabType)}
-                        onResetMenuOrder={handleResetMenuOrder}
+                        menuGroups={orderedMenuGroups.map((group) => ({
+                            id: group.id,
+                            label: group.label,
+                            items: group.itemIds
+                                .map((itemId) => tabMap.get(itemId))
+                                .filter((item): item is (typeof TABS)[number] => Boolean(item))
+                                .map((item) => ({ id: item.id, label: item.label })),
+                        }))}
+                        hiddenMenuGroupIds={hiddenMenuGroupIds}
+                        onToggleMenuGroupVisibility={(groupId) => handleToggleMenuGroupVisibility(groupId as MenuGroupId)}
+                        onMoveMenuGroup={(draggedId, targetId) => handleMoveMenuGroup(draggedId as MenuGroupId, targetId as MenuGroupId)}
+                        onResetMenuOrder={handleResetMenuGroupOrder}
                     />
                 );
             default:
@@ -238,11 +293,11 @@ function App() {
             <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 overflow-hidden">
                 <div className="flex flex-col items-center gap-5">
                     <div className="relative">
-                        <div className="absolute -inset-8 rounded-full bg-amber-500/10 blur-2xl" />
-                        <div className="relative w-64 rounded-3xl border border-amber-500/40 bg-zinc-900 shadow-2xl shadow-amber-950/40 p-4">
+                        <div className="absolute -inset-8 rounded-full bg-[#7d6df7]/18 blur-2xl" />
+                        <div className="relative w-64 rounded-3xl border border-[#7d6df7]/40 bg-zinc-900 shadow-2xl shadow-[#2f246f]/45 p-4">
                             <div className="flex justify-center gap-2 mb-3">
                                 {Array.from({ length: 9 }).map((_, index) => (
-                                    <span key={index} className="slot-light h-2 w-2 rounded-full bg-amber-300 shadow-sm shadow-amber-300/80" />
+                                    <span key={index} className="slot-light h-2 w-2 rounded-full bg-[#b7a8ff] shadow-sm shadow-[#a894ff]/80" />
                                 ))}
                             </div>
 
@@ -257,7 +312,7 @@ function App() {
                                                     .map((symbol, index) => (
                                                     <div
                                                         key={`${reel}-${index}`}
-                                                        className="h-12 flex items-center justify-center text-base font-black font-mono text-amber-300">
+                                                        className="h-12 flex items-center justify-center text-base font-black font-mono text-[#c2b7ff]">
                                                         {symbol}
                                                     </div>
                                                 ))}
@@ -272,15 +327,15 @@ function App() {
                                 <div className="slot-handle -mt-1 h-8 w-8 rounded-full bg-red-600 border-4 border-red-400 shadow-lg shadow-red-950/60" />
                             </div>
 
-                            <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-center">
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.28em] text-amber-300">
+                            <div className="mt-3 rounded-xl bg-[#7d6df7]/10 border border-[#7d6df7]/25 px-3 py-2 text-center">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.28em] text-[#c2b7ff]">
                                     Loading Tools
                                 </span>
                             </div>
                         </div>
                     </div>
                     <div className="text-center">
-                        <p className="text-amber-400/90 text-xs font-mono uppercase tracking-widest">Spinning up</p>
+                        <p className="text-[#b7a8ff]/95 text-xs font-mono uppercase tracking-widest">Spinning up</p>
                         <p className="text-zinc-600 text-[10px] font-mono mt-1 tracking-wide">Preparing cheat console...</p>
                     </div>
                 </div>
@@ -289,86 +344,112 @@ function App() {
     }
 
     const sidebarClassName = isDark
-        ? "w-64 bg-zinc-950 border-r border-zinc-800/50 p-5 flex flex-col justify-between shadow-lg z-10"
-        : "w-64 bg-white border-r border-slate-200 p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
+        ? "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-lg z-10"
+        : "w-64 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const sidebarTitleClassName = isDark
-        ? "opm-title text-[1.12rem] leading-tight text-amber-400/90"
-        : "opm-title text-[1.12rem] leading-tight text-amber-600";
+        ? "opm-title text-[1.12rem] leading-tight text-white whitespace-nowrap"
+        : "opm-title text-[1.12rem] leading-tight text-[#1c2432] whitespace-nowrap";
 
     const sidebarSubtitleClassName = isDark
-        ? "opm-kicker text-zinc-500 text-[10px] mt-1"
-        : "opm-kicker text-slate-500 text-[10px] mt-1";
+        ? "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]"
+        : "text-[#7e8799] text-[10px] mt-1 uppercase tracking-[0.08em]";
 
     const navItemClassName = (active: boolean) =>
         active
             ? isDark
-                ? "bg-amber-950/30 text-amber-300 border-amber-800/40 shadow-sm font-semibold"
-                : "bg-amber-100 text-amber-900 border-amber-300 shadow-sm shadow-amber-100 font-semibold"
+                ? "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.28)] font-semibold"
+                : "bg-[#7d6df7] text-white border-[#7d6df7] shadow-[0_10px_24px_rgba(125,109,247,0.18)] font-semibold"
             : isDark
-                ? "text-zinc-400 border-transparent hover:bg-zinc-800/50 hover:text-zinc-100"
-                : "text-slate-600 border-transparent hover:bg-white hover:border-slate-200 hover:text-slate-900 hover:shadow-sm";
+                ? "text-[#8e95a7] border-transparent hover:bg-[#2b3040] hover:text-white"
+                : "text-[#5f6b82] border-transparent hover:bg-[#eceffd] hover:text-[#2a3447]";
 
     const navIconClassName = (active: boolean) =>
         active
             ? isDark
-                ? "text-amber-400"
-                : "text-amber-600"
+                ? "text-white"
+                : "text-white"
             : isDark
-                ? "text-zinc-500 group-hover:text-zinc-300"
-                : "text-slate-400 group-hover:text-slate-700";
+                ? "text-[#71788d] group-hover:text-white"
+                : "text-[#8b95aa] group-hover:text-[#49566d]";
 
     const sidebarFooterClassName = isDark
-        ? "pt-4 border-t border-zinc-800/50 flex flex-col items-center gap-2"
-        : "pt-4 border-t border-slate-200 flex flex-col items-center gap-2";
+        ? "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2"
+        : "pt-4 border-t border-[#dde3f0] flex flex-col items-center gap-2";
 
     const themeToggleButtonClassName = isDark
-        ? "p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
-        : "p-2 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 text-slate-500 hover:text-amber-700 transition-all cursor-pointer shadow-sm";
+        ? "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer"
+        : "p-2 rounded-lg bg-[#eef2fb] hover:bg-[#e3e9f8] text-[#61708a] hover:text-[#253047] transition-all cursor-pointer";
 
     const footerNoteClassName = isDark
-        ? "text-[10px] text-zinc-600 font-mono tracking-wider"
-        : "text-[10px] text-slate-400 font-mono tracking-wider";
+        ? "text-[10px] text-[#6d7488] font-mono tracking-wider"
+        : "text-[10px] text-[#8791a5] font-mono tracking-wider";
+
+    const appShellClassName = isDark
+        ? "flex h-screen w-screen font-sans overflow-hidden bg-[rgb(25,27,33)] text-slate-800 dark:text-zinc-200"
+        : "flex h-screen w-screen font-sans overflow-hidden bg-[#eef3fb] text-slate-800";
+
+    const mainClassName = isDark
+        ? "flex-1 p-8 overflow-y-auto bg-[rgb(25,27,33)] [font-family:var(--sans)]"
+        : "flex-1 p-8 overflow-y-auto bg-[#eef3fb] [font-family:var(--sans)]";
+
+    const groupLabelClassName = isDark
+        ? "px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6d7488]"
+        : "px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#97a0b3]";
+
+    const tooltipClassName = isDark
+        ? "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700"
+        : "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100";
+
+    const mainFooterClassName = isDark
+        ? "text-center text-[10px] text-[#6d7488] font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wider"
+        : "text-center text-[10px] text-[#8791a5] font-mono mt-8 border-t border-[#dbe3f2] pt-4 tracking-wider";
 
     return (
-        <div className="flex h-screen w-screen font-sans overflow-hidden bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-200">
+        <div className={appShellClassName}>
             {/* MENU BÊN TRÁI */}
             <aside className={sidebarClassName}>
                 <div>
                     <div className="mb-8 px-2">
                         <h3 className={sidebarTitleClassName}>
-                            One Punch Tools
+                            One Punch DevKit
                         </h3>
                         <p className={sidebarSubtitleClassName}>
                             Hero utility console
                         </p>
                     </div>
 
-                    <nav className="flex flex-col gap-2">
-                        {visibleMenuItems.map((tab) => {
-                            const active = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
-                                    <span className="flex items-center gap-3">
-                                        <svg
-                                            className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)}`}
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth={1.75}>
-                                            {tab.icon}
-                                        </svg>
-                                        <span className="opm-nav-label">{tab.label}</span>
-                                    </span>
-                                    {active && (
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                                    )}
-                                </button>
-                            );
-                        })}
+                    <nav className="flex flex-col gap-5">
+                        {visibleMenuGroups.map((group) => (
+                            <div key={group.id} className="space-y-2">
+                                <div className={groupLabelClassName}>
+                                    {group.label}
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {group.items.map((tab) => {
+                                        const active = activeTab === tab.id;
+                                        return (
+                                            <button
+                                                key={`${tab.id}-${active && menuPulseTab === tab.id ? menuPulseTick : "idle"}`}
+                                                onClick={() => triggerMenuSelection(tab.id)}
+                                                className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)} ${active && menuPulseTab === tab.id ? "opm-nav-item-active" : ""}`}>
+                                                <span className="flex items-center gap-3">
+                                                    <svg
+                                                        className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)} ${active && menuPulseTab === tab.id ? "opm-nav-icon-active" : ""}`}
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth={1.75}>
+                                                        {tab.icon}
+                                                    </svg>
+                                                    <span className="opm-nav-label">{tab.label}</span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </nav>
                 </div>
 
@@ -380,7 +461,7 @@ function App() {
                                 onClick={() => setIsDark(!isDark)}
                                 className={themeToggleButtonClassName}>
                                 {isDark ? (
-                                    <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-4 h-4 text-[#9b8cff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
                                 ) : (
@@ -389,7 +470,7 @@ function App() {
                                     </svg>
                                 )}
                             </button>
-                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                            <span className={tooltipClassName}>
                                 Toggle theme
                             </span>
                         </div>
@@ -407,7 +488,7 @@ function App() {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </button>
-                            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                            <span className={tooltipClassName}>
                                 Open settings
                             </span>
                         </div>
@@ -418,7 +499,7 @@ function App() {
             </aside>
 
             {/* NỘI DUNG HIỂN THỊ CHÍNH BÊN PHẢI */}
-            <main className="flex-1 p-8 overflow-y-auto bg-slate-100 dark:bg-zinc-900 [font-family:var(--sans)]">
+            <main className={mainClassName}>
                 <div className="w-full h-full flex flex-col justify-between">
                     <div>
 
@@ -427,7 +508,7 @@ function App() {
                         {/* </div> */}
                     </div>
 
-                    <footer className="text-center text-xs text-zinc-400 dark:text-zinc-600 font-mono mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4 tracking-wide">
+                    <footer className={mainFooterClassName}>
                         Tool Cho Người Lười
                     </footer>
                 </div>

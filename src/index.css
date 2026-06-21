@@ -67,6 +67,7 @@
 
 body {
     margin: 0;
+    background: rgb(25, 27, 33);
 }
 
 @keyframes slot-reel-spin {
@@ -100,6 +101,33 @@ body {
     }
 }
 
+@keyframes opm-nav-select-pulse {
+    0% {
+        transform: translateX(0) scale(1);
+        box-shadow: 0 0 0 rgba(125, 109, 247, 0);
+    }
+    35% {
+        transform: translateX(4px) scale(1.015);
+        box-shadow: 0 14px 30px rgba(125, 109, 247, 0.26);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        box-shadow: 0 10px 24px rgba(125, 109, 247, 0.2);
+    }
+}
+
+@keyframes opm-nav-icon-bob {
+    0% {
+        transform: translateX(0) scale(1);
+    }
+    45% {
+        transform: translateX(1px) scale(1.08);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+    }
+}
+
 .slot-reel-strip {
     animation: slot-reel-spin 0.55s linear infinite;
 }
@@ -122,6 +150,16 @@ body {
 
 .slot-handle {
     animation: slot-handle-bounce 0.85s ease-in-out infinite;
+}
+
+.opm-nav-item-active {
+    animation: opm-nav-select-pulse 280ms ease-out;
+    will-change: transform, box-shadow;
+}
+
+.opm-nav-icon-active {
+    animation: opm-nav-icon-bob 280ms ease-out;
+    will-change: transform;
 }
 
 h1,

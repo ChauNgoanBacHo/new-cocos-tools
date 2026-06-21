@@ -218,7 +218,7 @@ async function requestBridgeReconnectForActiveTabs() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-    console.log("[One Punch Tools Connect] Extension installed");
+    console.log("[One Punch Assistant] Extension installed");
 });
 
 chrome.runtime.onStartup.addListener(() => {
