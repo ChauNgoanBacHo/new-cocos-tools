@@ -1203,7 +1203,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 <div className="flex items-center gap-3">
                     <div className="text-left">
                         <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
-                            Matrix Simulator
+                            Matrix Hub
                         </h2>
                         <p className="text-slate-400 text-xs">
                             {selectedGameId && activeGame

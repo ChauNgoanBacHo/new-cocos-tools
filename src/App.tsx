@@ -22,7 +22,7 @@ type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     {
         id: "cheat",
-        label: "Matrix Simulator",
+        label: "Matrix Hub",
         icon: (
             <>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 7.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
@@ -114,7 +114,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
     {
         id: "simulation",
-        label: "Simulation",
+        label: "Data",
         itemIds: ["cheat"],
     },
     {
@@ -337,7 +337,7 @@ function App() {
                     </div>
                     <div className="text-center">
                         <p className="text-[#b7a8ff]/95 text-xs font-mono uppercase tracking-widest">Spinning up</p>
-                        <p className="text-zinc-600 text-[10px] font-mono mt-1 tracking-wide">Preparing cheat console...</p>
+                        <p className="text-zinc-600 text-[10px] font-mono mt-1 tracking-wide">Initializing dev workspace...</p>
                     </div>
                 </div>
             </div>
