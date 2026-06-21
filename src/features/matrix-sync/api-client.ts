@@ -82,13 +82,4 @@ export class MatrixSyncClient {
       body: JSON.stringify(payload),
     });
   }
-
-  async updateTemplate(id: string, payload: MatrixTemplateMutationPayload): Promise<MatrixTemplateMutationResponse> {
-    const encodedId = encodeURIComponent(id.trim());
-    return this.request<MatrixTemplateMutationResponse>(`/api/matrix-templates/${encodedId}`, {
-      method: "PUT",
-      headers: this.buildHeaders("application/json"),
-      body: JSON.stringify(payload),
-    });
-  }
 }

@@ -321,33 +321,6 @@ interface ElectronAPI {
                 publishedBy: string | null;
             };
         }>;
-        updateTemplate: (templateId: string, payload: {
-            gameId: string;
-            gameName?: string;
-            title?: string;
-            matrixData: string;
-            tableFormat: string;
-            additionalData?: Record<string, string>;
-            tags?: string[];
-            publishedBy?: string | null;
-            version?: number;
-        }) => Promise<{
-            ok: true;
-            item: {
-                id: string;
-                gameId: string;
-                slug: string;
-                title: string;
-                matrixData: string;
-                tableFormat: string;
-                additionalData: Record<string, string>;
-                tags: string[];
-                version: number;
-                updatedAt: string;
-                createdAt: string;
-                publishedBy: string | null;
-            };
-        }>;
     };
 }
 

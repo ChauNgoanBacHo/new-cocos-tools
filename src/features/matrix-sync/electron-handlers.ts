@@ -16,8 +16,4 @@ export function setupMatrixSyncHandlers(baseUrl: string, apiKey?: string) {
   ipcMain.handle("matrix-sync:create-template", (_event, payload: MatrixTemplateMutationPayload) => {
     return client.createTemplate(payload);
   });
-
-  ipcMain.handle("matrix-sync:update-template", (_event, templateId: string, payload: MatrixTemplateMutationPayload) => {
-    return client.updateTemplate(templateId, payload);
-  });
 }
