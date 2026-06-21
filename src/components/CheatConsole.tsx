@@ -265,6 +265,8 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [publishingPanelId, setPublishingPanelId] = useState<string | null>(null);
     const [panelStatuses, setPanelStatuses] = useState<Record<string, PanelStatusState>>({});
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
+    const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
+    const [dragOverPanelId, setDragOverPanelId] = useState<string | null>(null);
     const [localSocketStatus, setLocalSocketStatus] = useState<CheatLocalSocketStatus>({
         enabled: false,
         running: false,
@@ -870,6 +872,24 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const removePanel = (panelId: string) => {
         if (!activeGame) return;
         updateActiveGamePanels((prev) => prev.filter((p) => p.id !== panelId));
+    };
+
+    const movePanelToTarget = (panelId: string, targetPanelId: string) => {
+        if (!activeGame) return;
+
+        updateActiveGamePanels((prev) => {
+            const currentIndex = prev.findIndex((panel) => panel.id === panelId);
+            const targetIndex = prev.findIndex((panel) => panel.id === targetPanelId);
+
+            if (currentIndex === -1 || targetIndex === -1 || currentIndex === targetIndex) {
+                return prev;
+            }
+
+            const nextPanels = [...prev];
+            const [movedPanel] = nextPanels.splice(currentIndex, 1);
+            nextPanels.splice(targetIndex, 0, movedPanel);
+            return nextPanels;
+        });
     };
 
     const executePanel = async (panel: PanelData) => {
@@ -1873,13 +1893,55 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                     {activeGame.panels.map((panel) => (
                                         <div
                                             key={panel.id}
-                                            className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200">
+                                            draggable
+                                            onDragStart={(event) => {
+                                                setDraggedPanelId(panel.id);
+                                                setDragOverPanelId(panel.id);
+                                                event.dataTransfer.effectAllowed = "move";
+                                                event.dataTransfer.setData("text/plain", panel.id);
+                                            }}
+                                            onDragOver={(event) => {
+                                                event.preventDefault();
+                                                if (dragOverPanelId !== panel.id) {
+                                                    setDragOverPanelId(panel.id);
+                                                }
+                                                event.dataTransfer.dropEffect = "move";
+                                            }}
+                                            onDrop={(event) => {
+                                                event.preventDefault();
+                                                const sourcePanelId = draggedPanelId || event.dataTransfer.getData("text/plain");
+                                                if (sourcePanelId && sourcePanelId !== panel.id) {
+                                                    movePanelToTarget(sourcePanelId, panel.id);
+                                                }
+                                                setDraggedPanelId(null);
+                                                setDragOverPanelId(null);
+                                            }}
+                                            onDragEnd={() => {
+                                                setDraggedPanelId(null);
+                                                setDragOverPanelId(null);
+                                            }}
+                                            className={`bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200 ${
+                                                draggedPanelId === panel.id
+                                                    ? "opacity-60 scale-[0.995]"
+                                                    : ""
+                                            } ${
+                                                dragOverPanelId === panel.id && draggedPanelId !== panel.id
+                                                    ? "ring-2 ring-[#7d6df7]/35 border-[#7d6df7]/35"
+                                                    : ""
+                                            }`}>
                                             {/* Tiêu đề Panel */}
                                             <div className="flex items-center justify-between bg-slate-50 px-5 py-3 border-b border-slate-200 dark:bg-white/5 dark:border-white/5">
                                                 <button
                                                     type="button"
                                                     className="flex items-center gap-2.5 cursor-pointer select-none text-left focus:outline-none"
                                                     onClick={() => toggleExpand(panel.id)}>
+                                                    <span
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-all cursor-grab active:cursor-grabbing dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-500"
+                                                        title="Drag to reorder matrix">
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01" />
+                                                        </svg>
+                                                    </span>
                                                     <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${panel.isExpanded ? "rotate-90" : ""}`}>
                                                         ▶
                                                     </span>
