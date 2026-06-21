@@ -12,6 +12,7 @@ import SpinePreview from "./components/SpinePreview";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { ChargeUpLoadingScreen } from "./components/loading/ChargeUpLoadingScreen";
 import brandLogo from "./assets/logo.png";
 
 type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
@@ -217,7 +218,7 @@ function App() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 1600);
+        const timer = setTimeout(() => setIsLoading(false), 3200);
         return () => clearTimeout(timer);
     }, []);
 
@@ -286,62 +287,7 @@ function App() {
     };
 
     if (isLoading) {
-        const reelSymbols = [
-            "7", "BAR", "⚡", "💎", "🍒", "WILD", "🍀", "⭐", "🔥", "🎲", "🔔", "🍋",
-            "BONUS", "x2", "🍉", "👑", "💰", "JACK", "7", "BAR", "⚡", "💎", "🍒", "WILD",
-        ];
-        return (
-            <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 overflow-hidden">
-                <div className="flex flex-col items-center gap-5">
-                    <div className="relative">
-                        <div className="absolute -inset-8 rounded-full bg-[#7d6df7]/18 blur-2xl" />
-                        <div className="relative w-64 rounded-3xl border border-[#7d6df7]/40 bg-zinc-900 shadow-2xl shadow-[#2f246f]/45 p-4">
-                            <div className="flex justify-center gap-2 mb-3">
-                                {Array.from({ length: 9 }).map((_, index) => (
-                                    <span key={index} className="slot-light h-2 w-2 rounded-full bg-[#b7a8ff] shadow-sm shadow-[#a894ff]/80" />
-                                ))}
-                            </div>
-
-                            <div className="rounded-2xl border border-zinc-700 bg-zinc-950 p-3 shadow-inner">
-                                <div className="grid grid-cols-3 gap-2 overflow-hidden">
-                                    {[0, 1, 2].map((reel) => (
-                                        <div key={reel} className="h-24 overflow-hidden rounded-xl border border-zinc-700 bg-gradient-to-b from-zinc-800 via-zinc-950 to-zinc-800">
-                                            <div className="slot-reel-strip flex flex-col">
-                                                {reelSymbols
-                                                    .slice(reel * 5)
-                                                    .concat(reelSymbols.slice(0, reel * 5))
-                                                    .map((symbol, index) => (
-                                                    <div
-                                                        key={`${reel}-${index}`}
-                                                        className="h-12 flex items-center justify-center text-base font-black font-mono text-[#c2b7ff]">
-                                                        {symbol}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="absolute -right-7 top-12 flex flex-col items-center">
-                                <div className="h-16 w-2 rounded-full bg-zinc-700 border border-zinc-600" />
-                                <div className="slot-handle -mt-1 h-8 w-8 rounded-full bg-red-600 border-4 border-red-400 shadow-lg shadow-red-950/60" />
-                            </div>
-
-                            <div className="mt-3 rounded-xl bg-[#7d6df7]/10 border border-[#7d6df7]/25 px-3 py-2 text-center">
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.28em] text-[#c2b7ff]">
-                                    Loading Tools
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-[#b7a8ff]/95 text-xs font-mono uppercase tracking-widest">Spinning up</p>
-                        <p className="text-zinc-600 text-[10px] font-mono mt-1 tracking-wide">Initializing dev workspace...</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return <ChargeUpLoadingScreen brandLogo={brandLogo} />;
     }
 
     const sidebarClassName = isDark

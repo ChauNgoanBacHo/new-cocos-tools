@@ -52,14 +52,20 @@ function getAppIconPath() {
 function createWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { x, y, width, height } = primaryDisplay.workArea;
-    const windowWidth = 1280;
-    const windowHeight = 860;
+    const windowWidth = process.platform === "darwin"
+        ? Math.max(1280, Math.floor(width * 0.8))
+        : 1280;
+    const windowHeight = process.platform === "darwin"
+        ? Math.max(860, Math.floor(height * 0.84))
+        : 860;
 
     mainWindow = new BrowserWindow({
         x: x + Math.floor((width - windowWidth) / 2),
         y: y + Math.floor((height - windowHeight) / 2),
         width: windowWidth,
         height: windowHeight,
+        minWidth: 1280,
+        minHeight: 860,
         icon: getAppIconPath(),
         webPreferences: {
             preload: path.join(__dirname, "preload.mjs"),

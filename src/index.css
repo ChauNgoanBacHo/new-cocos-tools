@@ -128,6 +128,278 @@ body {
     }
 }
 
+@keyframes charge-path {
+    0% {
+        stroke-dashoffset: 220;
+        opacity: 0.2;
+    }
+    55% {
+        opacity: 1;
+    }
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+}
+
+@keyframes charge-node {
+    0% {
+        opacity: 0;
+        transform: scale(0.35);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.18);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes charge-bar {
+    0% {
+        transform: scaleX(0);
+        filter: brightness(0.9);
+    }
+    70% {
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: scaleX(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes charge-scan {
+    0% {
+        transform: translate(-34%, -50%) skewX(-20deg);
+        opacity: 0;
+    }
+    25% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(34%, -50%) skewX(-20deg);
+        opacity: 0;
+    }
+}
+
+@keyframes charge-ambient {
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: translateY(0) scale(0.96);
+    }
+    50% {
+        opacity: 0.9;
+        transform: translateY(8px) scale(1.04);
+    }
+}
+
+@keyframes charge-shell {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: scale(0.96);
+    }
+    50% {
+        opacity: 0.55;
+        transform: scale(1.04);
+    }
+}
+
+@keyframes charge-punch-reveal {
+    0% {
+        opacity: 0;
+    }
+    38% {
+        opacity: 0;
+    }
+    72% {
+        opacity: 0.42;
+    }
+    100% {
+        opacity: 0.96;
+    }
+}
+
+@keyframes charge-ui-fade-out {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+}
+
+@keyframes charge-vignette {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes charge-ring-burst {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.96);
+    }
+    12% {
+        opacity: 0.78;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.22);
+    }
+}
+
+@keyframes charge-logo-sweep {
+    0% {
+        opacity: 0;
+        transform: translateX(0) skewX(-18deg);
+    }
+    18% {
+        opacity: 0.9;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(620px) skewX(-18deg);
+    }
+}
+
+@keyframes charge-logo-hero {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(2);
+    }
+}
+
+@keyframes hero-line {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes hero-ring {
+    0% {
+        transform: rotate(0deg) scale(0.96);
+        opacity: 0.45;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(360deg) scale(1.04);
+        opacity: 0.45;
+    }
+}
+
+@keyframes hero-terminal-scan {
+    0% {
+        transform: translateX(-130%);
+        opacity: 0;
+    }
+    15%,
+    65% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(130%);
+        opacity: 0;
+    }
+}
+
+@keyframes hero-core-pulse {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(0.96);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes hero-emblem-float {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-6px) scale(1.03);
+    }
+}
+
+@keyframes impact-speedline {
+    0% {
+        opacity: 0;
+        transform: translate(-80%, -50%) scaleX(0.25);
+    }
+    25% {
+        opacity: 0.9;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scaleX(1.18);
+    }
+}
+
+@keyframes impact-punch {
+    0% {
+        opacity: 0;
+        transform: translate3d(210px, -120px, 0) scale(0.2) rotate(-24deg);
+    }
+    62% {
+        opacity: 1;
+        transform: translate3d(-10px, 6px, 0) scale(1.08) rotate(2deg);
+    }
+    78% {
+        transform: translate3d(6px, -3px, 0) scale(0.98) rotate(-1deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes impact-flash {
+    0% {
+        opacity: 0;
+        transform: scaleX(0.15) scaleY(0.8);
+    }
+    35% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scaleX(1.2) scaleY(1.08);
+    }
+}
+
+@keyframes impact-brand {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .slot-reel-strip {
     animation: slot-reel-spin 0.55s linear infinite;
 }
