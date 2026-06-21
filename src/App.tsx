@@ -12,6 +12,7 @@ import SpinePreview from "./components/SpinePreview";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
+import brandLogo from "./assets/logo.png";
 
 type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
 type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
@@ -347,14 +348,6 @@ function App() {
         ? "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-lg z-10"
         : "w-64 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
-    const sidebarTitleClassName = isDark
-        ? "opm-title text-[1.12rem] leading-tight whitespace-nowrap text-[#ff5a36] drop-shadow-[0_0_18px_rgba(255,90,54,0.28)]"
-        : "opm-title text-[1.12rem] leading-tight whitespace-nowrap text-[#ff5a36]";
-
-    const sidebarSubtitleClassName = isDark
-        ? "text-[#7b8295] text-[10px] mt-1 uppercase tracking-[0.08em]"
-        : "text-[#7e8799] text-[10px] mt-1 uppercase tracking-[0.08em]";
-
     const navItemClassName = (active: boolean) =>
         active
             ? isDark
@@ -411,12 +404,11 @@ function App() {
             <aside className={sidebarClassName}>
                 <div>
                     <div className="mb-8 px-2">
-                        <h3 className={sidebarTitleClassName}>
-                            One Punch DevKit
-                        </h3>
-                        <p className={sidebarSubtitleClassName}>
-                            Hero utility console
-                        </p>
+                        <img
+                            src={brandLogo}
+                            alt="One Punch DevKit"
+                            className="block h-auto w-full max-w-[244px]"
+                        />
                     </div>
 
                     <nav className="flex flex-col gap-5">
