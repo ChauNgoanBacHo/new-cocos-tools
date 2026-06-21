@@ -1946,55 +1946,61 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                 </button>
                                                 <div className="flex items-center gap-2">
                                                     {!panel.isExpanded && (
-                                                    <button
-                                                        type="button"
-                                                        disabled={executingPanelId !== null}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            executePanel(panel);
-                                                        }}
-                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#8e81ff]/35 bg-[#7d6df7] hover:bg-[#9387ff] text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#7d6df7]/20"
-                                                        title="Run this configuration immediately">
-                                                        {executingPanelId === panel.id ? (
-                                                            <svg
-                                                                className="animate-spin h-4 w-4 text-white"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24">
-                                                                <circle
-                                                                    className="opacity-25"
-                                                                    cx="12"
-                                                                    cy="12"
-                                                                    r="10"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="4"
-                                                                />
-                                                                <path
-                                                                    className="opacity-75"
-                                                                    fill="currentColor"
-                                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                                />
-                                                            </svg>
-                                                        ) : (
-                                                            <>
+                                                    <div className="group relative">
+                                                        <button
+                                                            type="button"
+                                                            disabled={executingPanelId !== null}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                executePanel(panel);
+                                                            }}
+                                                            className="h-9 w-9 inline-flex items-center justify-center border border-[#3f72ff]/35 bg-[#2563eb] hover:bg-[#3b82f6] text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2563eb]/20">
+                                                            {executingPanelId === panel.id ? (
+                                                                <svg
+                                                                    className="animate-spin h-4 w-4 text-white"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24">
+                                                                    <circle
+                                                                        className="opacity-25"
+                                                                        cx="12"
+                                                                        cy="12"
+                                                                        r="10"
+                                                                        stroke="currentColor"
+                                                                        strokeWidth="4"
+                                                                    />
+                                                                    <path
+                                                                        className="opacity-75"
+                                                                        fill="currentColor"
+                                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                    />
+                                                                </svg>
+                                                            ) : (
                                                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
                                                                 </svg>
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                            )}
+                                                        </button>
+                                                        <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                                            Execute Matrix
+                                                        </span>
+                                                    </div>
                                                     )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removePanel(panel.id);
-                                                        }}
-                                                        className="h-9 w-9 inline-flex items-center justify-center border border-[#87485e] bg-[#5a3242] text-[#f7d3de] hover:bg-[#6a394c] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20"
-                                                        title="Xóa panel này">
-                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                            <path d="M9.5 4.75a1 1 0 00-1 1V7H6.25a.75.75 0 000 1.5h.53l.74 10.36A2 2 0 009.51 20.75h4.98a2 2 0 001.99-1.89l.74-10.36h.53a.75.75 0 000-1.5H15.5V5.75a1 1 0 00-1-1h-5zm4.5 2.25h-4V6.25h4V7zm-3 3.25a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm4 0a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6z" />
-                                                        </svg>
-                                                    </button>
+                                                    <div className="group relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                removePanel(panel.id);
+                                                            }}
+                                                            className="h-9 w-9 inline-flex items-center justify-center border border-[#87485e] bg-[#5a3242] text-[#f7d3de] hover:bg-[#6a394c] hover:text-white rounded-xl transition-all cursor-pointer shadow-md shadow-[#2a1922]/20">
+                                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                <path d="M9.5 4.75a1 1 0 00-1 1V7H6.25a.75.75 0 000 1.5h.53l.74 10.36A2 2 0 009.51 20.75h4.98a2 2 0 001.99-1.89l.74-10.36h.53a.75.75 0 000-1.5H15.5V5.75a1 1 0 00-1-1h-5zm4.5 2.25h-4V6.25h4V7zm-3 3.25a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm4 0a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6z" />
+                                                            </svg>
+                                                        </button>
+                                                        <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                                            Delete Matrix
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -2177,61 +2183,87 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                         )}
 
                                                         <div className="flex justify-end gap-2">
-                                                        <button
-                                                            type="button"
-                                                            disabled={publishingPanelId !== null}
-                                                            onClick={() => {
-                                                                void handlePublishPanel(panel);
-                                                            }}
-                                                            className={`px-3 py-2 text-[11px] rounded-xl font-bold transition-all ${
-                                                                publishingPanelId === panel.id
-                                                                    ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-zinc-700 dark:text-zinc-500"
-                                                                    : panel.remoteTemplateId
-                                                                        ? "bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-zinc-100"
-                                                                        : "bg-[#7d6df7] hover:bg-[#9387ff] text-white cursor-pointer shadow-md shadow-[#7d6df7]/20"
-                                                            }`}>
-                                                            {publishingPanelId === panel.id
-                                                                ? "Syncing..."
-                                                                : panel.remoteTemplateId
-                                                                    ? "Publish Again"
-                                                                    : "Publish Matrix"}
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={executingPanelId !== null}
-                                                            onClick={() => executePanel(panel)}
-                                                            className={`h-9 w-9 bg-[#7d6df7] text-white rounded-xl transition-all shadow-md shadow-[#7d6df7]/20 inline-flex items-center justify-center ${
-                                                                executingPanelId !== null
-                                                                    ? "opacity-50 cursor-not-allowed"
-                                                                    : "hover:bg-[#9387ff] active:scale-[0.99] cursor-pointer"
-                                                            }`}>
-                                                            {executingPanelId === panel.id ? (
-                                                                <>
-                                                                    <svg
-                                                                        className="animate-spin h-3.5 w-3.5 text-white"
-                                                                        fill="none"
-                                                                        viewBox="0 0 24 24">
-                                                                        <circle
-                                                                            className="opacity-25"
-                                                                            cx="12"
-                                                                            cy="12"
-                                                                            r="10"
-                                                                            stroke="currentColor"
-                                                                            strokeWidth="4"
-                                                                        />
-                                                                        <path
-                                                                            className="opacity-75"
-                                                                            fill="currentColor"
-                                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                                        />
-                                                                    </svg>
-                                                                </>
-                                                            ) : (
-                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
-                                                                </svg>
-                                                            )}
-                                                        </button>
+                                                            <div className="group relative">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={publishingPanelId !== null}
+                                                                    onClick={() => {
+                                                                        void handlePublishPanel(panel);
+                                                                    }}
+                                                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
+                                                                        publishingPanelId !== null
+                                                                            ? "cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500"
+                                                                            : "cursor-pointer bg-cyan-600 text-white shadow-md shadow-cyan-900/20 hover:bg-cyan-500 active:scale-[0.99]"
+                                                                    }`}>
+                                                                    {publishingPanelId === panel.id ? (
+                                                                        <svg
+                                                                            className="h-3.5 w-3.5 animate-spin text-white"
+                                                                            fill="none"
+                                                                            viewBox="0 0 24 24">
+                                                                            <circle
+                                                                                className="opacity-25"
+                                                                                cx="12"
+                                                                                cy="12"
+                                                                                r="10"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="4"
+                                                                            />
+                                                                            <path
+                                                                                className="opacity-75"
+                                                                                fill="currentColor"
+                                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                            />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                            <path d="M11.47 3.47a.75.75 0 011.06 0l3.75 3.75a.75.75 0 11-1.06 1.06L12.75 5.81v8.94a.75.75 0 01-1.5 0V5.81L8.78 8.28a.75.75 0 11-1.06-1.06l3.75-3.75z" />
+                                                                            <path d="M4.75 13.25a.75.75 0 01.75.75v2.5c0 .83.67 1.5 1.5 1.5h10.5a1.5 1.5 0 001.5-1.5V14a.75.75 0 011.5 0v2.5A3 3 0 0117.5 20H7a3 3 0 01-3-3V14a.75.75 0 01.75-.75z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                                                    Publish Matrix
+                                                                </span>
+                                                            </div>
+                                                            <div className="group relative">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={executingPanelId !== null}
+                                                                    onClick={() => executePanel(panel)}
+                                                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#2563eb] text-white shadow-md shadow-[#2563eb]/20 transition-all ${
+                                                                        executingPanelId !== null
+                                                                            ? "cursor-not-allowed opacity-50"
+                                                                            : "cursor-pointer hover:bg-[#3b82f6] active:scale-[0.99]"
+                                                                    }`}>
+                                                                    {executingPanelId === panel.id ? (
+                                                                        <svg
+                                                                            className="h-3.5 w-3.5 animate-spin text-white"
+                                                                            fill="none"
+                                                                            viewBox="0 0 24 24">
+                                                                            <circle
+                                                                                className="opacity-25"
+                                                                                cx="12"
+                                                                                cy="12"
+                                                                                r="10"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="4"
+                                                                            />
+                                                                            <path
+                                                                                className="opacity-75"
+                                                                                fill="currentColor"
+                                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                            />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
+                                                                    Execute Matrix
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
