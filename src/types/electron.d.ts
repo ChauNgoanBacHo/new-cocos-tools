@@ -297,6 +297,7 @@ interface ElectronAPI {
         }>;
         createTemplate: (payload: {
             gameId: string;
+            gameName?: string;
             title?: string;
             matrixData: string;
             tableFormat: string;
@@ -322,6 +323,7 @@ interface ElectronAPI {
         }>;
         updateTemplate: (templateId: string, payload: {
             gameId: string;
+            gameName?: string;
             title?: string;
             matrixData: string;
             tableFormat: string;

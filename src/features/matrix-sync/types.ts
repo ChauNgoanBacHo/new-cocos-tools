@@ -38,6 +38,7 @@ export interface MatrixTemplateDetailResponse {
 
 export interface MatrixTemplateMutationPayload {
   gameId: string;
+  gameName?: string;
   title?: string;
   matrixData: string;
   tableFormat: string;

@@ -697,6 +697,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
         const payload = {
             gameId: activeGame.id,
+            gameName: activeGame.name.trim(),
             title: panel.title.trim(),
             matrixData: panel.matrixData.trim(),
             tableFormat: panel.tableFormat.trim(),
