@@ -23,6 +23,24 @@ function getCodeHealthScriptsPath(outputPath: string) {
     return normalizedPath.slice(0, scriptsIndex + "/scripts".length);
 }
 
+function parseAnimDetailLine(line: string) {
+    const trimmed = line.trim();
+    const separatorIndex = trimmed.indexOf(":");
+
+    if (separatorIndex <= 0 || separatorIndex === trimmed.length - 1) {
+        return null;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim();
+
+    if (!key || !value) {
+        return null;
+    }
+
+    return { key, value };
+}
+
 export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfigsProps) {
     const [spineDir, setSpineDir] = useStoredState<string>("anim-spine-dir", "");
     const [outputDir, setOutputDir] = useStoredState<string>("anim-output-dir", "");
@@ -152,7 +170,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     isRunning
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-red-500/10 hover:bg-red-500/15 border-red-400/30 text-red-300 cursor-pointer"
+                                        : "bg-red-50 hover:bg-red-100 border-red-200 text-red-600 cursor-pointer dark:bg-red-500/10 dark:hover:bg-red-500/15 dark:border-red-400/30 dark:text-red-300"
                                 }`}>
                                 Clear
                             </button>
@@ -319,16 +337,51 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                             <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 font-bold">{section.title}</span>
                                         </div>
                                         <div className="p-4 text-sm font-mono text-left">
-                                            {section.lines.map((line, j) => (
-                                                <div key={j} className={`py-1 ${
-                                                    line.includes("ERROR:") ? "text-red-600 dark:text-red-400" :
-                                                    line.includes("Generated:") ? "text-emerald-600 dark:text-emerald-400" :
-                                                    line.includes("not written") ? "text-yellow-600 dark:text-yellow-400" :
-                                                    "text-slate-700 dark:text-zinc-200"
-                                                }`}>
-                                                    {line.trim()}
-                                                </div>
-                                            ))}
+                                            {(() => {
+                                                const parsedLines = section.lines.map((line) => ({
+                                                    raw: line,
+                                                    detail: parseAnimDetailLine(line),
+                                                }));
+                                                const detailLines = parsedLines.filter((item) => item.detail);
+                                                const plainLines = parsedLines.filter((item) => !item.detail);
+
+                                                return (
+                                                    <div className="space-y-3">
+                                                        {detailLines.length > 0 && (
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                                                                {detailLines.map((item, j) => (
+                                                                    <div
+                                                                        key={`detail-${j}`}
+                                                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/5 dark:bg-[#1b2029]"
+                                                                    >
+                                                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+                                                                            {item.detail?.key}
+                                                                        </div>
+                                                                        <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-zinc-100">
+                                                                            {item.detail?.value}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {plainLines.length > 0 && (
+                                                            <div>
+                                                                {plainLines.map((item, j) => (
+                                                                    <div key={`plain-${j}`} className={`py-1 ${
+                                                                        item.raw.includes("ERROR:") ? "text-red-600 dark:text-red-400" :
+                                                                        item.raw.includes("Generated:") ? "text-emerald-600 dark:text-emerald-400" :
+                                                                        item.raw.includes("not written") ? "text-yellow-600 dark:text-yellow-400" :
+                                                                        "text-slate-700 dark:text-zinc-200"
+                                                                    }`}>
+                                                                        {item.raw.trim()}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 ))}

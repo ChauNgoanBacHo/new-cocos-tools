@@ -1278,7 +1278,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     {localSocketStatus.running && (
                                                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
                                                             <span>Use</span>
-                                                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25 bg-[#7d6df7]/10 text-[#b7a8ff]">
+                                                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25">
                                                                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                                     <path
                                                                         strokeLinecap="round"
@@ -1307,14 +1307,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                     <div className="overflow-hidden rounded-2xl border border-white/5">
                                         <button
                                             type="button"
-                                            className="flex w-full items-center justify-between bg-white/5 px-5 py-3 border-b border-white/5 text-left cursor-pointer select-none focus:outline-none"
+                                            className="flex w-full items-center justify-between bg-slate-50 px-5 py-3 border-b border-slate-200 text-left cursor-pointer select-none focus:outline-none dark:bg-white/5 dark:border-white/5"
                                             onClick={() => setIsAutoplaySequenceExpanded((prev) => !prev)}>
                                             <div className="flex items-center gap-2.5">
-                                                <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
+                                                <span className={`text-[9px] text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isAutoplaySequenceExpanded ? "rotate-90" : ""}`}>
                                                     ▶
                                                 </span>
                                                 <span className="text-sm">🔁</span>
-                                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-100 font-mono">
+                                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
                                                     Autoplay Matrix Sequence
                                                 </h3>
                                             </div>

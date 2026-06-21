@@ -306,16 +306,16 @@ export default function CodeHealth() {
             return (
                 <div
                     key={file.filePath}
-                    className="rounded-2xl border border-white/5 overflow-hidden bg-[#1f2430] shadow-sm">
+                    className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm dark:border-white/5 dark:bg-[#1f2430]">
                     <button
                         type="button"
                         onClick={() => toggleExpanded(file.filePath)}
-                        className="w-full flex flex-col gap-3 bg-white/5 px-5 py-3 border-b border-white/5 hover:bg-white/10 transition-all text-left md:flex-row md:items-center md:justify-between">
+                        className="w-full flex flex-col gap-3 bg-slate-50 px-5 py-3 border-b border-slate-200 hover:bg-[#f3f0ff] transition-all text-left dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-3 min-w-0">
                             <span className="flex items-center justify-center">
                                 <ChevronIcon expanded={isExpanded} />
                             </span>
-                            <span className="font-semibold text-zinc-100 break-all">
+                            <span className="font-semibold text-slate-800 break-all dark:text-zinc-100">
                                 {file.filePath}
                             </span>
                         </div>
@@ -330,8 +330,8 @@ export default function CodeHealth() {
                     {isExpanded && (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
-                                <thead className="bg-[#1b2029] border-y border-white/5">
-                                    <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                                <thead className="bg-slate-50 border-y border-slate-200 dark:bg-[#1b2029] dark:border-white/5">
+                                    <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
                                         <th className="px-4 py-3 font-mono w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">Source</th>
                                         <th className="px-4 py-3 font-mono w-[140px] min-w-[140px] max-w-[140px] whitespace-nowrap">Location</th>
                                         <th className="px-4 py-3 font-mono">Message</th>
@@ -342,7 +342,7 @@ export default function CodeHealth() {
                                     {file.issues.map((issue, index) => (
                                         <tr
                                             key={`${file.filePath}-${issue.ruleId}-${index}`}
-                                            className="border-b border-white/5 last:border-0 align-top">
+                                            className="border-b border-slate-200 last:border-0 align-top dark:border-white/5">
                                             <td className="px-4 py-3 w-[120px] min-w-[120px] max-w-[120px] whitespace-nowrap">
                                                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                                                     issue.source === "typescript"
@@ -354,7 +354,7 @@ export default function CodeHealth() {
                                                     {issue.source === "typescript" ? "TypeScript" : "ESLint"}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-zinc-300 font-mono whitespace-nowrap w-[140px] min-w-[140px] max-w-[140px]">
+                                            <td className="px-4 py-3 text-slate-600 font-mono whitespace-nowrap w-[140px] min-w-[140px] max-w-[140px] dark:text-zinc-300">
                                                 <button
                                                     type="button"
                                                     onClick={() => void handleOpenInVSCode(file, issue)}
@@ -362,10 +362,10 @@ export default function CodeHealth() {
                                                     {issue.location.label}
                                                 </button>
                                             </td>
-                                            <td className="px-4 py-3 text-zinc-100">
+                                            <td className="px-4 py-3 text-slate-700 dark:text-zinc-100">
                                                 {issue.message}
                                             </td>
-                                            <td className="px-4 py-3 text-zinc-400 font-mono whitespace-nowrap min-w-[112px]">
+                                            <td className="px-4 py-3 text-slate-500 font-mono whitespace-nowrap min-w-[112px] dark:text-zinc-400">
                                                 {issue.ruleId}
                                             </td>
                                         </tr>
@@ -424,7 +424,7 @@ export default function CodeHealth() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     isRunning
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-red-500/10 hover:bg-red-500/15 border-red-400/30 text-red-300 cursor-pointer"
+                                        : "bg-red-50 hover:bg-red-100 border-red-200 text-red-600 cursor-pointer dark:bg-red-500/10 dark:hover:bg-red-500/15 dark:border-red-400/30 dark:text-red-300"
                                 }`}>
                                 Clear
                             </button>

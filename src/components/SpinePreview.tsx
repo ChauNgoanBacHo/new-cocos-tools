@@ -108,7 +108,7 @@ export default function SpinePreview() {
                                 className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
                                     isRunning
                                         ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-700 cursor-not-allowed"
-                                        : "bg-red-500/10 hover:bg-red-500/15 border-red-400/30 text-red-300 cursor-pointer"
+                                        : "bg-red-50 hover:bg-red-100 border-red-200 text-red-600 cursor-pointer dark:bg-red-500/10 dark:hover:bg-red-500/15 dark:border-red-400/30 dark:text-red-300"
                                 }`}>
                                 Clear
                             </button>

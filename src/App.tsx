@@ -135,6 +135,8 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
 
 function App() {
     const [activeTab, setActiveTab] = useState<TabType>("cheat");
+    const [menuPulseTab, setMenuPulseTab] = useState<TabType>("cheat");
+    const [menuPulseTick, setMenuPulseTick] = useState(0);
     const [cheatViewResetKey, setCheatViewResetKey] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
@@ -201,6 +203,16 @@ function App() {
 
     const handleResetMenuGroupOrder = () => {
         setMenuGroupOrder(MENU_GROUPS.map((group) => group.id));
+    };
+
+    const triggerMenuSelection = (tabId: TabType) => {
+        setActiveTab(tabId);
+        setMenuPulseTab(tabId);
+        setMenuPulseTick((prev) => prev + 1);
+
+        if (tabId === "cheat") {
+            setCheatViewResetKey((prev) => prev + 1);
+        }
     };
 
     useEffect(() => {
@@ -418,17 +430,12 @@ function App() {
                                         const active = activeTab === tab.id;
                                         return (
                                             <button
-                                                key={tab.id}
-                                                onClick={() => {
-                                                    setActiveTab(tab.id);
-                                                    if (tab.id === "cheat") {
-                                                        setCheatViewResetKey((prev) => prev + 1);
-                                                    }
-                                                }}
-                                                className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)}`}>
+                                                key={`${tab.id}-${active && menuPulseTab === tab.id ? menuPulseTick : "idle"}`}
+                                                onClick={() => triggerMenuSelection(tab.id)}
+                                                className={`group w-full text-left py-3 px-3.5 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-between border ${navItemClassName(active)} ${active && menuPulseTab === tab.id ? "opm-nav-item-active" : ""}`}>
                                                 <span className="flex items-center gap-3">
                                                     <svg
-                                                        className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)}`}
+                                                        className={`w-5 h-5 shrink-0 transition-colors ${navIconClassName(active)} ${active && menuPulseTab === tab.id ? "opm-nav-icon-active" : ""}`}
                                                         fill="none"
                                                         viewBox="0 0 24 24"
                                                         stroke="currentColor"

@@ -212,7 +212,7 @@ export function DriveSyncMenu() {
               type="button"
               onClick={() => handleSync('today')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-[#39435a] hover:bg-[#46506a] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-black/10 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
               {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : (
                 <>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -226,7 +226,7 @@ export function DriveSyncMenu() {
               type="button"
               onClick={() => handleSync('all')}
               disabled={!selectedDrive || !localRoot || syncing}
-              className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+              className="flex-1 px-6 py-3.5 bg-[#39435a] hover:bg-[#46506a] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-black/10 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
               {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : (
                 <>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

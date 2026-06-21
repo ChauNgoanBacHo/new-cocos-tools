@@ -89,7 +89,7 @@ export function SettingsPanel({
                         <button
                             type="button"
                             onClick={onResetMenuOrder}
-                            className="px-3 py-2 rounded-lg border border-[#7d6df7]/25 bg-[#7d6df7]/10 hover:bg-[#7d6df7]/18 text-xs font-semibold text-[#c2b7ff] transition-all cursor-pointer">
+                            className="px-3 py-2 rounded-lg border border-[#7d6df7]/25 bg-[#f3efff] hover:bg-[#ebe4ff] text-xs font-semibold text-[#6d57f3] transition-all cursor-pointer dark:bg-[#7d6df7]/10 dark:hover:bg-[#7d6df7]/18 dark:text-[#c2b7ff]">
                             Reset Menu Order
                         </button>
                     </div>
