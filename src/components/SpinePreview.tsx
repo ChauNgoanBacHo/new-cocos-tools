@@ -76,7 +76,7 @@ export default function SpinePreview() {
                 </div>
             </div>
 
-            <div className="bg-[#f6f8fc] border border-[#d9e1ef] dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.14)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
+            <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">
                 <div className="py-6 space-y-6">
                     {status.type && (
                         <div className="px-6">

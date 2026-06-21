@@ -1245,7 +1245,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
             <div className={`overflow-hidden ${
                 selectedGameId
-                    ? "bg-[#f6f8fc] border border-[#d9e1ef] dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.14)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
+                    ? "bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)]"
                     : ""
             }`}>
                 <div>
@@ -1269,7 +1269,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                             {isCreatingGame && (
                                 <form
                                     onSubmit={handleCreateGame}
-                                    className="bg-[#f6f8fc] border border-[#d9e1ef] dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.14)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden animate-in fade-in duration-200">
+                                    className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden animate-in fade-in duration-200">
                                     <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-3 dark:border-white/5 dark:bg-white/5">
                                         <span className="text-sm text-[#b7a8ff]">🎮</span>
                                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100 font-mono">
@@ -1327,7 +1327,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                         <div
                                             key={game.id}
                                             onClick={() => setSelectedGameId(game.id)}
-                                            className="group relative bg-[#f6f8fc] border border-[#d9e1ef] dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(148,163,184,0.14)] dark:shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#eef3fa] dark:hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(148,163,184,0.18)] dark:hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
+                                            className="group relative bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_10px_24px_rgba(148,163,184,0.16)] dark:shadow-[0_10px_24px_rgba(10,12,18,0.18)] min-h-[160px] overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-[#f6f8fc] dark:hover:bg-[#353c4d] hover:shadow-[0_14px_28px_rgba(148,163,184,0.2)] dark:hover:shadow-[0_14px_28px_rgba(10,12,18,0.22)] flex flex-col justify-between p-5">
                                             <div>
                                                 <div className="flex justify-between items-start">
                                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#5964d8] to-[#7d6df7] text-white flex items-center justify-center font-bold font-mono text-sm shadow-md shadow-[#4f57bb]/20">
@@ -1906,7 +1906,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                 setDraggedPanelId(null);
                                                 setDragOverPanelId(null);
                                             }}
-                                            className={`bg-[#f6f8fc] border border-[#d9e1ef] dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.14)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200 ${
+                                            className={`bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.24)] overflow-hidden transition-all duration-200 ${
                                                 draggedPanelId === panel.id
                                                     ? "opacity-60 scale-[0.995]"
                                                     : ""
