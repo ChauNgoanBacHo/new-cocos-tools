@@ -8,6 +8,10 @@ interface ElectronAPI {
     };
     selectFolder: () => Promise<string | null>;
     selectFile: () => Promise<string | null>;
+    openExternalLink: (url: string) => Promise<{
+        ok: boolean;
+        error?: string;
+    }>;
     openInVSCode: (filePath: string, line?: number | null, column?: number | null) => Promise<{
         ok: boolean;
         error?: string;
@@ -344,6 +348,10 @@ interface ElectronAPI {
                 createdAt: string;
                 publishedBy: string | null;
             };
+        }>;
+        openHostedGame: (gameId: string) => Promise<{
+            ok: boolean;
+            error?: string;
         }>;
     };
 }

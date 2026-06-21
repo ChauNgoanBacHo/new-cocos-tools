@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
     selectFolder: () => ipcRenderer.invoke("select-folder"),
     selectFile: () => ipcRenderer.invoke("select-file"),
+    openExternalLink: (url: string) => ipcRenderer.invoke("open-external-link", url),
     openInVSCode: (filePath: string, line?: number | null, column?: number | null) =>
         ipcRenderer.invoke("open-in-vscode", filePath, line, column),
     runEslint: (sourcePath: string) =>
@@ -81,5 +82,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
         getTemplate: (templateId: string) => ipcRenderer.invoke("matrix-sync:get-template", templateId),
         createTemplate: (payload: unknown) => ipcRenderer.invoke("matrix-sync:create-template", payload),
         updateTemplate: (templateId: string, payload: unknown) => ipcRenderer.invoke("matrix-sync:update-template", templateId, payload),
+        openHostedGame: (gameId: string) => ipcRenderer.invoke("matrix-sync:open-hosted-game", gameId),
     },
 });

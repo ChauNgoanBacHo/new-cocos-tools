@@ -40,6 +40,8 @@ protocol.registerSchemesAsPrivileged([
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow: BrowserWindow | null = null;
+const INTERNAL_API_BASE_URL = "https://drive-bot-0ahh.onrender.com";
+const INTERNAL_API_KEY = "e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02";
 
 function getAppIconPath() {
     return app.isPackaged
@@ -118,6 +120,62 @@ ipcMain.handle("select-file", async () => {
 });
 
 ipcMain.handle("get-app-version", () => app.getVersion());
+
+ipcMain.handle("open-external-link", async (_event, url: string) => {
+    try {
+        const targetUrl = String(url || "").trim();
+        if (!targetUrl) {
+            return {
+                ok: false,
+                error: "URL is required.",
+            };
+        }
+
+        const opened = await shell.openExternal(targetUrl);
+        if (opened === "") {
+            return { ok: true };
+        }
+
+        return {
+            ok: false,
+            error: opened,
+        };
+    } catch (error: unknown) {
+        return {
+            ok: false,
+            error: error instanceof Error ? error.message : "Failed to open external link.",
+        };
+    }
+});
+
+ipcMain.handle("matrix-sync:open-hosted-game", async (_event, gameId: string) => {
+    try {
+        const normalizedGameId = String(gameId || "").trim();
+        if (!normalizedGameId) {
+            return {
+                ok: false,
+                error: "Game ID is required.",
+            };
+        }
+
+        const targetUrl = `${INTERNAL_API_BASE_URL}/matrix-simulator/games/${encodeURIComponent(normalizedGameId)}`;
+        const opened = await shell.openExternal(targetUrl);
+
+        if (opened === "") {
+            return { ok: true };
+        }
+
+        return {
+            ok: false,
+            error: opened,
+        };
+    } catch (error: unknown) {
+        return {
+            ok: false,
+            error: error instanceof Error ? error.message : "Failed to open hosted game page.",
+        };
+    }
+});
 
 function runDetachedCommand(command: string, args: string[]) {
     return new Promise<void>((resolve, reject) => {
@@ -213,11 +271,11 @@ registerCheatLocalSocketHandlers();
 registerExportCheatExtensionHandlers();
 
 setupDriveSyncHandlers(
-    'https://drive-bot-0ahh.onrender.com',
-    'e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02'
+    INTERNAL_API_BASE_URL,
+    INTERNAL_API_KEY,
 );
 
 setupMatrixSyncHandlers(
-    "https://drive-bot-0ahh.onrender.com",
-    "e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02",
+    INTERNAL_API_BASE_URL,
+    INTERNAL_API_KEY,
 );

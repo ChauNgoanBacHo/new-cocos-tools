@@ -1565,7 +1565,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
                                                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
-                                                    Matrix Sync API
+                                                    Matrix Sync
                                                 </label>
                                                 <div className="sm:col-span-2 space-y-3">
                                                     <div className="flex flex-wrap gap-2">
@@ -1580,13 +1580,35 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                     ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-zinc-700 dark:text-zinc-500"
                                                                     : "bg-[#7d6df7] hover:bg-[#9387ff] text-white shadow-md shadow-[#7d6df7]/20 cursor-pointer"
                                                             }`}>
-                                                            {isFetchingRemoteTemplates ? "Fetching..." : "Fetch by Game"}
+                                                            {isFetchingRemoteTemplates ? "Fetching..." : "Get Matrix"}
                                                         </button>
                                                         <button
                                                             type="button"
                                                             onClick={() => setIsRemoteLibraryOpen((prev) => !prev)}
                                                             className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-200 dark:hover:bg-[#232938]">
                                                             {isRemoteLibraryOpen ? "Hide Remote Library" : "Show Remote Library"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                void (async () => {
+                                                                    const response = await window.electronAPI.matrixSync.openHostedGame(activeGame.id);
+                                                                    if (!response.ok) {
+                                                                        setStatus({
+                                                                            type: "error",
+                                                                            message: response.error
+                                                                                ? `❌ Không thể mở link ngoài: ${response.error}`
+                                                                                : "❌ Không thể mở link ngoài.",
+                                                                        });
+                                                                    }
+                                                                })();
+                                                            }}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-200 dark:hover:bg-[#232938]">
+                                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H18m0 0v4.5M18 6l-7.5 7.5" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 6H7.5A1.5 1.5 0 006 7.5v9A1.5 1.5 0 007.5 18h9a1.5 1.5 0 001.5-1.5v-2.25" />
+                                                            </svg>
+                                                            <span>Open Game</span>
                                                         </button>
                                                     </div>
 
