@@ -44,6 +44,9 @@ interface PanelData {
     title: string;
     matrixData: string;
     tableFormat: string;
+    remoteTemplateId?: string;
+    remoteTemplateVersion?: number;
+    remoteUpdatedAt?: string;
     jackpotTypeLeft: string;
     isExpanded: boolean;
     delay?: number;
@@ -181,6 +184,44 @@ interface GameData {
     fieldConfig?: FieldConfig[];
 }
 
+interface RemoteMatrixTemplateListItem {
+    id: string;
+    gameId: string;
+    slug: string;
+    title: string;
+    tableFormat: string;
+    tags: string[];
+    version: number;
+    updatedAt: string;
+    createdAt: string;
+    publishedBy: string | null;
+}
+
+interface RemoteMatrixTemplateDetail extends RemoteMatrixTemplateListItem {
+    matrixData: string;
+    additionalData: Record<string, string>;
+    notes: string;
+}
+
+interface PanelStatusState {
+    type: "success" | "error" | null;
+    message: string;
+}
+
+function buildAdditionalDataPayload(panel: PanelData, fieldConfig?: FieldConfig[]) {
+    const resolvedFieldConfig = getResolvedFieldConfig(fieldConfig);
+    const additionalData: Record<string, string> = {};
+
+    for (const { key } of resolvedFieldConfig) {
+        const value = panel[key];
+        if (typeof value === "string" && value.trim()) {
+            additionalData[String(key)] = value.trim();
+        }
+    }
+
+    return additionalData;
+}
+
 interface CheatConsoleProps {
     resetSignal?: number;
 }
@@ -215,6 +256,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const matrixCellAnimationTimeoutRef = useRef<number | null>(null);
     const [isCommonDataOpen, setIsCommonDataOpen] = useState(true);
     const [isFieldConfigOpen, setIsFieldConfigOpen] = useState(false);
+    const [isRemoteLibraryOpen, setIsRemoteLibraryOpen] = useState(false);
+    const [isFetchingRemoteTemplates, setIsFetchingRemoteTemplates] = useState(false);
+    const [remoteTemplates, setRemoteTemplates] = useState<RemoteMatrixTemplateListItem[]>([]);
+    const [selectedRemoteTemplateId, setSelectedRemoteTemplateId] = useState<string | null>(null);
+    const [selectedRemoteTemplateDetail, setSelectedRemoteTemplateDetail] = useState<RemoteMatrixTemplateDetail | null>(null);
+    const [isLoadingRemoteTemplateDetail, setIsLoadingRemoteTemplateDetail] = useState(false);
+    const [publishingPanelId, setPublishingPanelId] = useState<string | null>(null);
+    const [panelStatuses, setPanelStatuses] = useState<Record<string, PanelStatusState>>({});
     const [animatedMatrixCell, setAnimatedMatrixCell] = useState<string | null>(null);
     const [localSocketStatus, setLocalSocketStatus] = useState<CheatLocalSocketStatus>({
         enabled: false,
@@ -520,6 +569,204 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         );
     };
 
+    const setPanelStatus = (panelId: string, nextStatus: PanelStatusState) => {
+        setPanelStatuses((prev) => ({
+            ...prev,
+            [panelId]: nextStatus,
+        }));
+    };
+
+    const createPanelFromRemoteTemplate = (
+        template: RemoteMatrixTemplateDetail,
+        nextId: string,
+        fieldConfig?: FieldConfig[],
+    ): PanelData => {
+        const nextPanel: PanelData = {
+            id: nextId,
+            title: template.title ?? "",
+            matrixData: template.matrixData,
+            tableFormat: template.tableFormat,
+            jackpotTypeLeft: "",
+            isExpanded: true,
+            isAdditionalExpanded: true,
+            delay: 2,
+            remoteTemplateId: template.id,
+            remoteTemplateVersion: template.version,
+            remoteUpdatedAt: template.updatedAt,
+        };
+
+        const enabledLocalFieldKeys = new Set(
+            getResolvedFieldConfig(fieldConfig)
+                .filter((field) => field.visible)
+                .map((field) => String(field.key)),
+        );
+
+        for (const [key, value] of Object.entries(template.additionalData || {})) {
+            if (enabledLocalFieldKeys.has(key) && typeof value === "string") {
+                (nextPanel as unknown as Record<string, unknown>)[key] = value;
+            }
+        }
+
+        return nextPanel;
+    };
+
+    const handleFetchRemoteTemplates = async () => {
+        if (!activeGame) {
+            setStatus({ type: "error", message: "❌ Hãy chọn game trước khi fetch Matrix từ API." });
+            return;
+        }
+
+        setIsFetchingRemoteTemplates(true);
+        setSelectedRemoteTemplateId(null);
+        setSelectedRemoteTemplateDetail(null);
+
+        try {
+            const response = await window.electronAPI.matrixSync.listByGame(activeGame.id);
+            setRemoteTemplates(response.items);
+            setIsRemoteLibraryOpen(true);
+            setStatus({
+                type: "success",
+                message: response.items.length > 0
+                    ? `☁️ Đã tải ${response.items.length} matrix từ API cho game ${activeGame.id}.`
+                    : `☁️ Chưa có matrix nào trên API cho game ${activeGame.id}.`,
+            });
+        } catch (error) {
+            setStatus({
+                type: "error",
+                message: error instanceof Error
+                    ? `❌ Không thể fetch matrix từ API: ${error.message}`
+                    : "❌ Không thể fetch matrix từ API.",
+            });
+        } finally {
+            setIsFetchingRemoteTemplates(false);
+        }
+    };
+
+    const handleSelectRemoteTemplate = async (templateId: string) => {
+        setSelectedRemoteTemplateId(templateId);
+        setIsLoadingRemoteTemplateDetail(true);
+
+        try {
+            const response = await window.electronAPI.matrixSync.getTemplate(templateId);
+            setSelectedRemoteTemplateDetail(response.item);
+        } catch (error) {
+            setSelectedRemoteTemplateDetail(null);
+            setStatus({
+                type: "error",
+                message: error instanceof Error
+                    ? `❌ Không thể tải chi tiết matrix remote: ${error.message}`
+                    : "❌ Không thể tải chi tiết matrix remote.",
+            });
+        } finally {
+            setIsLoadingRemoteTemplateDetail(false);
+        }
+    };
+
+    const handleImportRemoteTemplate = () => {
+        if (!activeGame || !selectedRemoteTemplateDetail) {
+            setStatus({ type: "error", message: "❌ Hãy chọn matrix remote trước khi import." });
+            return;
+        }
+
+        const nextId = (
+            Math.max(...activeGame.panels.map((panel) => parseInt(panel.id, 10) || 0), 0) + 1
+        ).toString();
+
+        const nextPanel = createPanelFromRemoteTemplate(
+            selectedRemoteTemplateDetail,
+            nextId,
+            activeGame.fieldConfig,
+        );
+        updateActiveGamePanels((prev) => [...prev, nextPanel]);
+
+        setStatus({
+            type: "success",
+            message: `📥 Đã import matrix "${selectedRemoteTemplateDetail.title || selectedRemoteTemplateDetail.slug}" từ API vào local theo cấu hình field đang bật trên máy này.`,
+        });
+    };
+
+    const handlePublishPanel = async (panel: PanelData) => {
+        if (!activeGame) return;
+
+        if (!panel.matrixData.trim()) {
+            setStatus({ type: "error", message: `❌ Matrix #${panel.id} chưa có Matrix Data để publish.` });
+            setPanelStatus(panel.id, { type: "error", message: "Matrix Data is required before publishing." });
+            return;
+        }
+
+        if (!panel.tableFormat.trim()) {
+            setStatus({ type: "error", message: `❌ Matrix #${panel.id} chưa có Table Format để publish.` });
+            setPanelStatus(panel.id, { type: "error", message: "Table Format is required before publishing." });
+            return;
+        }
+
+        setPublishingPanelId(panel.id);
+        setPanelStatus(panel.id, { type: null, message: "" });
+
+        const payload = {
+            gameId: activeGame.id,
+            title: panel.title.trim(),
+            matrixData: panel.matrixData.trim(),
+            tableFormat: panel.tableFormat.trim(),
+            additionalData: buildAdditionalDataPayload(panel, activeGame.fieldConfig),
+            publishedBy: activeGame.userId.trim() || null,
+        };
+
+        try {
+            const response = panel.remoteTemplateId
+                ? await window.electronAPI.matrixSync.updateTemplate(panel.remoteTemplateId, {
+                    ...payload,
+                    version: panel.remoteTemplateVersion,
+                })
+                : await window.electronAPI.matrixSync.createTemplate(payload);
+
+            updateActiveGamePanels((prev) =>
+                prev.map((currentPanel) =>
+                    currentPanel.id === panel.id
+                        ? {
+                            ...currentPanel,
+                            remoteTemplateId: response.item.id,
+                            remoteTemplateVersion: response.item.version,
+                            remoteUpdatedAt: response.item.updatedAt,
+                        }
+                        : currentPanel,
+                ),
+            );
+
+            setStatus({
+                type: "success",
+                message: panel.remoteTemplateId
+                    ? `☁️ Đã update Matrix #${panel.id} lên API thành công.`
+                    : `☁️ Đã publish Matrix #${panel.id} lên API thành công.`,
+            });
+            setPanelStatus(panel.id, {
+                type: "success",
+                message: panel.remoteTemplateId
+                    ? "Remote matrix updated successfully."
+                    : "Published to Matrix Sync API successfully.",
+            });
+
+            if (isRemoteLibraryOpen) {
+                void handleFetchRemoteTemplates();
+            }
+        } catch (error) {
+            setStatus({
+                type: "error",
+                message: error instanceof Error
+                    ? `❌ Publish matrix thất bại: ${error.message}`
+                    : "❌ Publish matrix thất bại.",
+            });
+            setPanelStatus(panel.id, {
+                type: "error",
+                message: error instanceof Error
+                    ? error.message
+                    : "Publish failed.",
+            });
+        } finally {
+            setPublishingPanelId(null);
+        }
+    };
+
     const updateActiveGamePanels = (updater: PanelData[] | ((prev: PanelData[]) => PanelData[])) => {
         setGames((prev) =>
             prev.map((g) => {
@@ -632,19 +879,23 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
         if (!userId.trim()) {
             setStatus({ type: "error", message: "❌ Vui lòng nhập User ID!" });
+            setPanelStatus(panel.id, { type: "error", message: "User ID is required before execute." });
             return;
         }
         if (!panel.matrixData.trim()) {
             setStatus({ type: "error", message: "❌ Vui lòng nhập Matrix cho Panel #" + panel.id + "!" });
+            setPanelStatus(panel.id, { type: "error", message: "Matrix Data is required before execute." });
             return;
         }
         if (!panel.tableFormat.trim()) {
             setStatus({ type: "error", message: "❌ Vui lòng nhập Table Format cho Panel #" + panel.id + "!" });
+            setPanelStatus(panel.id, { type: "error", message: "Table Format is required before execute." });
             return;
         }
 
         setExecutingPanelId(panel.id);
         setStatus({ type: null, message: "" });
+        setPanelStatus(panel.id, { type: null, message: "" });
 
         const submitTargetUrl = `https://cheat.${activeGame.env}.enostd.gay/${gameId}/inputed`;
 
@@ -668,16 +919,28 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                     type: "success",
                     message: `🚀 Execute Cheat [Panel #${panel.id}] thành công! Máy chủ đã ghi nhận thông số mới.`,
                 });
+                setPanelStatus(panel.id, {
+                    type: "success",
+                    message: "Execute success. Server accepted this matrix configuration.",
+                });
             } else {
                 setStatus({
                     type: "error",
                     message: `❌ Thất bại [Panel #${panel.id}]! Máy chủ phản hồi mã lỗi: ${response.status}`,
+                });
+                setPanelStatus(panel.id, {
+                    type: "error",
+                    message: `Execute failed with status ${response.status}.`,
                 });
             }
         } catch (error) {
             setStatus({
                 type: "error",
                 message: `❌ Lỗi kết nối mạng hoặc server chặn CORS Request [Panel #${panel.id}]!`,
+            });
+            setPanelStatus(panel.id, {
+                type: "error",
+                message: "Network error or blocked request while executing this matrix.",
             });
         } finally {
             setExecutingPanelId(null);
@@ -1299,6 +1562,157 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     )}
                                                 </div>
                                             </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 pt-1">
+                                                    Matrix Sync API
+                                                </label>
+                                                <div className="sm:col-span-2 space-y-3">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                void handleFetchRemoteTemplates();
+                                                            }}
+                                                            disabled={isFetchingRemoteTemplates}
+                                                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                                                                isFetchingRemoteTemplates
+                                                                    ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-zinc-700 dark:text-zinc-500"
+                                                                    : "bg-[#7d6df7] hover:bg-[#9387ff] text-white shadow-md shadow-[#7d6df7]/20 cursor-pointer"
+                                                            }`}>
+                                                            {isFetchingRemoteTemplates ? "Fetching..." : "Fetch by Game"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsRemoteLibraryOpen((prev) => !prev)}
+                                                            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-200 dark:hover:bg-[#232938]">
+                                                            {isRemoteLibraryOpen ? "Hide Remote Library" : "Show Remote Library"}
+                                                        </button>
+                                                    </div>
+
+                                                    {isRemoteLibraryOpen && (
+                                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4 dark:border-white/5 dark:bg-[#1b2029]">
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <div>
+                                                                    <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200 font-mono">
+                                                                        Remote Matrix Library
+                                                                    </div>
+                                                                    <div className="mt-1 text-[11px] text-slate-500 dark:text-zinc-400">
+                                                                        {remoteTemplates.length > 0
+                                                                            ? `${remoteTemplates.length} matrix templates for game ${activeGame.id}`
+                                                                            : `No remote templates loaded for game ${activeGame.id}`}
+                                                                    </div>
+                                                                </div>
+                                                                {selectedRemoteTemplateDetail && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleImportRemoteTemplate}
+                                                                        className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 cursor-pointer">
+                                                                        Import to Local
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)] gap-4">
+                                                                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                                                    {remoteTemplates.map((template) => {
+                                                                        const isSelected = selectedRemoteTemplateId === template.id;
+                                                                        return (
+                                                                            <button
+                                                                                key={template.id}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    void handleSelectRemoteTemplate(template.id);
+                                                                                }}
+                                                                                className={`w-full rounded-xl border px-3 py-3 text-left transition-all cursor-pointer ${
+                                                                                    isSelected
+                                                                                        ? "border-[#7d6df7]/40 bg-[#f3f0ff] dark:bg-[#2c2449] dark:border-[#7d6df7]/50"
+                                                                                        : "border-slate-200 bg-white hover:bg-slate-50 dark:border-white/5 dark:bg-[#232938] dark:hover:bg-[#2b3243]"
+                                                                                }`}>
+                                                                                <div className="text-xs font-bold text-slate-800 dark:text-zinc-100">
+                                                                                    {template.title || template.slug}
+                                                                                </div>
+                                                                                <div className="mt-1 text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
+                                                                                    v{template.version} • {template.tableFormat}
+                                                                                </div>
+                                                                                <div className="mt-1 text-[11px] text-slate-400 dark:text-zinc-500">
+                                                                                    {template.updatedAt}
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+
+                                                                <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/5 dark:bg-[#232938]">
+                                                                    {isLoadingRemoteTemplateDetail ? (
+                                                                        <div className="text-sm text-slate-500 dark:text-zinc-400">
+                                                                            Loading remote template detail...
+                                                                        </div>
+                                                                    ) : selectedRemoteTemplateDetail ? (
+                                                                        <div className="space-y-3 text-left">
+                                                                            <div>
+                                                                                <div className="text-sm font-bold text-slate-800 dark:text-zinc-100">
+                                                                                    {selectedRemoteTemplateDetail.title || selectedRemoteTemplateDetail.slug}
+                                                                                </div>
+                                                                                {selectedRemoteTemplateDetail.tags.length > 0 && (
+                                                                                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                                                                        {selectedRemoteTemplateDetail.tags.map((tag) => (
+                                                                                            <span
+                                                                                                key={tag}
+                                                                                                className="inline-flex items-center rounded-full border border-[#7d6df7]/20 bg-[#7d6df7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#6c59e8] dark:text-[#c2b7ff]">
+                                                                                                {tag}
+                                                                                            </span>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] font-mono text-slate-700 break-all dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-300">
+                                                                                {selectedRemoteTemplateDetail.matrixData}
+                                                                            </div>
+                                                                            <div className="text-[11px] text-slate-600 dark:text-zinc-400">
+                                                                                Table Format: <span className="font-mono">{selectedRemoteTemplateDetail.tableFormat}</span>
+                                                                            </div>
+                                                                            <div className="space-y-2">
+                                                                                <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                                                                                    Additional Data
+                                                                                </div>
+                                                                                {Object.keys(selectedRemoteTemplateDetail.additionalData || {}).length > 0 ? (
+                                                                                    <div className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-white/5 dark:bg-[#1b2029]">
+                                                                                        {Object.entries(selectedRemoteTemplateDetail.additionalData).map(([key, value]) => (
+                                                                                            <div
+                                                                                                key={key}
+                                                                                                className="flex items-center gap-2 text-[11px]">
+                                                                                                <div
+                                                                                                    className="w-[140px] shrink-0 truncate font-mono text-[10px] uppercase tracking-wide text-slate-500 dark:text-zinc-500"
+                                                                                                    title={key}>
+                                                                                                    {key}
+                                                                                                </div>
+                                                                                                <div
+                                                                                                    className="min-w-0 flex-1 truncate text-slate-700 dark:text-zinc-200"
+                                                                                                    title={value}>
+                                                                                                    {value}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="text-[11px] text-slate-400 dark:text-zinc-500">
+                                                                                        No additional data.
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="text-sm text-slate-500 dark:text-zinc-400">
+                                                                            Select a remote matrix template to preview and import.
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -1689,7 +2103,38 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                     </div>
 
                                                     {/* Nút gửi dữ liệu của từng panel */}
-                                                    <div className="pt-3 border-t border-white/5 flex justify-end">
+                                                    <div className="pt-3 border-t border-white/5 space-y-3">
+                                                        {panelStatuses[panel.id]?.message && (
+                                                            <div
+                                                                className={`rounded-xl border px-4 py-3 text-xs font-medium transition-all ${
+                                                                    panelStatuses[panel.id]?.type === "success"
+                                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-400"
+                                                                        : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400"
+                                                                }`}>
+                                                                {panelStatuses[panel.id]?.message}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-end gap-2">
+                                                        <button
+                                                            type="button"
+                                                            disabled={publishingPanelId !== null}
+                                                            onClick={() => {
+                                                                void handlePublishPanel(panel);
+                                                            }}
+                                                            className={`px-3 py-2 text-[11px] rounded-xl font-bold transition-all ${
+                                                                publishingPanelId === panel.id
+                                                                    ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-zinc-700 dark:text-zinc-500"
+                                                                    : panel.remoteTemplateId
+                                                                        ? "bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-zinc-100"
+                                                                        : "bg-[#7d6df7] hover:bg-[#9387ff] text-white cursor-pointer shadow-md shadow-[#7d6df7]/20"
+                                                            }`}>
+                                                            {publishingPanelId === panel.id
+                                                                ? "Syncing..."
+                                                                : panel.remoteTemplateId
+                                                                    ? "Update Remote"
+                                                                    : "Publish to API"}
+                                                        </button>
                                                         <button
                                                             type="button"
                                                             disabled={executingPanelId !== null}
@@ -1726,6 +2171,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                 </svg>
                                                             )}
                                                         </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

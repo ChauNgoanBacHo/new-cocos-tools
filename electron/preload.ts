@@ -76,4 +76,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
             success?: boolean;
         }) => ipcRenderer.invoke("drive-sync:report-complete", payload),
     },
+    matrixSync: {
+        listByGame: (gameId: string) => ipcRenderer.invoke("matrix-sync:list-by-game", gameId),
+        getTemplate: (templateId: string) => ipcRenderer.invoke("matrix-sync:get-template", templateId),
+        createTemplate: (payload: unknown) => ipcRenderer.invoke("matrix-sync:create-template", payload),
+        updateTemplate: (templateId: string, payload: unknown) => ipcRenderer.invoke("matrix-sync:update-template", templateId, payload),
+    },
 });

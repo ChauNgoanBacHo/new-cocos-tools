@@ -16,6 +16,7 @@ import { registerStorageHandlers } from "./storage";
 import { registerCheatLocalSocketHandlers } from "./handlers/cheatLocalSocket";
 import { registerExportCheatExtensionHandlers } from "./handlers/exportCheatExtension";
 import { setupDriveSyncHandlers } from "../src/features/drive-sync/electron-handlers";
+import { setupMatrixSyncHandlers } from "../src/features/matrix-sync/electron-handlers";
 
 app.commandLine.appendSwitch("use-mock-keychain");
 
@@ -214,4 +215,9 @@ registerExportCheatExtensionHandlers();
 setupDriveSyncHandlers(
     'https://drive-bot-0ahh.onrender.com',
     'e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02'
+);
+
+setupMatrixSyncHandlers(
+    "https://drive-bot-0ahh.onrender.com",
+    "e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02",
 );

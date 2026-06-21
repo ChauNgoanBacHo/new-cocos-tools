@@ -253,6 +253,99 @@ interface ElectronAPI {
             success?: boolean;
         }) => Promise<{ ok: true; notified?: boolean; skipped?: boolean; reason?: string; syncType?: string }>;
     };
+    matrixSync: {
+        listByGame: (gameId: string) => Promise<{
+            ok: true;
+            gameId: string;
+            items: Array<{
+                id: string;
+                gameId: string;
+                slug: string;
+                title: string;
+                tableFormat: string;
+                tags: string[];
+                version: number;
+                updatedAt: string;
+                createdAt: string;
+                publishedBy: string | null;
+            }>;
+            nextCursor: string | null;
+            total: number;
+        }>;
+        getTemplate: (templateId: string) => Promise<{
+            ok: true;
+            item: {
+                id: string;
+                gameId: string;
+                slug: string;
+                title: string;
+                matrixData: string;
+                tableFormat: string;
+                additionalData: Record<string, string>;
+                tags: string[];
+                notes: string;
+                version: number;
+                updatedAt: string;
+                createdAt: string;
+                publishedBy: string | null;
+            };
+        }>;
+        createTemplate: (payload: {
+            gameId: string;
+            title?: string;
+            matrixData: string;
+            tableFormat: string;
+            additionalData?: Record<string, string>;
+            tags?: string[];
+            notes?: string;
+            publishedBy?: string | null;
+        }) => Promise<{
+            ok: true;
+            item: {
+                id: string;
+                gameId: string;
+                slug: string;
+                title: string;
+                matrixData: string;
+                tableFormat: string;
+                additionalData: Record<string, string>;
+                tags: string[];
+                notes: string;
+                version: number;
+                updatedAt: string;
+                createdAt: string;
+                publishedBy: string | null;
+            };
+        }>;
+        updateTemplate: (templateId: string, payload: {
+            gameId: string;
+            title?: string;
+            matrixData: string;
+            tableFormat: string;
+            additionalData?: Record<string, string>;
+            tags?: string[];
+            notes?: string;
+            publishedBy?: string | null;
+            version?: number;
+        }) => Promise<{
+            ok: true;
+            item: {
+                id: string;
+                gameId: string;
+                slug: string;
+                title: string;
+                matrixData: string;
+                tableFormat: string;
+                additionalData: Record<string, string>;
+                tags: string[];
+                notes: string;
+                version: number;
+                updatedAt: string;
+                createdAt: string;
+                publishedBy: string | null;
+            };
+        }>;
+    };
 }
 
 interface Window {
