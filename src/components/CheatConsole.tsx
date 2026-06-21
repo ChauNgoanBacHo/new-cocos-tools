@@ -85,11 +85,6 @@ interface FieldConfig {
     visible: boolean;
 }
 
-interface MatrixSyncRequestError extends Error {
-    code?: string;
-    status?: number;
-}
-
 function getDefaultFieldConfig(): FieldConfig[] {
     return ADDITIONAL_FIELDS.map(f => ({ ...f, visible: true }));
 }
@@ -715,29 +710,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         };
 
         try {
-            let response;
-            let publishMode: "create" | "update" | "recreate" = "create";
-
-            if (panel.remoteTemplateId) {
-                try {
-                    response = await window.electronAPI.matrixSync.updateTemplate(panel.remoteTemplateId, {
-                        ...payload,
-                        version: panel.remoteTemplateVersion,
-                    });
-                    publishMode = "update";
-                } catch (error) {
-                    const requestError = error as MatrixSyncRequestError;
-
-                    if (requestError?.code !== "MATRIX_NOT_FOUND" && requestError?.status !== 404) {
-                        throw error;
-                    }
-
-                    response = await window.electronAPI.matrixSync.createTemplate(payload);
-                    publishMode = "recreate";
-                }
-            } else {
-                response = await window.electronAPI.matrixSync.createTemplate(payload);
-            }
+            const response = await window.electronAPI.matrixSync.createTemplate(payload);
 
             updateActiveGamePanels((prev) =>
                 prev.map((currentPanel) =>
@@ -754,19 +727,11 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
             setStatus({
                 type: "success",
-                message: publishMode === "update"
-                    ? `☁️ Đã update Matrix #${panel.id} lên API thành công.`
-                    : publishMode === "recreate"
-                        ? `☁️ Remote Matrix #${panel.id} không còn tồn tại. Đã tạo lại record mới trên API thành công.`
-                        : `☁️ Đã publish Matrix #${panel.id} lên API thành công.`,
+                message: `☁️ Đã publish Matrix #${panel.id} lên API thành công.`,
             });
             setPanelStatus(panel.id, {
                 type: "success",
-                message: publishMode === "update"
-                    ? "Remote matrix updated successfully."
-                    : publishMode === "recreate"
-                        ? "Remote template was missing, so a new template was created successfully."
-                        : "Published to Matrix Sync API successfully.",
+                message: "Published to Matrix Sync API successfully.",
             });
 
             if (isRemoteLibraryOpen) {
