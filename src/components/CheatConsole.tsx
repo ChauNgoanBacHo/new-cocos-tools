@@ -2193,8 +2193,8 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                             {publishingPanelId === panel.id
                                                                 ? "Syncing..."
                                                                 : panel.remoteTemplateId
-                                                                    ? "Update Remote"
-                                                                    : "Publish to API"}
+                                                                    ? "Publish Again"
+                                                                    : "Publish Matrix"}
                                                         </button>
                                                         <button
                                                             type="button"
