@@ -1555,7 +1555,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
                                                     {localSocketStatus.running && (
                                                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
-                                                            <span>Use</span>
+                                                            <span>Go to</span>
                                                             <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25">
                                                                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                                     <path

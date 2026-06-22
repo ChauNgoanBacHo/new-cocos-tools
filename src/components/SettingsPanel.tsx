@@ -5,6 +5,10 @@ import {
     DEFAULT_SOUND_EXCLUDE_LIST,
     normalizeExcludeList,
 } from "../constants/generatorExcludes";
+import {
+    SPINE_ALIASES_STORAGE_KEY,
+    type PathAlias,
+} from "../constants/spineAliases";
 
 type MenuItem = {
     id: string;
@@ -45,8 +49,19 @@ export function SettingsPanel({
         "anim-generator-exclude-list",
         DEFAULT_ANIM_EXCLUDE_LIST,
     );
+    const [spineAliases, setSpineAliases] = useStoredState<PathAlias[]>(
+        SPINE_ALIASES_STORAGE_KEY,
+        [],
+    );
+    const [aliasName, setAliasName] = useState("");
+    const [aliasPath, setAliasPath] = useState("");
+    const [editingAliasId, setEditingAliasId] = useState<string | null>(null);
 
     const hiddenGroupSet = useMemo(() => new Set(hiddenMenuGroupIds), [hiddenMenuGroupIds]);
+    const sortAliases = (aliases: PathAlias[]) => [...aliases].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" })
+    );
+    const sortedSpineAliases = useMemo(() => sortAliases(spineAliases), [spineAliases]);
 
     const handleDownloadExtension = async () => {
         setIsExporting(true);
@@ -69,6 +84,77 @@ export function SettingsPanel({
         } finally {
             setIsExporting(false);
         }
+    };
+
+    const resetAliasForm = () => {
+        setAliasName("");
+        setAliasPath("");
+        setEditingAliasId(null);
+    };
+
+    const handleEditAlias = (alias: PathAlias) => {
+        setEditingAliasId(alias.id);
+        setAliasName(alias.name);
+        setAliasPath(alias.path);
+    };
+
+    const handleSaveAlias = () => {
+        const trimmedName = aliasName.trim();
+        const trimmedPath = aliasPath.trim();
+
+        if (!trimmedName || !trimmedPath) {
+            setStatusMessage("Alias name and path are required.");
+            return;
+        }
+
+        const duplicateAlias = spineAliases.find((alias) =>
+            alias.name.trim().toLowerCase() === trimmedName.toLowerCase() &&
+            alias.id !== editingAliasId
+        );
+        if (duplicateAlias) {
+            setStatusMessage(`Alias already exists: ${trimmedName}`);
+            return;
+        }
+
+        if (editingAliasId) {
+            setSpineAliases((prev) =>
+                prev.map((alias) =>
+                    alias.id === editingAliasId
+                        ? { ...alias, name: trimmedName, path: trimmedPath }
+                        : alias
+                )
+            );
+            setStatusMessage(`Alias updated: ${trimmedName}`);
+        } else {
+            setSpineAliases((prev) => [
+                ...prev,
+                {
+                    id: `spine-alias-${Date.now()}`,
+                    name: trimmedName,
+                    path: trimmedPath,
+                },
+            ]);
+            setStatusMessage(`Alias added: ${trimmedName}`);
+        }
+
+        resetAliasForm();
+    };
+
+    const handleDeleteAlias = (aliasId: string) => {
+        const targetAlias = spineAliases.find((alias) => alias.id === aliasId);
+        setSpineAliases((prev) => prev.filter((alias) => alias.id !== aliasId));
+
+        if (editingAliasId === aliasId) {
+            resetAliasForm();
+        }
+
+        setStatusMessage(targetAlias ? `Alias deleted: ${targetAlias.name}` : "Alias deleted.");
+    };
+
+    const handleSelectAliasPath = async () => {
+        const folder = await window.electronAPI.selectFolder();
+        if (!folder) return;
+        setAliasPath(folder);
     };
 
     const renderExcludeListEditor = (
@@ -241,6 +327,100 @@ export function SettingsPanel({
                             (nextValues) => setSoundExcludeList(normalizeExcludeList(nextValues)),
                             DEFAULT_SOUND_EXCLUDE_LIST,
                         )}
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
+                        <span className="text-sm">🔖</span>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                            Path Aliases
+                        </h3>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4">
+                            <div>
+                                <div className="text-sm font-semibold text-slate-700 dark:text-zinc-200">Shared Path Aliases</div>
+                                <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+                                    Alias dùng chung cho cac page can nap nhanh folder hoac source path.
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[140px_minmax(0,1fr)_auto]">
+                                <input
+                                    type="text"
+                                    value={aliasName}
+                                    onChange={(event) => setAliasName(event.target.value)}
+                                    placeholder="Alias Name"
+                                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={aliasPath}
+                                        onChange={(event) => setAliasPath(event.target.value)}
+                                        placeholder="Folder path"
+                                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void handleSelectAliasPath();
+                                        }}
+                                        title="Browse alias path"
+                                        aria-label="Browse alias path"
+                                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                                        <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveAlias}
+                                    className="px-3 py-2 rounded-xl bg-[#7d6df7] text-xs font-bold text-white transition-all hover:bg-[#9387ff] cursor-pointer shadow-md shadow-[#7d6df7]/20">
+                                    {editingAliasId ? "Update Alias" : "Add Alias"}
+                                </button>
+                            </div>
+
+                            {sortedSpineAliases.length > 0 ? (
+                                <div className="space-y-2">
+                                    {sortedSpineAliases.map((alias) => (
+                                        <div
+                                            key={alias.id}
+                                            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 dark:border-white/5 dark:bg-[#1b2029] lg:flex-row lg:items-center lg:justify-between">
+                                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                                <span className="inline-flex min-w-[84px] items-center justify-center rounded-lg bg-[#7d6df7]/12 px-2.5 py-1 text-[11px] font-bold text-[#5c46ff] dark:text-[#c9bfff]">
+                                                    {alias.name}
+                                                </span>
+                                                <span className="truncate text-xs text-slate-600 dark:text-zinc-300">
+                                                    {alias.path}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEditAlias(alias)}
+                                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-800 cursor-pointer dark:border-white/5 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10">
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteAlias(alias.id)}
+                                                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-100 cursor-pointer dark:border-red-400/25 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-500 dark:border-white/5 dark:text-zinc-500">
+                                    No aliases yet. Add a few common paths here for faster access.
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

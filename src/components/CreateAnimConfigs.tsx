@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 import ActionPromptModal from "./ActionPromptModal";
 import { DEFAULT_ANIM_EXCLUDE_LIST } from "../constants/generatorExcludes";
+import { SPINE_ALIASES_STORAGE_KEY, type PathAlias } from "../constants/spineAliases";
 
 interface AnimResult {
     stdout: string;
@@ -45,6 +46,7 @@ function parseAnimDetailLine(line: string) {
 export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfigsProps) {
     const [spineDir, setSpineDir] = useStoredState<string>("anim-spine-dir", "");
     const [outputDir, setOutputDir] = useStoredState<string>("anim-output-dir", "");
+    const [aliases] = useStoredState<PathAlias[]>(SPINE_ALIASES_STORAGE_KEY, []);
     const [animFileName, setAnimFileName] = useStoredState<string>("anim-file-name", "AnimConfig9000.ts");
     const [timeFileName, setTimeFileName] = useStoredState<string>("time-file-name", "TimeConfig9000.ts");
     const [overwrite, setOverwrite] = useStoredState<boolean>("anim-overwrite", false);
@@ -56,6 +58,11 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
         type: null,
         message: "",
     });
+    const [selectedSpineAliasId, setSelectedSpineAliasId] = useState("");
+    const [selectedOutputAliasId, setSelectedOutputAliasId] = useState("");
+    const sortedAliases = [...aliases].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" }),
+    );
 
     const handleSelectSpineDir = async () => {
         const folder = await window.electronAPI.selectFolder();
@@ -102,12 +109,32 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
     const handleClearForm = () => {
         setSpineDir("");
         setOutputDir("");
+        setSelectedSpineAliasId("");
+        setSelectedOutputAliasId("");
         setAnimFileName("");
         setTimeFileName("");
         setOverwrite(false);
         setResult(null);
         setPendingCodeHealthPath(null);
         setStatus({ type: null, message: "" });
+    };
+
+    const handleUseSpineAlias = (alias: PathAlias) => {
+        setSelectedSpineAliasId(alias.id);
+        setSpineDir(alias.path);
+        setStatus({
+            type: "success",
+            message: `Đã chọn spine alias "${alias.name}".`,
+        });
+    };
+
+    const handleUseOutputAlias = (alias: PathAlias) => {
+        setSelectedOutputAliasId(alias.id);
+        setOutputDir(alias.path);
+        setStatus({
+            type: "success",
+            message: `Đã chọn output alias "${alias.name}".`,
+        });
     };
 
     return (
@@ -205,6 +232,53 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
 
                         <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
+                                Alias
+                            </label>
+                            <div className="min-w-0 space-y-2">
+                                {sortedAliases.length > 0 ? (
+                                    <div className="flex min-w-0 gap-2">
+                                        <select
+                                            value={selectedSpineAliasId}
+                                            onChange={(event) => {
+                                                setSelectedSpineAliasId(event.target.value);
+                                                const alias = aliases.find((item) => item.id === event.target.value);
+                                                if (alias) handleUseSpineAlias(alias);
+                                            }}
+                                            className="min-w-0 flex-1 truncate px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100">
+                                            <option value="">Select spine alias...</option>
+                                            {sortedAliases.map((alias) => (
+                                                <option key={alias.id} value={alias.id}>
+                                                    {alias.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                                        <span>Go to</span>
+                                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25">
+                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                                />
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </span>
+                                        <span>to create shared path aliases.</span>
+                                    </div>
+                                )}
+                                {selectedSpineAliasId && (
+                                    <div className="truncate text-[11px] text-slate-500 dark:text-zinc-400">
+                                        {sortedAliases.find((alias) => alias.id === selectedSpineAliasId)?.path}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
                                 Output Folder <span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
@@ -225,6 +299,53 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
                                     </svg>
                                 </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
+                                Alias
+                            </label>
+                            <div className="min-w-0 space-y-2">
+                                {sortedAliases.length > 0 ? (
+                                    <div className="flex min-w-0 gap-2">
+                                        <select
+                                            value={selectedOutputAliasId}
+                                            onChange={(event) => {
+                                                setSelectedOutputAliasId(event.target.value);
+                                                const alias = aliases.find((item) => item.id === event.target.value);
+                                                if (alias) handleUseOutputAlias(alias);
+                                            }}
+                                            className="min-w-0 flex-1 truncate px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100">
+                                            <option value="">Select output alias...</option>
+                                            {sortedAliases.map((alias) => (
+                                                <option key={alias.id} value={alias.id}>
+                                                    {alias.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                                        <span>Go to</span>
+                                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[#7d6df7]/25">
+                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                                />
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </span>
+                                        <span>to create shared path aliases.</span>
+                                    </div>
+                                )}
+                                {selectedOutputAliasId && (
+                                    <div className="truncate text-[11px] text-slate-500 dark:text-zinc-400">
+                                        {sortedAliases.find((alias) => alias.id === selectedOutputAliasId)?.path}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

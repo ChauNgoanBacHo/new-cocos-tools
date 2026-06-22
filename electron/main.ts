@@ -75,6 +75,10 @@ function createWindow() {
         },
     });
 
+    mainWindow.on("closed", () => {
+        mainWindow = null;
+    });
+
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         void shell.openExternal(url);
         return { action: "deny" };
@@ -119,6 +123,20 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
+});
+
+app.on("activate", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        createWindow();
+        return;
+    }
+
+    if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+    }
+
+    mainWindow.show();
+    mainWindow.focus();
 });
 
 ipcMain.handle("select-folder", async () => {
