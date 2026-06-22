@@ -2,11 +2,6 @@
     const BRIDGE_EVENT_TYPE = "ONE_PUNCH_TOOLS_SOCKET_EVENT";
     const PAGE_CONTROL_EVENT_TYPE = "ONE_PUNCH_TOOLS_PAGE_CONTROL";
     const ACCEPTED_EVENT_NAMES = new Set(["n", "f"]);
-    const DEFAULT_ALLOWED_ORIGINS = [
-        "http://localhost:7456",
-        "https://iframe-tektale.staging.enostd.gay",
-        "https://webapp5tek.enostd.gay",
-    ];
     const MAX_DEBUG_UNMATCHED_MESSAGES = 5;
     const OVERLAY_ID = "one-punch-devkit-debug-controls";
     let unmatchedDebugCount = 0;
@@ -26,7 +21,7 @@
     };
     const currentScript = document.currentScript;
     const customAllowedOrigins = parseAllowedOrigins(currentScript?.dataset?.allowedOrigins);
-    const allowedOrigins = new Set([...DEFAULT_ALLOWED_ORIGINS, ...customAllowedOrigins]);
+    const allowedOrigins = new Set(customAllowedOrigins);
 
     if (!allowedOrigins.has(window.location.origin)) {
         return;
