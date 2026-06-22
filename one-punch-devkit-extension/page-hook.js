@@ -113,7 +113,6 @@
     function setCheatSpeed(speed) {
         const normalizedSpeed = Number.isFinite(Number(speed)) ? Math.max(0.1, Number(speed)) : 1;
         cheatControlState.configuredSpeed = normalizedSpeed;
-        cheatControlState.boostEnabled = normalizedSpeed !== 1;
         applySpeed();
         updateOverlayUi();
     }
