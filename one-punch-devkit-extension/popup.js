@@ -76,6 +76,17 @@ function getNormalizedOrigins() {
     return customOriginsInput.value
         .split("\n")
         .map((line) => line.trim())
+        .map((line) => {
+            if (!line) {
+                return "";
+            }
+
+            try {
+                return new URL(line).origin;
+            } catch {
+                return line;
+            }
+        })
         .filter(Boolean);
 }
 
