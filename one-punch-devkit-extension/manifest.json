@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "One Punch Assistant",
-  "description": "Bridge game WebSocket responses to the One Punch DevKit Electron app.",
+  "name": "One Punch Assistant Lite",
+  "description": "Inject lightweight debug controls for supported Cocos web games.",
   "version": "0.1.0",
   "permissions": [
     "storage"
