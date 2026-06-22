@@ -80,7 +80,8 @@
 
             cheatControlState.originalTick = originalTick;
             runtime.cc.director.tick = function patchedTick(dt, ...args) {
-                return originalTick.call(runtime.cc.director, dt * cheatControlState.configuredSpeed, ...args);
+                const effectiveSpeed = cheatControlState.boostEnabled ? cheatControlState.configuredSpeed : 1;
+                return originalTick.call(runtime.cc.director, dt * effectiveSpeed, ...args);
             };
             return true;
         }
