@@ -1,10 +1,5 @@
 (function () {
     const PAGE_CONTROL_EVENT_TYPE = "ONE_PUNCH_TOOLS_PAGE_CONTROL";
-    const DEFAULT_ALLOWED_ORIGINS = [
-        "http://localhost:7456",
-        "https://iframe-tektale.staging.enostd.gay",
-        "https://webapp5tek.enostd.gay",
-    ];
     const OVERLAY_ID = "one-punch-devkit-debug-controls";
     const cheatControlState = {
         configuredSpeed: 1,
@@ -22,7 +17,7 @@
     };
     const currentScript = document.currentScript;
     const customAllowedOrigins = parseAllowedOrigins(currentScript?.dataset?.allowedOrigins);
-    const allowedOrigins = new Set([...DEFAULT_ALLOWED_ORIGINS, ...customAllowedOrigins]);
+    const allowedOrigins = new Set(customAllowedOrigins);
 
     if (!allowedOrigins.has(window.location.origin)) {
         return;
@@ -278,8 +273,33 @@
             case "set-speed":
                 setCheatSpeed(payload?.speed);
                 break;
+            case "toggle-pause":
+                togglePause();
+                break;
+            case "toggle-speed-boost":
+                if (Number.isFinite(Number(payload?.speed))) {
+                    cheatControlState.configuredSpeed = Math.max(0.1, Number(payload.speed));
+                }
+                toggleSpeedBoost();
+                break;
+            case "reset-speed":
+                resetSpeed();
+                break;
             case "set-debug-visibility":
                 setOverlayVisibility(payload?.enabled === true);
+                break;
+            case "get-page-state":
+                window.postMessage({
+                    source: PAGE_CONTROL_EVENT_TYPE,
+                    command: "page-state-response",
+                    requestId: payload?.requestId ?? null,
+                    payload: {
+                        paused: cheatControlState.paused,
+                        boostEnabled: cheatControlState.boostEnabled,
+                        configuredSpeed: cheatControlState.configuredSpeed,
+                        overlayVisible: cheatControlState.overlayVisible,
+                    },
+                }, "*");
                 break;
             default:
                 break;
@@ -309,6 +329,9 @@
             return;
         }
 
-        handlePageControl(data.command, data.payload ?? {});
+        handlePageControl(data.command, {
+            ...(data.payload ?? {}),
+            requestId: data.requestId ?? null,
+        });
     });
 })();

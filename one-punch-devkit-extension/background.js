@@ -83,6 +83,29 @@ async function syncControlSettingsToTabs(options = {}) {
     };
 }
 
+async function getActiveTabDebugState() {
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const activeTab = tabs.find((tab) => typeof tab.id === "number" && isSupportedBridgeUrl(tab.url));
+
+    if (!activeTab?.id) {
+        return null;
+    }
+
+    try {
+        const response = await chrome.tabs.sendMessage(activeTab.id, {
+            type: "get-page-control-state",
+        });
+
+        if (response?.ok && response.state) {
+            return response.state;
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log("[One Punch Assistant Lite] Extension installed");
 });
@@ -95,11 +118,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "get-extension-settings") {
         void chrome.storage.local.get([CUSTOM_ORIGINS_KEY, CHEAT_SPEED_KEY, SHOW_DEBUG_KEY]).then((result) => {
-            sendResponse({
+            void getActiveTabDebugState().then((debugState) => {
+                sendResponse({
                 ok: true,
                 customAllowedOrigins: Array.isArray(result[CUSTOM_ORIGINS_KEY]) ? result[CUSTOM_ORIGINS_KEY] : [],
                 cheatSpeed: typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1,
                 showDebugControls: result[SHOW_DEBUG_KEY] === true,
+                debugState,
+                });
             });
         });
         return true;
@@ -154,6 +180,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 ok: true,
                 cheatSpeed,
                 showDebugControls,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "toggle-game-pause") {
+        void sendPageControlToTabs("toggle-pause", {}, { activeOnly: true }).then(({ sentCount }) => {
+            sendResponse({
+                ok: sentCount > 0,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "toggle-speed-boost") {
+        void chrome.storage.local.get(CHEAT_SPEED_KEY).then(async (result) => {
+            const speed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
+            const response = await sendPageControlToTabs("toggle-speed-boost", { speed }, { activeOnly: true });
+            sendResponse({
+                ok: response.sentCount > 0,
+                cheatSpeed: speed,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "reset-speed-boost") {
+        void sendPageControlToTabs("reset-speed", {}, { activeOnly: true }).then(({ sentCount }) => {
+            sendResponse({
+                ok: sentCount > 0,
             });
         });
         return true;

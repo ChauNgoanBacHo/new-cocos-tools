@@ -91,6 +91,45 @@
             return false;
         }
 
+        if (message.type === "get-page-control-state") {
+            const requestId = `one-punch-state-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+            const handleStateMessage = (event) => {
+                if (event.source !== window) {
+                    return;
+                }
+
+                const data = event.data;
+                if (!data || data.source !== PAGE_CONTROL_EVENT_TYPE || data.command !== "page-state-response" || data.requestId !== requestId) {
+                    return;
+                }
+
+                window.removeEventListener("message", handleStateMessage);
+                sendResponse({
+                    ok: true,
+                    bridged: Boolean(window[CONTENT_BOOTSTRAP_MARKER]),
+                    state: data.payload ?? null,
+                });
+            };
+
+            window.addEventListener("message", handleStateMessage);
+            window.postMessage({
+                source: PAGE_CONTROL_EVENT_TYPE,
+                command: "get-page-state",
+                requestId,
+            }, "*");
+
+            window.setTimeout(() => {
+                window.removeEventListener("message", handleStateMessage);
+                sendResponse({
+                    ok: false,
+                    bridged: Boolean(window[CONTENT_BOOTSTRAP_MARKER]),
+                });
+            }, 500);
+
+            return true;
+        }
+
         return false;
     });
 

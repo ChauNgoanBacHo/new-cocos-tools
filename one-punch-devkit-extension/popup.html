@@ -175,6 +175,54 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      .debug-actions {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .debug-action-button {
+        border: none;
+        border-radius: 12px;
+        background: #475569;
+        color: #ffffff;
+        padding: 10px 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+
+      .debug-action-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .debug-action-button[data-active="true"] {
+        background: #7c3aed;
+      }
+
+      .debug-action-button[data-variant="pause"] {
+        background: #dc2626;
+      }
+
+      .debug-action-button[data-variant="pause"][data-active="true"] {
+        background: #16a34a;
+      }
+
+      .debug-action-button[data-variant="speed"] {
+        background: #334155;
+      }
+
+      .debug-action-button[data-variant="speed"][data-active="true"] {
+        background: #7c3aed;
+      }
+
+      .debug-action-button[data-variant="reset"] {
+        background: #475569;
+      }
     </style>
   </head>
   <body>
@@ -200,6 +248,18 @@
 
       <div class="actions">
         <button id="refresh-button" class="action-button" type="button">Refresh Active Tab Controls</button>
+      </div>
+
+      <div class="debug-actions">
+        <button id="pause-button" class="debug-action-button" data-variant="pause" type="button">Pause</button>
+        <button id="speed-button" class="debug-action-button" data-variant="speed" type="button">Speed</button>
+        <button id="reset-speed-button" class="debug-action-button" data-variant="reset" type="button">x1.0</button>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="custom-origins">Custom Links</label>
+        <p class="field-help">One origin per line. Reload the target tab after saving a new domain.</p>
+        <textarea id="custom-origins" class="textarea" placeholder="https://your-domain.example"></textarea>
       </div>
 
     </div>
