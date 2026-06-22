@@ -966,7 +966,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         setClearingSession(true);
         setStatus({ type: null, message: "" });
 
-        const clearUrl = `https://cheat.staging.enostd.gay/${gameId}/clearsession`;
+        const clearUrl = `https://cheat.${activeGame.env}.enostd.gay/${gameId}/clearsession`;
         const urlEncodedData = new URLSearchParams();
         urlEncodedData.append("userId", userId);
         urlEncodedData.append("currency", "USD");
