@@ -3,6 +3,8 @@ const HEARTBEAT_INTERVAL_MS = 15000;
 const STORAGE_KEY = "localSocketEnabled";
 const CUSTOM_ORIGINS_KEY = "customAllowedOrigins";
 const AUTOPLAY_GAME_ID_KEY = "autoplayGameId";
+const CHEAT_SPEED_KEY = "cheatSpeed";
+const SHOW_DEBUG_KEY = "showDebugControls";
 
 let socket = null;
 let reconnectTimeout = null;
@@ -132,6 +134,74 @@ function isSupportedBridgeUrl(url) {
     }
 }
 
+async function sendPageControlToTabs(command, payload, options = {}) {
+    const {
+        activeOnly = true,
+        tabIds = null,
+    } = options;
+    let tabs = [];
+
+    try {
+        if (Array.isArray(tabIds) && tabIds.length > 0) {
+            tabs = (
+                await Promise.all(
+                    tabIds.map(async (tabId) => {
+                        try {
+                            return await chrome.tabs.get(tabId);
+                        } catch {
+                            return null;
+                        }
+                    }),
+                )
+            ).filter(Boolean);
+        } else {
+            tabs = activeOnly
+                ? await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+                : await chrome.tabs.query({});
+        }
+    } catch {
+        return { sentCount: 0 };
+    }
+
+    let sentCount = 0;
+
+    await Promise.all(
+        tabs
+            .filter((tab) => typeof tab.id === "number" && isSupportedBridgeUrl(tab.url))
+            .map(async (tab) => {
+                try {
+                    const response = await chrome.tabs.sendMessage(tab.id, {
+                        type: "apply-page-control",
+                        command,
+                        payload,
+                    });
+
+                    if (response?.ok) {
+                        sentCount += 1;
+                    }
+                } catch {
+                    // Ignore tabs without an active content script bridge.
+                }
+            }),
+    );
+
+    return { sentCount };
+}
+
+async function syncControlSettingsToTabs(options = {}) {
+    const result = await chrome.storage.local.get([CHEAT_SPEED_KEY, SHOW_DEBUG_KEY]);
+    const cheatSpeed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
+    const showDebugControls = result[SHOW_DEBUG_KEY] === true;
+
+    await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
+    await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
+
+    return {
+        cheatSpeed,
+        showDebugControls,
+    };
+}
+
 function extractGameIdFromUrl(url) {
     if (typeof url !== "string" || !url) {
         return "";
@@ -243,7 +313,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 
     if (message.type === "get-extension-settings") {
-        void chrome.storage.local.get([CUSTOM_ORIGINS_KEY, AUTOPLAY_GAME_ID_KEY]).then((result) => {
+        void chrome.storage.local.get([CUSTOM_ORIGINS_KEY, AUTOPLAY_GAME_ID_KEY, CHEAT_SPEED_KEY, SHOW_DEBUG_KEY]).then((result) => {
             sendResponse({
                 ok: true,
                 enabled: localSocketEnabled,
@@ -252,6 +322,57 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 lastConnectionError,
                 customAllowedOrigins: Array.isArray(result[CUSTOM_ORIGINS_KEY]) ? result[CUSTOM_ORIGINS_KEY] : [],
                 autoplayGameId: typeof result[AUTOPLAY_GAME_ID_KEY] === "string" ? result[AUTOPLAY_GAME_ID_KEY] : "",
+                cheatSpeed: typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1,
+                showDebugControls: result[SHOW_DEBUG_KEY] === true,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-cheat-speed") {
+        const nextSpeed = Number.isFinite(Number(message.speed)) ? Math.max(0.1, Number(message.speed)) : 1;
+        void chrome.storage.local.set({
+            [CHEAT_SPEED_KEY]: nextSpeed,
+        }).then(async () => {
+            await sendPageControlToTabs("set-speed", { speed: nextSpeed });
+            sendResponse({
+                ok: true,
+                cheatSpeed: nextSpeed,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-show-debug-controls") {
+        const showDebugControls = message.enabled === true;
+        void chrome.storage.local.set({
+            [SHOW_DEBUG_KEY]: showDebugControls,
+        }).then(async () => {
+            await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls });
+            sendResponse({
+                ok: true,
+                showDebugControls,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "toggle-game-pause") {
+        void sendPageControlToTabs("toggle-pause", {}, { activeOnly: true }).then(({ sentCount }) => {
+            sendResponse({
+                ok: sentCount > 0,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "toggle-speed-boost") {
+        void chrome.storage.local.get(CHEAT_SPEED_KEY).then(async (result) => {
+            const speed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
+            const response = await sendPageControlToTabs("toggle-speed-boost", { speed }, { activeOnly: true });
+            sendResponse({
+                ok: response.sentCount > 0,
+                cheatSpeed: speed,
             });
         });
         return true;
@@ -262,6 +383,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         void setLocalSocketEnabled(enabled).then(async () => {
             if (enabled) {
                 await requestBridgeReconnectForActiveTabs();
+                await syncControlSettingsToTabs({ activeOnly: false });
                 connectToLocalSocket();
             }
 
@@ -277,7 +399,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 
     if (message.type === "reconnect-local-socket") {
-        void requestBridgeReconnectForActiveTabs().then(() => {
+        void requestBridgeReconnectForActiveTabs().then(async () => {
+            await syncControlSettingsToTabs({ activeOnly: false });
             if (localSocketEnabled) {
                 closeSocket();
                 connectToLocalSocket();
@@ -328,6 +451,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             timestamp: Date.now(),
         };
         hasActiveBridgeContext = true;
+        const senderTabId = typeof _sender?.tab?.id === "number" ? _sender.tab.id : null;
+        void syncControlSettingsToTabs(
+            senderTabId
+                ? { activeOnly: false, tabIds: [senderTabId] }
+                : { activeOnly: true },
+        );
         if (localSocketEnabled) {
             connectToLocalSocket();
             sendToElectron(lastHandshakePayload);

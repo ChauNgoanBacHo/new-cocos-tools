@@ -3,12 +3,15 @@ const toggleStatus = document.getElementById("toggle-status");
 const connectionMeta = document.getElementById("connection-meta");
 const startAutoplayButton = document.getElementById("start-autoplay-button");
 const reconnectButton = document.getElementById("reconnect-button");
+const cheatSpeedInput = document.getElementById("cheat-speed");
+const debugToggleButton = document.getElementById("debug-toggle-button");
 const autoplayGameIdInput = document.getElementById("autoplay-game-id");
 const customOriginsInput = document.getElementById("custom-origins");
 const AUTO_SAVE_DELAY_MS = 450;
 
 let saveGameIdTimeout = null;
 let saveOriginsTimeout = null;
+let saveCheatSpeedTimeout = null;
 
 function getStatusMessage(enabled, connected, hasActiveBridgeContext, lastConnectionError) {
     if (!enabled) {
@@ -55,6 +58,13 @@ function requestState() {
             Boolean(response.hasActiveBridgeContext),
             typeof response.lastConnectionError === "string" ? response.lastConnectionError : null,
         );
+        cheatSpeedInput.value = String(
+            typeof response.cheatSpeed === "number" && Number.isFinite(response.cheatSpeed)
+                ? response.cheatSpeed
+                : 1,
+        );
+        debugToggleButton.dataset.enabled = String(response.showDebugControls === true);
+        debugToggleButton.setAttribute("aria-pressed", String(response.showDebugControls === true));
         autoplayGameIdInput.value = typeof response.autoplayGameId === "string" ? response.autoplayGameId : "";
         customOriginsInput.value = Array.isArray(response.customAllowedOrigins)
             ? response.customAllowedOrigins.join("\n")
@@ -97,6 +107,23 @@ function saveOriginsSilently() {
             ? response.customAllowedOrigins.join("\n")
             : "";
         connectionMeta.textContent = "Custom links auto-saved. Reload the target tab to apply them.";
+        connectionMeta.className = "meta connected";
+    });
+}
+
+function saveCheatSpeedSilently() {
+    const parsedSpeed = Number.parseFloat(cheatSpeedInput.value);
+    const speed = Number.isFinite(parsedSpeed) ? Math.max(0.1, parsedSpeed) : 1;
+
+    chrome.runtime.sendMessage({ type: "set-cheat-speed", speed }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            connectionMeta.textContent = chrome.runtime.lastError?.message || "Could not auto-save cheat speed.";
+            connectionMeta.className = "meta";
+            return;
+        }
+
+        cheatSpeedInput.value = String(response.cheatSpeed);
+        connectionMeta.textContent = `Cheat speed set to x${response.cheatSpeed}.`;
         connectionMeta.className = "meta connected";
     });
 }
@@ -163,6 +190,24 @@ reconnectButton.addEventListener("click", () => {
     });
 });
 
+debugToggleButton.addEventListener("click", () => {
+    const enabled = debugToggleButton.dataset.enabled !== "true";
+    chrome.runtime.sendMessage({ type: "set-show-debug-controls", enabled }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            connectionMeta.textContent = chrome.runtime.lastError?.message || "Could not update debug controls.";
+            connectionMeta.className = "meta";
+            return;
+        }
+
+        debugToggleButton.dataset.enabled = String(response.showDebugControls === true);
+        debugToggleButton.setAttribute("aria-pressed", String(response.showDebugControls === true));
+        connectionMeta.textContent = response.showDebugControls
+            ? "Debug controls are visible on the game page."
+            : "Debug controls are hidden.";
+        connectionMeta.className = "meta connected";
+    });
+});
+
 autoplayGameIdInput.addEventListener("input", () => {
     if (saveGameIdTimeout) {
         window.clearTimeout(saveGameIdTimeout);
@@ -180,6 +225,16 @@ customOriginsInput.addEventListener("input", () => {
 
     saveOriginsTimeout = window.setTimeout(() => {
         saveOriginsSilently();
+    }, AUTO_SAVE_DELAY_MS);
+});
+
+cheatSpeedInput.addEventListener("input", () => {
+    if (saveCheatSpeedTimeout) {
+        window.clearTimeout(saveCheatSpeedTimeout);
+    }
+
+    saveCheatSpeedTimeout = window.setTimeout(() => {
+        saveCheatSpeedSilently();
     }, AUTO_SAVE_DELAY_MS);
 });
 

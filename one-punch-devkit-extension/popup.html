@@ -62,9 +62,14 @@
       }
 
       .switch {
+        appearance: none;
+        -webkit-appearance: none;
         position: relative;
+        display: inline-block;
+        flex: 0 0 auto;
         width: 46px;
         height: 28px;
+        padding: 0;
         border: none;
         border-radius: 999px;
         background: #cbd5e1;
@@ -127,6 +132,17 @@
         line-height: 1.5;
       }
 
+      .text-input {
+        height: 42px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0 12px;
+        font: inherit;
+        font-size: 12px;
+        color: #0f172a;
+        background: #ffffff;
+      }
+
       .textarea {
         min-height: 92px;
         resize: vertical;
@@ -170,6 +186,13 @@
     <div class="panel">
       <h1 class="title">One Punch Assistant</h1>
       <p class="subtitle">You can turn the local socket bridge on only when using Cheat Matrix, then turn it off again when switching to other work.</p>
+      <div class="toggle-row" style="margin-bottom:12px;">
+        <div class="toggle-copy">
+          <span class="toggle-label">Show Debug Controls</span>
+          <span class="toggle-status">Inject Pause / Resume / Speed controls on the top-right of the game page.</span>
+        </div>
+        <button id="debug-toggle-button" class="switch" data-enabled="false" aria-pressed="false" type="button"></button>
+      </div>
       <div class="toggle-row">
         <div class="toggle-copy">
           <span class="toggle-label">Enable Local Socket Bridge</span>
@@ -183,9 +206,14 @@
         <button id="reconnect-button" class="action-button" type="button">Reconnect Now</button>
       </div>
       <div class="field">
+        <label class="field-label" for="cheat-speed">Cheat Speed</label>
+        <p class="field-help">Set the runtime speed multiplier for supported Cocos web games.</p>
+        <input id="cheat-speed" class="text-input" type="number" min="0.1" step="0.1" placeholder="1.0" />
+      </div>
+      <div class="field">
         <label class="field-label" for="autoplay-game-id">Game ID</label>
         <p class="field-help">Electron will auto-select this game before starting autoplay.</p>
-        <input id="autoplay-game-id" class="textarea" style="min-height:auto;height:42px;resize:none;" placeholder="Game ID" />
+        <input id="autoplay-game-id" class="text-input" placeholder="Game ID" />
       </div>
       <div class="field">
         <label class="field-label" for="custom-origins">Custom Links</label>

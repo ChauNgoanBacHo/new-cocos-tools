@@ -1,5 +1,6 @@
 (function () {
     const BRIDGE_EVENT_TYPE = "ONE_PUNCH_TOOLS_SOCKET_EVENT";
+    const PAGE_CONTROL_EVENT_TYPE = "ONE_PUNCH_TOOLS_PAGE_CONTROL";
     const HANDSHAKE_EVENT_TYPE = "extension-handshake";
     const CONTENT_BOOTSTRAP_MARKER = "__ONE_PUNCH_TOOLS_BRIDGE_BOOTSTRAPPED__";
     const PAGE_HOOK_MARKER = "data-one-punch-devkit-bridge";
@@ -103,6 +104,22 @@
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         if (!message || typeof message !== "object") {
+            return false;
+        }
+
+        if (message.type === "apply-page-control") {
+            window.postMessage({
+                source: PAGE_CONTROL_EVENT_TYPE,
+                command: message.command,
+                payload: message.payload ?? {},
+            }, "*");
+
+            sendResponse({
+                ok: true,
+                bridged: Boolean(window[CONTENT_BOOTSTRAP_MARKER]),
+                origin: window.location.origin,
+                pageUrl: window.location.href,
+            });
             return false;
         }
 
