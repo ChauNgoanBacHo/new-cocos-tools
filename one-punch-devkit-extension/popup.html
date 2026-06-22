@@ -193,6 +193,11 @@
         </div>
         <button id="debug-toggle-button" class="switch" data-enabled="false" aria-pressed="false" type="button"></button>
       </div>
+      <div class="field" style="margin-top:0;margin-bottom:12px;">
+        <label class="field-label" for="cheat-speed">Cheat Speed</label>
+        <p class="field-help">Set the runtime speed multiplier for supported Cocos web games.</p>
+        <input id="cheat-speed" class="text-input" type="number" min="0.1" step="0.1" placeholder="1.0" />
+      </div>
       <div class="toggle-row">
         <div class="toggle-copy">
           <span class="toggle-label">Enable Local Socket Bridge</span>
@@ -204,11 +209,6 @@
       <div class="actions">
         <button id="start-autoplay-button" class="action-button" type="button">Start Autoplay In Electron</button>
         <button id="reconnect-button" class="action-button" type="button">Reconnect Now</button>
-      </div>
-      <div class="field">
-        <label class="field-label" for="cheat-speed">Cheat Speed</label>
-        <p class="field-help">Set the runtime speed multiplier for supported Cocos web games.</p>
-        <input id="cheat-speed" class="text-input" type="number" min="0.1" step="0.1" placeholder="1.0" />
       </div>
       <div class="field">
         <label class="field-label" for="autoplay-game-id">Game ID</label>
