@@ -179,7 +179,7 @@
       .debug-actions {
         margin-top: 12px;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
       }
 
@@ -220,6 +220,10 @@
         background: #7c3aed;
       }
 
+      .debug-action-button[data-variant="step"] {
+        background: #991b1b;
+      }
+
       .debug-action-button[data-variant="reset"] {
         background: #475569;
       }
@@ -228,7 +232,6 @@
   <body>
     <div class="panel">
       <h1 class="title">One Punch Assistant Lite</h1>
-      <p class="subtitle">Extension nay chi inject bo nut debug len game Cocos web. Khong can Electron hay local socket.</p>
 
       <div class="toggle-row" style="margin-bottom:12px;">
         <div class="toggle-copy">
@@ -252,6 +255,7 @@
 
       <div class="debug-actions">
         <button id="pause-button" class="debug-action-button" data-variant="pause" type="button">Pause</button>
+        <button id="step-button" class="debug-action-button" data-variant="step" type="button">Next</button>
         <button id="speed-button" class="debug-action-button" data-variant="speed" type="button">Speed</button>
         <button id="reset-speed-button" class="debug-action-button" data-variant="reset" type="button">x1.0</button>
       </div>

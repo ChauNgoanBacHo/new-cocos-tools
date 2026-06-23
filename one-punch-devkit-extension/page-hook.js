@@ -5,10 +5,12 @@
         configuredSpeed: 1,
         boostEnabled: false,
         paused: false,
+        stepFramePending: false,
         overlayVisible: false,
         overlayRoot: null,
         overlayPauseButton: null,
         overlaySpeedButton: null,
+        overlayNextFrameButton: null,
         overlayResetButton: null,
         runtime: null,
         version: null,
@@ -158,6 +160,62 @@
         return pauseGame();
     }
 
+    function setBaseSpeedScale(scale) {
+        if (cheatControlState.version === "2" && cheatControlState.scheduler && typeof cheatControlState.scheduler.setTimeScale === "function") {
+            cheatControlState.scheduler.setTimeScale(scale);
+        }
+    }
+
+    function getDirectorFrameEvent(runtime) {
+        return runtime?.cc?.Director?.EVENT_AFTER_DRAW
+            || runtime?.cc?.Director?.EVENT_AFTER_UPDATE
+            || null;
+    }
+
+    function stepNextFrame() {
+        const runtime = getCocosRuntime();
+        if (!runtime || cheatControlState.stepFramePending || !cheatControlState.paused) {
+            return false;
+        }
+
+        const director = runtime.cc.director;
+        const frameEvent = getDirectorFrameEvent(runtime);
+        if (!director || typeof director.once !== "function" || !frameEvent) {
+            return false;
+        }
+
+        cheatControlState.runtime = runtime.cc;
+        cheatControlState.version = runtime.version;
+        cheatControlState.stepFramePending = true;
+
+        const restoreBoost = cheatControlState.boostEnabled;
+        if (restoreBoost) {
+            setBaseSpeedScale(1);
+        }
+
+        director.once(frameEvent, () => {
+            cheatControlState.stepFramePending = false;
+            pauseGame();
+            if (restoreBoost) {
+                applySpeed();
+            }
+            updateOverlayUi();
+        });
+
+        const resumed = resumeGame();
+        if (!resumed) {
+            cheatControlState.stepFramePending = false;
+            if (restoreBoost) {
+                applySpeed();
+            }
+            updateOverlayUi();
+            return false;
+        }
+
+        updateOverlayUi();
+        return true;
+    }
+
     function ensureOverlay() {
         if (cheatControlState.overlayRoot?.isConnected) {
             return cheatControlState.overlayRoot;
@@ -210,12 +268,18 @@
             toggleSpeedBoost();
         });
 
+        const nextFrameButton = createIconButton();
+        nextFrameButton.addEventListener("click", () => {
+            stepNextFrame();
+        });
+
         const resetButton = createIconButton();
         resetButton.addEventListener("click", () => {
             resetSpeed();
         });
 
         root.appendChild(pauseButton);
+        root.appendChild(nextFrameButton);
         root.appendChild(speedButton);
         root.appendChild(resetButton);
         (document.body || document.documentElement).appendChild(root);
@@ -223,6 +287,7 @@
         cheatControlState.overlayRoot = root;
         cheatControlState.overlayPauseButton = pauseButton;
         cheatControlState.overlaySpeedButton = speedButton;
+        cheatControlState.overlayNextFrameButton = nextFrameButton;
         cheatControlState.overlayResetButton = resetButton;
         updateOverlayUi();
 
@@ -230,7 +295,12 @@
     }
 
     function updateOverlayUi() {
-        if (!cheatControlState.overlayPauseButton || !cheatControlState.overlaySpeedButton || !cheatControlState.overlayResetButton) {
+        if (
+            !cheatControlState.overlayPauseButton
+            || !cheatControlState.overlaySpeedButton
+            || !cheatControlState.overlayNextFrameButton
+            || !cheatControlState.overlayResetButton
+        ) {
             return;
         }
 
@@ -243,6 +313,26 @@
             ? `Pause speed boost (${cheatControlState.configuredSpeed.toFixed(1)}x)`
             : `Play speed boost (${cheatControlState.configuredSpeed.toFixed(1)}x)`;
         cheatControlState.overlaySpeedButton.style.background = cheatControlState.boostEnabled ? "#7c3aed" : "#334155";
+
+        const canStepFrame = cheatControlState.paused && !cheatControlState.stepFramePending;
+        cheatControlState.overlayNextFrameButton.textContent = "⏭";
+        cheatControlState.overlayNextFrameButton.title = cheatControlState.stepFramePending
+            ? "Advancing one frame..."
+            : cheatControlState.paused
+                ? "Step next frame"
+                : "Pause the game before stepping frame-by-frame";
+        cheatControlState.overlayNextFrameButton.disabled = !canStepFrame;
+        cheatControlState.overlayNextFrameButton.style.opacity = canStepFrame ? "1" : "0.55";
+        cheatControlState.overlayNextFrameButton.style.cursor = cheatControlState.stepFramePending
+            ? "progress"
+            : canStepFrame
+                ? "pointer"
+                : "not-allowed";
+        cheatControlState.overlayNextFrameButton.style.background = cheatControlState.stepFramePending
+            ? "#7f1d1d"
+            : canStepFrame
+                ? "#991b1b"
+                : "#3f3f46";
 
         cheatControlState.overlayResetButton.textContent = "x1.0";
         cheatControlState.overlayResetButton.title = `Reset speed to x1.0 (current x${cheatControlState.configuredSpeed.toFixed(1)})`;
@@ -261,6 +351,7 @@
             cheatControlState.overlayRoot = null;
             cheatControlState.overlayPauseButton = null;
             cheatControlState.overlaySpeedButton = null;
+            cheatControlState.overlayNextFrameButton = null;
             cheatControlState.overlayResetButton = null;
             return;
         }
@@ -282,6 +373,9 @@
                 }
                 toggleSpeedBoost();
                 break;
+            case "step-next-frame":
+                stepNextFrame();
+                break;
             case "reset-speed":
                 resetSpeed();
                 break;
@@ -298,6 +392,7 @@
                         boostEnabled: cheatControlState.boostEnabled,
                         configuredSpeed: cheatControlState.configuredSpeed,
                         overlayVisible: cheatControlState.overlayVisible,
+                        stepFramePending: cheatControlState.stepFramePending,
                     },
                 }, "*");
                 break;

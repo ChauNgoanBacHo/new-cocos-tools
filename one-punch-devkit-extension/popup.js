@@ -1,6 +1,7 @@
 const statusMeta = document.getElementById("status-meta");
 const refreshButton = document.getElementById("refresh-button");
 const pauseButton = document.getElementById("pause-button");
+const stepButton = document.getElementById("step-button");
 const speedButton = document.getElementById("speed-button");
 const resetSpeedButton = document.getElementById("reset-speed-button");
 const cheatSpeedInput = document.getElementById("cheat-speed");
@@ -18,9 +19,14 @@ function setStatus(message) {
 function applyDebugButtonState(debugState) {
     const paused = debugState?.paused === true;
     const boostEnabled = debugState?.boostEnabled === true;
+    const stepFramePending = debugState?.stepFramePending === true;
 
     pauseButton.dataset.active = String(paused);
     pauseButton.textContent = paused ? "Resume" : "Pause";
+
+    stepButton.dataset.active = String(paused && !stepFramePending);
+    stepButton.disabled = !paused || stepFramePending;
+    stepButton.textContent = stepFramePending ? "..." : "Next";
 
     speedButton.dataset.active = String(boostEnabled);
     speedButton.textContent = boostEnabled ? "Speed On" : "Speed Off";
@@ -140,6 +146,23 @@ pauseButton.addEventListener("click", () => {
 
         setStatus("Pause or resume command sent to the active tab.");
         requestState();
+    });
+});
+
+stepButton.addEventListener("click", () => {
+    stepButton.disabled = true;
+    chrome.runtime.sendMessage({ type: "step-next-frame" }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            stepButton.disabled = false;
+            setStatus(chrome.runtime.lastError?.message || "Could not step the next frame. Pause the game first.");
+            requestState();
+            return;
+        }
+
+        setStatus("Next frame command sent to the active tab.");
+        window.setTimeout(() => {
+            requestState();
+        }, 120);
     });
 });
 

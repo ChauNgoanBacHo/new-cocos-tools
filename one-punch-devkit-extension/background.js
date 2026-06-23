@@ -194,6 +194,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message.type === "step-next-frame") {
+        void sendPageControlToTabs("step-next-frame", {}, { activeOnly: true }).then(({ sentCount }) => {
+            sendResponse({
+                ok: sentCount > 0,
+            });
+        });
+        return true;
+    }
+
     if (message.type === "toggle-speed-boost") {
         void chrome.storage.local.get(CHEAT_SPEED_KEY).then(async (result) => {
             const speed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
