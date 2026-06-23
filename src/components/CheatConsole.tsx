@@ -2181,87 +2181,81 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                         )}
 
                                                         <div className="flex justify-end gap-2">
-                                                            <div className="group relative">
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={publishingPanelId !== null}
-                                                                    onClick={() => {
-                                                                        void handlePublishPanel(panel);
-                                                                    }}
-                                                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
-                                                                        publishingPanelId !== null
-                                                                            ? "cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500"
-                                                                            : "cursor-pointer bg-cyan-600 text-white shadow-md shadow-cyan-900/20 hover:bg-cyan-500 active:scale-[0.99]"
-                                                                    }`}>
-                                                                    {publishingPanelId === panel.id ? (
-                                                                        <svg
-                                                                            className="h-3.5 w-3.5 animate-spin text-white"
-                                                                            fill="none"
-                                                                            viewBox="0 0 24 24">
-                                                                            <circle
-                                                                                className="opacity-25"
-                                                                                cx="12"
-                                                                                cy="12"
-                                                                                r="10"
-                                                                                stroke="currentColor"
-                                                                                strokeWidth="4"
-                                                                            />
-                                                                            <path
-                                                                                className="opacity-75"
-                                                                                fill="currentColor"
-                                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                                            />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                                            <path d="M11.47 3.47a.75.75 0 011.06 0l3.75 3.75a.75.75 0 11-1.06 1.06L12.75 5.81v8.94a.75.75 0 01-1.5 0V5.81L8.78 8.28a.75.75 0 11-1.06-1.06l3.75-3.75z" />
-                                                                            <path d="M4.75 13.25a.75.75 0 01.75.75v2.5c0 .83.67 1.5 1.5 1.5h10.5a1.5 1.5 0 001.5-1.5V14a.75.75 0 011.5 0v2.5A3 3 0 0117.5 20H7a3 3 0 01-3-3V14a.75.75 0 01.75-.75z" />
-                                                                        </svg>
-                                                                    )}
-                                                                </button>
-                                                                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
-                                                                    Publish Matrix
+                                                            <button
+                                                                type="button"
+                                                                disabled={publishingPanelId !== null}
+                                                                onClick={() => {
+                                                                    void handlePublishPanel(panel);
+                                                                }}
+                                                                className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition-all ${
+                                                                    publishingPanelId !== null
+                                                                        ? "cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500"
+                                                                        : "cursor-pointer bg-cyan-600 text-white shadow-md shadow-cyan-900/20 hover:bg-cyan-500 active:scale-[0.99]"
+                                                                }`}>
+                                                                {publishingPanelId === panel.id ? (
+                                                                    <svg
+                                                                        className="h-3.5 w-3.5 animate-spin text-white"
+                                                                        fill="none"
+                                                                        viewBox="0 0 24 24">
+                                                                        <circle
+                                                                            className="opacity-25"
+                                                                            cx="12"
+                                                                            cy="12"
+                                                                            r="10"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="4"
+                                                                        />
+                                                                        <path
+                                                                            className="opacity-75"
+                                                                            fill="currentColor"
+                                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                        />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                        <path d="M11.47 3.47a.75.75 0 011.06 0l3.75 3.75a.75.75 0 11-1.06 1.06L12.75 5.81v8.94a.75.75 0 01-1.5 0V5.81L8.78 8.28a.75.75 0 11-1.06-1.06l3.75-3.75z" />
+                                                                        <path d="M4.75 13.25a.75.75 0 01.75.75v2.5c0 .83.67 1.5 1.5 1.5h10.5a1.5 1.5 0 001.5-1.5V14a.75.75 0 011.5 0v2.5A3 3 0 0117.5 20H7a3 3 0 01-3-3V14a.75.75 0 01.75-.75z" />
+                                                                    </svg>
+                                                                )}
+                                                                <span>Publish Matrix</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={executingPanelId !== null}
+                                                                onClick={() => executePanel(panel)}
+                                                                className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold bg-[#2563eb] text-white shadow-md shadow-[#2563eb]/20 transition-all ${
+                                                                    executingPanelId !== null
+                                                                        ? "cursor-not-allowed opacity-50"
+                                                                        : "cursor-pointer hover:bg-[#3b82f6] active:scale-[0.99]"
+                                                                }`}>
+                                                                {executingPanelId === panel.id ? (
+                                                                    <svg
+                                                                        className="h-3.5 w-3.5 animate-spin text-white"
+                                                                        fill="none"
+                                                                        viewBox="0 0 24 24">
+                                                                        <circle
+                                                                            className="opacity-25"
+                                                                            cx="12"
+                                                                            cy="12"
+                                                                            r="10"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="4"
+                                                                        />
+                                                                        <path
+                                                                            className="opacity-75"
+                                                                            fill="currentColor"
+                                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                        />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
+                                                                    </svg>
+                                                                )}
+                                                                <span>
+                                                                    Execute {panel.title.trim() ? panel.title.trim() : `Matrix #${panel.id}`}
                                                                 </span>
-                                                            </div>
-                                                            <div className="group relative">
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={executingPanelId !== null}
-                                                                    onClick={() => executePanel(panel)}
-                                                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#2563eb] text-white shadow-md shadow-[#2563eb]/20 transition-all ${
-                                                                        executingPanelId !== null
-                                                                            ? "cursor-not-allowed opacity-50"
-                                                                            : "cursor-pointer hover:bg-[#3b82f6] active:scale-[0.99]"
-                                                                    }`}>
-                                                                    {executingPanelId === panel.id ? (
-                                                                        <svg
-                                                                            className="h-3.5 w-3.5 animate-spin text-white"
-                                                                            fill="none"
-                                                                            viewBox="0 0 24 24">
-                                                                            <circle
-                                                                                className="opacity-25"
-                                                                                cx="12"
-                                                                                cy="12"
-                                                                                r="10"
-                                                                                stroke="currentColor"
-                                                                                strokeWidth="4"
-                                                                            />
-                                                                            <path
-                                                                                className="opacity-75"
-                                                                                fill="currentColor"
-                                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                                            />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l-6 7h4l-1 7 7-9h-4l1-5z" />
-                                                                        </svg>
-                                                                    )}
-                                                                </button>
-                                                                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2736] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 dark:bg-zinc-700">
-                                                                    Execute Matrix
-                                                                </span>
-                                                            </div>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>

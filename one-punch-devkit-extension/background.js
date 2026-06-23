@@ -289,10 +289,12 @@ async function requestBridgeReconnectForActiveTabs() {
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("[One Punch Assistant] Extension installed");
+    void resetDebugControlsToDefault();
 });
 
 chrome.runtime.onStartup.addListener(() => {
     void initializeLocalSocketState();
+    void resetDebugControlsToDefault();
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -359,6 +361,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     if (message.type === "toggle-game-pause") {
         void sendPageControlToTabs("toggle-pause", {}, { activeOnly: true }).then(({ sentCount }) => {
+            sendResponse({
+                ok: sentCount > 0,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "step-next-frame") {
+        void sendPageControlToTabs("step-next-frame", {}, { activeOnly: true }).then(({ sentCount }) => {
             sendResponse({
                 ok: sentCount > 0,
             });
@@ -526,6 +537,14 @@ async function initializeLocalSocketState() {
     closeSocket();
 }
 
+async function resetDebugControlsToDefault() {
+    await chrome.storage.local.set({
+        [SHOW_DEBUG_KEY]: false,
+    });
+
+    await sendPageControlToTabs("set-debug-visibility", { enabled: false }, { activeOnly: false });
+}
+
 async function setLocalSocketEnabled(enabled) {
     localSocketEnabled = enabled;
     lastConnectionError = null;
@@ -543,3 +562,4 @@ async function setLocalSocketEnabled(enabled) {
 }
 
 void initializeLocalSocketState();
+void resetDebugControlsToDefault();
