@@ -2,6 +2,26 @@ import { ipcMain } from "electron";
 import fs from "fs";
 import path from "path";
 
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractTemplatePrefixes(template: string): string[] {
+    const prefixes = new Set<string>();
+    const normalized = template.replace(/\s+/g, "");
+
+    for (const match of normalized.matchAll(/(?:^|[_-])([A-Z0-9]+)_\$\{/g)) {
+        prefixes.add(`${match[1]}_`);
+    }
+
+    const leadingPrefixMatch = normalized.match(/^([A-Z0-9_]+_)\$\{/);
+    if (leadingPrefixMatch) {
+        prefixes.add(leadingPrefixMatch[1]);
+    }
+
+    return [...prefixes];
+}
+
 export function registerCheckConfigHandler() {
     ipcMain.handle("check-config", async (_event, configFilePath: string, sourcePath: string) => {
         try {
@@ -69,20 +89,24 @@ export function registerCheckConfigHandler() {
 
                 const usedKeys = new Set<string>();
                 const dynamicKeys = new Set<string>();
+                const escapedObj = escapeRegExp(obj);
+                let hasUnknownComputedUsage = false;
 
                 for (const key of keys) {
-                    const pattern = new RegExp(`\\b${obj}\\.${key}\\b`);
+                    const pattern = new RegExp(`\\b${escapedObj}\\.${escapeRegExp(key)}\\b`);
                     if (pattern.test(allCode)) {
                         usedKeys.add(key);
                     }
                 }
 
-                const templatePattern = new RegExp(`${obj}\\[\\s*\`([^\`]+)\`\\s*\\]`, "g");
+                const templatePattern = new RegExp(`${escapedObj}\\[\\s*\`([^\`]+)\`\\s*\\]`, "g");
                 const templateUsages = [...allCode.matchAll(templatePattern)];
                 for (const [, tpl] of templateUsages) {
-                    const prefixMatch = tpl.match(/^([A-Z0-9_]+_)\$\{/);
-                    if (prefixMatch) {
-                        const prefix = prefixMatch[1];
+                    const prefixes = extractTemplatePrefixes(tpl);
+                    if (prefixes.length === 0) {
+                        hasUnknownComputedUsage = true;
+                    }
+                    for (const prefix of prefixes) {
                         for (const key of keys) {
                             if (key.startsWith(prefix)) {
                                 dynamicKeys.add(key);
@@ -91,12 +115,17 @@ export function registerCheckConfigHandler() {
                     }
                 }
 
-                const flowPattern = new RegExp(`(?:const|let|var)\\s+(\\w+)\\s*=\\s*\`([^\`]+)\`[\\s\\S]*?${obj}\\[\\s*\\1\\s*\\]`, "g");
+                const flowPattern = new RegExp(
+                    `(?:const|let|var)\\s+(\\w+)\\s*=\\s*(?:\\([^)]*\\)\\s*=>\\s*)?\`([^\`]+)\`[\\s\\S]*?${escapedObj}\\[\\s*\\1\\s*\\]`,
+                    "g",
+                );
                 const flows = [...allCode.matchAll(flowPattern)];
                 for (const [, , template] of flows) {
-                    const prefixMatch = template.match(/^([A-Z0-9_]+_)\$\{/);
-                    if (prefixMatch) {
-                        const prefix = prefixMatch[1];
+                    const prefixes = extractTemplatePrefixes(template);
+                    if (prefixes.length === 0) {
+                        hasUnknownComputedUsage = true;
+                    }
+                    for (const prefix of prefixes) {
                         for (const key of keys) {
                             if (key.startsWith(prefix)) {
                                 dynamicKeys.add(key);
@@ -105,15 +134,19 @@ export function registerCheckConfigHandler() {
                     }
                 }
 
-                const varPattern = new RegExp(`${obj}\\[\\s*(\\w+)\\s*\\]`, "g");
+                const varPattern = new RegExp(`${escapedObj}\\[\\s*(\\w+)\\s*\\]`, "g");
                 const varUsages = [...allCode.matchAll(varPattern)];
                 for (const [, varName] of varUsages) {
                     if (varName.startsWith("`")) continue;
                     const isFlowVar = flows.some(([, flowVar]) => flowVar === varName);
                     if (!isFlowVar) {
-                        for (const key of keys) {
-                            dynamicKeys.add(key);
-                        }
+                        hasUnknownComputedUsage = true;
+                    }
+                }
+
+                if (hasUnknownComputedUsage) {
+                    for (const key of keys) {
+                        dynamicKeys.add(key);
                     }
                 }
 

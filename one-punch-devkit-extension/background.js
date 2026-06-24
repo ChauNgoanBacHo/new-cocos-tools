@@ -6,7 +6,8 @@ const AUTOPLAY_GAME_ID_KEY = "autoplayGameId";
 const CHEAT_SPEED_KEY = "cheatSpeed";
 const SHOW_DEBUG_KEY = "showDebugControls";
 const DEBUG_EXCLUDE_LIST_KEY = "debugExcludeList";
-const DEBUG_WHITE_LIST_KEY = "debugWhiteList";
+const DEBUG_HIGHLIGHT_LIST_KEY = "debugHighlightList";
+const DEBUG_HIGHLIGHT_COLOR_KEY = "debugHighlightColor";
 const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "SocketManager",
     "CommandManager",
@@ -215,25 +216,29 @@ async function syncControlSettingsToTabs(options = {}) {
         CHEAT_SPEED_KEY,
         SHOW_DEBUG_KEY,
         DEBUG_EXCLUDE_LIST_KEY,
-        DEBUG_WHITE_LIST_KEY,
+        DEBUG_HIGHLIGHT_LIST_KEY,
+        DEBUG_HIGHLIGHT_COLOR_KEY,
     ]);
     const cheatSpeed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
     const showDebugControls = result[SHOW_DEBUG_KEY] === true;
     const debugExcludeList = Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST;
-    const debugWhiteList = Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [];
+    const debugHighlightList = Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [];
+    const debugHighlightColor = typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red";
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
     await sendPageControlToTabs("set-debug-filter-lists", {
         excludeList: debugExcludeList,
-        whiteList: debugWhiteList,
+        highlightList: debugHighlightList,
+        highlightColor: debugHighlightColor,
     }, options);
 
     return {
         cheatSpeed,
         showDebugControls,
         debugExcludeList,
-        debugWhiteList,
+        debugHighlightList,
+        debugHighlightColor,
     };
 }
 
@@ -356,7 +361,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             CHEAT_SPEED_KEY,
             SHOW_DEBUG_KEY,
             DEBUG_EXCLUDE_LIST_KEY,
-            DEBUG_WHITE_LIST_KEY,
+            DEBUG_HIGHLIGHT_LIST_KEY,
+            DEBUG_HIGHLIGHT_COLOR_KEY,
         ]).then((result) => {
             sendResponse({
                 ok: true,
@@ -369,7 +375,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 cheatSpeed: typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1,
                 showDebugControls: result[SHOW_DEBUG_KEY] === true,
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
-                debugWhiteList: Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [],
+                debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
+                debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
             });
         });
         return true;
@@ -378,12 +385,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "get-debug-filter-settings") {
         void chrome.storage.local.get([
             DEBUG_EXCLUDE_LIST_KEY,
-            DEBUG_WHITE_LIST_KEY,
+            DEBUG_HIGHLIGHT_LIST_KEY,
+            DEBUG_HIGHLIGHT_COLOR_KEY,
         ]).then((result) => {
             sendResponse({
                 ok: true,
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
-                debugWhiteList: Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [],
+                debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
+                debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
             });
         });
         return true;
@@ -508,9 +517,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         void chrome.storage.local.set({
             [DEBUG_EXCLUDE_LIST_KEY]: nextList,
         }).then(async () => {
+            const highlightSettings = await chrome.storage.local.get([
+                DEBUG_HIGHLIGHT_LIST_KEY,
+                DEBUG_HIGHLIGHT_COLOR_KEY,
+            ]);
             await sendPageControlToTabs("set-debug-filter-lists", {
                 excludeList: nextList,
-                whiteList: (await chrome.storage.local.get(DEBUG_WHITE_LIST_KEY))[DEBUG_WHITE_LIST_KEY] ?? [],
+                highlightList: highlightSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
+                highlightColor: typeof highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY] === "string"
+                    ? highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
+                    : "red",
             }, { activeOnly: false });
             sendResponse({
                 ok: true,
@@ -520,20 +536,52 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return true;
     }
 
-    if (message.type === "set-debug-white-list") {
+    if (message.type === "set-debug-highlight-list") {
         const nextList = Array.isArray(message.values)
             ? message.values.filter((value) => typeof value === "string")
             : [];
         void chrome.storage.local.set({
-            [DEBUG_WHITE_LIST_KEY]: nextList,
+            [DEBUG_HIGHLIGHT_LIST_KEY]: nextList,
         }).then(async () => {
+            const filterSettings = await chrome.storage.local.get([
+                DEBUG_EXCLUDE_LIST_KEY,
+                DEBUG_HIGHLIGHT_COLOR_KEY,
+            ]);
             await sendPageControlToTabs("set-debug-filter-lists", {
-                excludeList: (await chrome.storage.local.get(DEBUG_EXCLUDE_LIST_KEY))[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
-                whiteList: nextList,
+                excludeList: filterSettings[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
+                highlightList: nextList,
+                highlightColor: typeof filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY] === "string"
+                    ? filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
+                    : "red",
             }, { activeOnly: false });
             sendResponse({
                 ok: true,
-                debugWhiteList: nextList,
+                debugHighlightList: nextList,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-debug-highlight-color") {
+        const allowedColors = new Set(["red", "amber", "cyan"]);
+        const nextColor = typeof message.color === "string" && allowedColors.has(message.color)
+            ? message.color
+            : "red";
+        void chrome.storage.local.set({
+            [DEBUG_HIGHLIGHT_COLOR_KEY]: nextColor,
+        }).then(async () => {
+            const filterSettings = await chrome.storage.local.get([
+                DEBUG_EXCLUDE_LIST_KEY,
+                DEBUG_HIGHLIGHT_LIST_KEY,
+            ]);
+            await sendPageControlToTabs("set-debug-filter-lists", {
+                excludeList: filterSettings[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
+                highlightList: filterSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
+                highlightColor: nextColor,
+            }, { activeOnly: false });
+            sendResponse({
+                ok: true,
+                debugHighlightColor: nextColor,
             });
         });
         return true;

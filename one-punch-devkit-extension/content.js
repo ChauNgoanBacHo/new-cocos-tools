@@ -10,7 +10,8 @@
     let isLocalSocketEnabled = true;
     let isDebugControlsEnabled = false;
     let debugExcludeList = [];
-    let debugWhiteList = [];
+    let debugHighlightList = [];
+    let debugHighlightColor = "red";
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
         "https://iframe-tektale.staging.enostd.gay",
@@ -128,9 +129,29 @@
             command: "set-debug-filter-lists",
             payload: {
                 excludeList: debugExcludeList,
-                whiteList: debugWhiteList,
+                highlightList: debugHighlightList,
+                highlightColor: debugHighlightColor,
             },
         }, "*");
+    }
+
+    function applyDebugFilterSettingsFromStorage() {
+        chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
+            if (chrome.runtime.lastError || !filterResponse?.ok) {
+                return;
+            }
+
+            debugExcludeList = Array.isArray(filterResponse.debugExcludeList)
+                ? filterResponse.debugExcludeList
+                : [];
+            debugHighlightList = Array.isArray(filterResponse.debugHighlightList)
+                ? filterResponse.debugHighlightList
+                : [];
+            debugHighlightColor = typeof filterResponse.debugHighlightColor === "string"
+                ? filterResponse.debugHighlightColor
+                : "red";
+            applyDebugFilterLists();
+        });
     }
 
     function applyDebugVisibilityWithRetry(enabled) {
@@ -153,7 +174,10 @@
             return;
         }
 
-        if (!isLocalSocketEnabled && !isDebugControlsEnabled) {
+        const shouldEnableBrowserTools = isDebugControlsEnabled;
+        const shouldEnableElectronBridge = isLocalSocketEnabled;
+
+        if (!shouldEnableBrowserTools && !shouldEnableElectronBridge) {
             removePageHook();
             return;
         }
@@ -167,10 +191,10 @@
         injectPageHook();
         window[CONTENT_BOOTSTRAP_MARKER] = true;
         applyDebugFilterLists();
-        if (isDebugControlsEnabled) {
+        if (shouldEnableBrowserTools) {
             applyDebugVisibilityWithRetry(true);
         }
-        if (!isLocalSocketEnabled) {
+        if (!shouldEnableElectronBridge) {
             return;
         }
 
@@ -260,9 +284,12 @@
                     debugExcludeList = Array.isArray(filterResponse.debugExcludeList)
                         ? filterResponse.debugExcludeList
                         : [];
-                    debugWhiteList = Array.isArray(filterResponse.debugWhiteList)
-                        ? filterResponse.debugWhiteList
+                    debugHighlightList = Array.isArray(filterResponse.debugHighlightList)
+                        ? filterResponse.debugHighlightList
                         : [];
+                    debugHighlightColor = typeof filterResponse.debugHighlightColor === "string"
+                        ? filterResponse.debugHighlightColor
+                        : "red";
                     window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
                         ? result.customAllowedOrigins
                         : [];
@@ -294,6 +321,14 @@
             isDebugControlsEnabled = changes[SHOW_DEBUG_STORAGE_KEY].newValue === true;
         }
 
+        if (
+            changes.debugExcludeList
+            || changes.debugHighlightList
+            || changes.debugHighlightColor
+        ) {
+            applyDebugFilterSettingsFromStorage();
+        }
+
         if (isLocalSocketEnabled || isDebugControlsEnabled) {
             bootstrap();
             return;
@@ -311,7 +346,8 @@
             window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = [];
             chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
                 debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
-                debugWhiteList = Array.isArray(filterResponse?.debugWhiteList) ? filterResponse.debugWhiteList : [];
+                debugHighlightList = Array.isArray(filterResponse?.debugHighlightList) ? filterResponse.debugHighlightList : [];
+                debugHighlightColor = typeof filterResponse?.debugHighlightColor === "string" ? filterResponse.debugHighlightColor : "red";
                 bootstrap();
             });
             return;
@@ -324,7 +360,8 @@
             : [];
         chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
             debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
-            debugWhiteList = Array.isArray(filterResponse?.debugWhiteList) ? filterResponse.debugWhiteList : [];
+            debugHighlightList = Array.isArray(filterResponse?.debugHighlightList) ? filterResponse.debugHighlightList : [];
+            debugHighlightColor = typeof filterResponse?.debugHighlightColor === "string" ? filterResponse.debugHighlightColor : "red";
             bootstrap();
         });
     });

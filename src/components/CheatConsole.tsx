@@ -24,6 +24,9 @@ interface CheatSocketEventPayload {
         gameId?: string | null;
         serviceId?: string;
         eventId?: string | null;
+        highlight?: {
+            color?: string;
+        };
         data?: {
             gameId?: string | null;
             mx?: string[];
@@ -38,6 +41,12 @@ const ACCEPTED_AUTOPLAY_EVENT_NAMES = new Set(["n", "f"]);
 const SHOW_AUTOPLAY_DEBUG_LOGS = false;
 const LOCAL_SOCKET_CLIENT_WAIT_MS = 4000;
 const LOCAL_SOCKET_CLIENT_POLL_MS = 250;
+type AutoplayLogTone = "default" | "error" | "success" | "warning" | "muted" | "highlight-red" | "highlight-amber" | "highlight-cyan";
+
+interface AutoplayLogEntry {
+    message: string;
+    tone: AutoplayLogTone;
+}
 
 interface PanelData {
     id: string;
@@ -247,7 +256,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
     const [autoplaySelectedIds, setAutoplaySelectedIds] = useState<string[]>([]);
     const [isAutoplayRunning, setIsAutoplayRunning] = useState<boolean>(false);
-    const [autoplayLogs, setAutoplayLogs] = useState<string[]>([]);
+    const [autoplayLogs, setAutoplayLogs] = useState<AutoplayLogEntry[]>([]);
     const [autoplayCurrentId, setAutoplayCurrentId] = useState<string | null>(null);
     const [isAutoplaySequenceExpanded, setIsAutoplaySequenceExpanded] = useState<boolean>(false);
     const autoplayAbortRef = useRef<AbortController | null>(null);
@@ -282,12 +291,30 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const localSocketStatusRef = useRef<CheatLocalSocketStatus>(localSocketStatus);
     const autoplaySelectedIdsRef = useRef<string[]>(autoplaySelectedIds);
 
-    const appendAutoplayLog = (message: string, options?: { debug?: boolean }) => {
-        if (options?.debug && !SHOW_AUTOPLAY_DEBUG_LOGS) {
+    const appendAutoplayLog = (
+        message: string,
+        options?: { debug?: boolean; tone?: AutoplayLogTone },
+    ) => {
+        const isHighlightedLog = Boolean(options?.tone?.startsWith("highlight-"));
+        if (options?.debug && !SHOW_AUTOPLAY_DEBUG_LOGS && !isHighlightedLog) {
             return;
         }
 
-        setAutoplayLogs((prev) => [...prev, message]);
+        setAutoplayLogs((prev) => [...prev, { message, tone: options?.tone ?? "default" }]);
+    };
+
+    const appendAutoplayTextLog = (message: string) => {
+        const tone: AutoplayLogTone = message.startsWith("❌")
+            ? "error"
+            : message.startsWith("✅") || message.startsWith("🎉")
+                ? "success"
+                : message.includes("⏳")
+                    ? "warning"
+                    : message.startsWith("🪵")
+                        ? "muted"
+                        : "default";
+
+        setAutoplayLogs((prev) => [...prev, { message, tone }]);
     };
 
     const resolveExtensionRequestedGameId = (event: CheatSocketEventPayload) => {
@@ -424,6 +451,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
             const eventId = typeof socketPayload?.eventId === "string" ? socketPayload.eventId : null;
             const displayLabel = [eventType, debugType, eventName, eventGameId, eventId].filter(Boolean).join(" / ");
             const preview = typeof socketPayload?.preview === "string" ? socketPayload.preview : null;
+            const highlightColor = typeof socketPayload?.highlight?.color === "string" ? socketPayload.highlight.color : null;
+            const highlightTone: AutoplayLogTone | undefined = highlightColor === "amber"
+                ? "highlight-amber"
+                : highlightColor === "cyan"
+                    ? "highlight-cyan"
+                    : highlightColor === "red"
+                        ? "highlight-red"
+                        : undefined;
 
             if (eventType === "extension-command" && (event as CheatSocketEventPayload).command === "start-autoplay") {
                 runAutoplayFromExtension(resolveExtensionRequestedGameId(event as CheatSocketEventPayload));
@@ -434,6 +469,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 `📡 Received socket event: ${displayLabel || "unknown"}${preview ? ` | ${preview}` : ""}`,
                 {
                     debug: eventType !== "game-socket-response",
+                    tone: highlightTone,
                 },
             );
         });
@@ -508,7 +544,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
     const runAutoplayFromExtension = (requestedGameId?: string | null) => {
         if (isAutoplayRunning) {
-            setAutoplayLogs((prev) => [...prev, "📥 Received extension command: start-autoplay (ignored because autoplay is already running)."]);
+            appendAutoplayTextLog("📥 Received extension command: start-autoplay (ignored because autoplay is already running).");
             return;
         }
 
@@ -520,8 +556,8 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
             : activeGameRef.current ?? null;
 
         if (!targetGame) {
-            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay${targetGameId ? ` for game ${targetGameId}` : ""}.`]);
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: game was not found in Electron."]);
+            appendAutoplayTextLog(`📥 Received extension command: start-autoplay${targetGameId ? ` for game ${targetGameId}` : ""}.`);
+            appendAutoplayTextLog("❌ Cannot start autoplay from extension: game was not found in Electron.");
             return;
         }
 
@@ -530,14 +566,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         }
 
         if (!localSocketStatusRef.current.running) {
-            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: Electron Local WebSocket Server is not running."]);
+            appendAutoplayTextLog(`📥 Received extension command: start-autoplay for game ${targetGame.id}.`);
+            appendAutoplayTextLog("❌ Cannot start autoplay from extension: Electron Local WebSocket Server is not running.");
             return;
         }
 
         if (targetGame.panels.length === 0) {
-            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: selected game has no configured panels."]);
+            appendAutoplayTextLog(`📥 Received extension command: start-autoplay for game ${targetGame.id}.`);
+            appendAutoplayTextLog("❌ Cannot start autoplay from extension: selected game has no configured panels.");
             return;
         }
 
@@ -546,14 +582,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         }
 
         if ((autoplaySelectedIdsRef.current.length === 0 ? targetGame.panels.length : autoplaySelectedIdsRef.current.length) === 0) {
-            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: no autoplay steps are selected."]);
+            appendAutoplayTextLog(`📥 Received extension command: start-autoplay for game ${targetGame.id}.`);
+            appendAutoplayTextLog("❌ Cannot start autoplay from extension: no autoplay steps are selected.");
             return;
         }
 
         if (!targetGame.userId.trim()) {
-            setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay from extension: User ID is empty."]);
+            appendAutoplayTextLog(`📥 Received extension command: start-autoplay for game ${targetGame.id}.`);
+            appendAutoplayTextLog("❌ Cannot start autoplay from extension: User ID is empty.");
             return;
         }
 
@@ -561,8 +597,8 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
             type: "success",
             message: "⚡ Extension đã gửi lệnh Start Autoplay cho Electron app.",
         });
-        setAutoplayLogs((prev) => [...prev, `📥 Received extension command: start-autoplay for game ${targetGame.id}.`]);
-        setAutoplayLogs((prev) => [...prev, "⚡ Electron is starting autoplay from extension command..."]);
+        appendAutoplayTextLog(`📥 Received extension command: start-autoplay for game ${targetGame.id}.`);
+        appendAutoplayTextLog("⚡ Electron is starting autoplay from extension command...");
         void runAutoplay(targetGame);
     };
 
@@ -1008,14 +1044,14 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         }
         setIsAutoplayRunning(false);
         setAutoplayCurrentId(null);
-        setAutoplayLogs((prev) => [...prev, "🛑 Đã dừng chạy tự động."]);
+        appendAutoplayTextLog("🛑 Đã dừng chạy tự động.");
     };
 
     const runAutoplay = async (overrideGame?: GameData) => {
         const gameToRun = overrideGame ?? activeGameRef.current;
         const isExternalOverride = Boolean(overrideGame);
         if (!gameToRun) {
-            setAutoplayLogs((prev) => [...prev, "❌ Cannot start autoplay: no active game is available in Electron."]);
+            appendAutoplayTextLog("❌ Cannot start autoplay: no active game is available in Electron.");
             return;
         }
         if (!localSocketStatusRef.current.running) {
@@ -1023,7 +1059,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 type: "error",
                 message: "❌ Autoplay chỉ hoạt động khi Local WebSocket Server đang bật.",
             });
-            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: Electron Local WebSocket Server is not running.`]);
+            appendAutoplayTextLog(`❌ Cannot start autoplay for game ${gameToRun.id}: Electron Local WebSocket Server is not running.`);
             return;
         }
         const selectedIds = autoplaySelectedIdsRef.current.length > 0
@@ -1032,13 +1068,13 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
 
         if (selectedIds.length === 0) {
             setStatus({ type: "error", message: "❌ Vui lòng chọn ít nhất 1 bước để Autoplay!" });
-            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: no autoplay steps are selected.`]);
+            appendAutoplayTextLog(`❌ Cannot start autoplay for game ${gameToRun.id}: no autoplay steps are selected.`);
             return;
         }
         const userId = gameToRun.userId;
         if (!userId.trim()) {
             setStatus({ type: "error", message: "❌ Vui lòng nhập User ID trước khi chạy Autoplay!" });
-            setAutoplayLogs((prev) => [...prev, `❌ Cannot start autoplay for game ${gameToRun.id}: User ID is empty.`]);
+            appendAutoplayTextLog(`❌ Cannot start autoplay for game ${gameToRun.id}: User ID is empty.`);
             return;
         }
 
@@ -1050,7 +1086,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         }
 
         setIsAutoplayRunning(true);
-        setAutoplayLogs(["🚀 Bắt đầu Autoplay chuỗi Matrix..."]);
+        setAutoplayLogs([{ message: "🚀 Bắt đầu Autoplay chuỗi Matrix...", tone: "default" }]);
 
         const controller = new AbortController();
         autoplayAbortRef.current = controller;
@@ -1067,7 +1103,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 if (controller.signal.aborted) break;
 
                 const displayName = panel.title.trim() ? panel.title : `Matrix #${panel.id}`;
-                setAutoplayLogs((prev) => [...prev, `⚡ Đang chạy: ${displayName}...`]);
+                appendAutoplayTextLog(`⚡ Đang chạy: ${displayName}...`);
                 const socketSequenceBeforeSubmit = socketEventSequenceRef.current;
 
                 const submitTargetUrl = `https://cheat.${gameToRun.env}.enostd.gay/${gameToRun.id}/inputed`;
@@ -1089,8 +1125,8 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 if (response.ok) {
                     setAutoplayLogs((prev) => [
                         ...prev,
-                        `✅ Thành công: ${displayName}`,
-                        "⏳ Waiting for local socket event before next step...",
+                        { message: `✅ Thành công: ${displayName}`, tone: "success" },
+                        { message: "⏳ Waiting for local socket event before next step...", tone: "warning" },
                     ]);
 
                     if (i < panelsToExecute.length - 1) {
@@ -1105,7 +1141,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                             ) {
                                 setAutoplayLogs((prev) => [
                                     ...prev,
-                                    "🧭 Detected matching socket event arrived during request. Continuing immediately.",
+                                    { message: "🧭 Detected matching socket event arrived during request. Continuing immediately.", tone: "default" },
                                 ]);
                                 resolve();
                                 return;
@@ -1143,7 +1179,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                 resolved = true;
                                 removeListener();
                                 clearTimeout(timeoutId);
-                                setAutoplayLogs((prev) => [...prev, `✅ Accepted socket event: ${socketEvent.eventName || "unknown"}`]);
+                                appendAutoplayTextLog(`✅ Accepted socket event: ${socketEvent.eventName || "unknown"}`);
                                 resolve();
                             });
 
@@ -1166,21 +1202,24 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 } else {
                     setAutoplayLogs((prev) => [
                         ...prev,
-                        `❌ Thất bại: ${displayName} (Mã lỗi: ${response.status})`
+                        { message: `❌ Thất bại: ${displayName} (Mã lỗi: ${response.status})`, tone: "error" },
                     ]);
                 }
             }
 
             if (!controller.signal.aborted) {
-                setAutoplayLogs((prev) => [...prev, "🎉 Hoàn thành autoplay tất cả các bước!"]);
+                appendAutoplayTextLog("🎉 Hoàn thành autoplay tất cả các bước!");
             }
         } catch (error: any) {
             if (error.name !== "AbortError" && error.message !== "aborted") {
                 setAutoplayLogs((prev) => [
                     ...prev,
-                    error.message === "socket-timeout"
-                        ? "❌ Timeout khi chờ socket event để chạy bước tiếp theo."
-                        : `❌ Gặp lỗi trong quá trình Autoplay: ${error.message || error}`
+                    {
+                        message: error.message === "socket-timeout"
+                            ? "❌ Timeout khi chờ socket event để chạy bước tiếp theo."
+                            : `❌ Gặp lỗi trong quá trình Autoplay: ${error.message || error}`,
+                        tone: "error",
+                    },
                 ]);
             }
         } finally {
@@ -1861,8 +1900,26 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                         </div>
                                                         <div className="bg-zinc-950 p-4 text-xs font-mono text-emerald-400 h-40 overflow-y-auto space-y-1.5 scrollbar-thin">
                                                             {autoplayLogs.length > 0 ? autoplayLogs.map((log, idx) => (
-                                                                <div key={idx} className={log.startsWith("❌") ? "text-red-400" : log.startsWith("✅") ? "text-emerald-400" : log.includes("⏳") ? "text-amber-400/90" : "text-zinc-400"}>
-                                                                    {log}
+                                                                <div
+                                                                    key={idx}
+                                                                    className={
+                                                                        log.tone === "error"
+                                                                            ? "text-red-400"
+                                                                            : log.tone === "success"
+                                                                                ? "text-emerald-400"
+                                                                                : log.tone === "warning"
+                                                                                    ? "text-amber-400/90"
+                                                                                    : log.tone === "muted"
+                                                                                        ? "text-zinc-500"
+                                                                                        : log.tone === "highlight-red"
+                                                                                            ? "text-rose-400"
+                                                                                            : log.tone === "highlight-amber"
+                                                                                                ? "text-amber-300"
+                                                                                                : log.tone === "highlight-cyan"
+                                                                                                    ? "text-cyan-300"
+                                                                                                    : "text-zinc-400"
+                                                                    }>
+                                                                    {log.message}
                                                                 </div>
                                                             )) : (
                                                                 <div className="text-zinc-500">

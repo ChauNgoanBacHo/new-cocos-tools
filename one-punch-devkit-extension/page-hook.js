@@ -4,9 +4,11 @@
     const ACCEPTED_EVENT_NAMES = new Set(["n", "f"]);
     const MAX_DEBUG_UNMATCHED_MESSAGES = 5;
     const OVERLAY_ID = "one-punch-devkit-debug-controls";
+    const MINI_LOG_MAX_ENTRIES = 20;
     let unmatchedDebugCount = 0;
     let debugExcludeList = [];
-    let debugWhiteList = [];
+    let debugHighlightList = [];
+    let debugHighlightColor = "red";
     const cheatControlState = {
         configuredSpeed: 1,
         boostEnabled: false,
@@ -14,10 +16,15 @@
         stepFramePending: false,
         overlayVisible: false,
         overlayRoot: null,
+        miniLogRoot: null,
         overlayPauseButton: null,
         overlaySpeedButton: null,
         overlayNextFrameButton: null,
         overlayResetButton: null,
+        overlayMiniLogButton: null,
+        overlayMiniLogPanel: null,
+        miniLogExpanded: false,
+        miniLogEntries: [],
         runtime: null,
         version: null,
         scheduler: null,
@@ -57,29 +64,17 @@
             .toLowerCase();
     }
 
-    function shouldEmitDebugLine(rawText) {
+    function matchesHighlightRule(rawText) {
         const normalizedText = normalizeFilterText(rawText);
         if (!normalizedText) {
             return false;
         }
 
-        const normalizedWhiteList = debugWhiteList
+        const normalizedHighlightList = debugHighlightList
             .map(normalizeFilterText)
             .filter(Boolean);
 
-        if (normalizedWhiteList.length > 0 && !normalizedWhiteList.some((entry) => normalizedText.includes(entry))) {
-            return false;
-        }
-
-        const normalizedExcludeList = debugExcludeList
-            .map(normalizeFilterText)
-            .filter(Boolean);
-
-        if (normalizedExcludeList.some((entry) => normalizedText.includes(entry))) {
-            return false;
-        }
-
-        return true;
+        return normalizedHighlightList.some((entry) => normalizedText.includes(entry));
     }
 
     function shouldSuppressConsoleLine(rawText) {
@@ -88,19 +83,146 @@
             return false;
         }
 
-        const normalizedWhiteList = debugWhiteList
-            .map(normalizeFilterText)
-            .filter(Boolean);
-
-        if (normalizedWhiteList.length > 0 && !normalizedWhiteList.some((entry) => normalizedText.includes(entry))) {
-            return true;
-        }
-
         const normalizedExcludeList = debugExcludeList
             .map(normalizeFilterText)
             .filter(Boolean);
 
         return normalizedExcludeList.some((entry) => normalizedText.includes(entry));
+    }
+
+    function getHighlightMeta(rawText) {
+        if (!matchesHighlightRule(rawText)) {
+            return null;
+        }
+
+        return {
+            color: debugHighlightColor,
+        };
+    }
+
+    function getConsoleHighlightStyle(color) {
+        switch (color) {
+            case "amber":
+                return "color: #facc15; text-shadow: 0 0 8px rgba(250, 204, 21, 0.35); font-weight: 700;";
+            case "cyan":
+                return "color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.35); font-weight: 700;";
+            case "red":
+            default:
+                return "color: #ff4d6d; text-shadow: 0 0 8px rgba(255, 77, 109, 0.35); font-weight: 700;";
+        }
+    }
+
+    function stringifyConsoleArg(value) {
+        if (typeof value === "string") {
+            return value;
+        }
+
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+
+    function buildHighlightedConsoleText(args) {
+        if (!Array.isArray(args) || args.length === 0) {
+            return "";
+        }
+
+        const firstArg = typeof args[0] === "string" ? args[0] : "";
+        const formatStyleCount = firstArg ? (firstArg.match(/%c/g) || []).length : 0;
+
+        if (formatStyleCount === 0) {
+            return args.map(stringifyConsoleArg).join(" ");
+        }
+
+        const normalizedFirstArg = firstArg.replace(/%c/g, "").trim();
+        const visibleArgs = [];
+
+        if (normalizedFirstArg) {
+            visibleArgs.push(normalizedFirstArg);
+        }
+
+        for (let index = 1 + formatStyleCount; index < args.length; index += 1) {
+            visibleArgs.push(stringifyConsoleArg(args[index]));
+        }
+
+        return visibleArgs.join(" ").trim();
+    }
+
+    function appendMiniLogEntry(message, options = {}) {
+        if (typeof message !== "string" || !message.trim()) {
+            return;
+        }
+
+        const normalizedMessage = message.trim();
+        const shouldFilterByHighlight = debugHighlightList.length > 0;
+        const isHighlighted = matchesHighlightRule(normalizedMessage);
+
+        if (shouldFilterByHighlight && !isHighlighted) {
+            return;
+        }
+
+        const entry = {
+            text: normalizedMessage.slice(0, 280),
+            color: typeof options.color === "string" ? options.color : isHighlighted ? debugHighlightColor : null,
+        };
+
+        cheatControlState.miniLogEntries = [...cheatControlState.miniLogEntries.slice(-(MINI_LOG_MAX_ENTRIES - 1)), entry];
+        renderMiniLogEntries();
+    }
+
+    function renderMiniLogEntries() {
+        if (!cheatControlState.overlayMiniLogPanel) {
+            return;
+        }
+
+        cheatControlState.overlayMiniLogPanel.innerHTML = "";
+
+        if (cheatControlState.miniLogEntries.length === 0) {
+            const emptyState = document.createElement("div");
+            emptyState.textContent = debugHighlightList.length > 0
+                ? "No matching highlight logs yet."
+                : "Mini log is waiting for new entries.";
+            emptyState.style.color = "rgba(226, 232, 240, 0.55)";
+            emptyState.style.fontSize = "11px";
+            emptyState.style.lineHeight = "1.45";
+            cheatControlState.overlayMiniLogPanel.appendChild(emptyState);
+            return;
+        }
+
+        for (const entry of cheatControlState.miniLogEntries) {
+            const line = document.createElement("div");
+            line.textContent = entry.text;
+            line.style.fontSize = "11px";
+            line.style.lineHeight = "1.45";
+            line.style.whiteSpace = "nowrap";
+            line.style.overflow = "hidden";
+            line.style.textOverflow = "ellipsis";
+            line.style.color = entry.color
+                ? entry.color === "amber"
+                    ? "#facc15"
+                    : entry.color === "cyan"
+                        ? "#c084fc"
+                        : "#ff4d6d"
+                : "rgba(226, 232, 240, 0.86)";
+            cheatControlState.overlayMiniLogPanel.appendChild(line);
+        }
+
+        cheatControlState.overlayMiniLogPanel.scrollTop = cheatControlState.overlayMiniLogPanel.scrollHeight;
+    }
+
+    function emitHighlightedConsoleLine(originalMethod, args, joined) {
+        const highlightMeta = getHighlightMeta(joined);
+        if (!highlightMeta) {
+            return false;
+        }
+
+        const highlightStyle = getConsoleHighlightStyle(highlightMeta.color);
+        const highlightedText = buildHighlightedConsoleText(args) || joined;
+        appendMiniLogEntry(highlightedText, { color: highlightMeta.color });
+        originalMethod.call(window.console, `%c${highlightedText}`, highlightStyle);
+        return true;
     }
 
     function getCocosRuntime() {
@@ -356,17 +478,51 @@
             resetSpeed();
         });
 
+        const miniLogButton = createIconButton();
+        miniLogButton.addEventListener("click", () => {
+            cheatControlState.miniLogExpanded = !cheatControlState.miniLogExpanded;
+            updateOverlayUi();
+        });
+
+        const miniLogRoot = document.createElement("div");
+        miniLogRoot.style.position = "fixed";
+        miniLogRoot.style.top = "54px";
+        miniLogRoot.style.right = "16px";
+        miniLogRoot.style.zIndex = "2147483646";
+        miniLogRoot.style.display = "none";
+        miniLogRoot.style.padding = "0";
+        miniLogRoot.style.fontFamily = "Arial, sans-serif";
+
+        const miniLogPanel = document.createElement("div");
+        miniLogPanel.style.padding = "10px";
+        miniLogPanel.style.width = "280px";
+        miniLogPanel.style.maxWidth = "280px";
+        miniLogPanel.style.maxHeight = "96px";
+        miniLogPanel.style.overflowY = "auto";
+        miniLogPanel.style.borderRadius = "12px";
+        miniLogPanel.style.background = "rgba(15, 23, 42, 0.92)";
+        miniLogPanel.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+        miniLogPanel.style.boxShadow = "0 14px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.04)";
+        miniLogPanel.style.fontFamily = "Arial, sans-serif";
+
         root.appendChild(pauseButton);
         root.appendChild(nextFrameButton);
         root.appendChild(speedButton);
         root.appendChild(resetButton);
+        root.appendChild(miniLogButton);
+        miniLogRoot.appendChild(miniLogPanel);
         (document.body || document.documentElement).appendChild(root);
+        (document.body || document.documentElement).appendChild(miniLogRoot);
 
         cheatControlState.overlayRoot = root;
+        cheatControlState.miniLogRoot = miniLogRoot;
         cheatControlState.overlayPauseButton = pauseButton;
         cheatControlState.overlaySpeedButton = speedButton;
         cheatControlState.overlayNextFrameButton = nextFrameButton;
         cheatControlState.overlayResetButton = resetButton;
+        cheatControlState.overlayMiniLogButton = miniLogButton;
+        cheatControlState.overlayMiniLogPanel = miniLogPanel;
+        renderMiniLogEntries();
         updateOverlayUi();
 
         return root;
@@ -378,6 +534,8 @@
             || !cheatControlState.overlaySpeedButton
             || !cheatControlState.overlayNextFrameButton
             || !cheatControlState.overlayResetButton
+            || !cheatControlState.overlayMiniLogButton
+            || !cheatControlState.overlayMiniLogPanel
         ) {
             return;
         }
@@ -415,6 +573,14 @@
         cheatControlState.overlayResetButton.textContent = "x1.0";
         cheatControlState.overlayResetButton.title = `Reset speed to x1.0 (current x${cheatControlState.configuredSpeed.toFixed(1)})`;
         cheatControlState.overlayResetButton.style.background = "#475569";
+
+        cheatControlState.overlayMiniLogButton.textContent = cheatControlState.miniLogExpanded ? "🗕" : "🗖";
+        cheatControlState.overlayMiniLogButton.title = cheatControlState.miniLogExpanded ? "Hide mini log" : "Show mini log";
+        cheatControlState.overlayMiniLogButton.style.background = cheatControlState.miniLogExpanded ? "#0f766e" : "#334155";
+
+        if (cheatControlState.miniLogRoot) {
+            cheatControlState.miniLogRoot.style.display = cheatControlState.miniLogExpanded ? "block" : "none";
+        }
     }
 
     function setOverlayVisibility(enabled) {
@@ -423,10 +589,17 @@
             if (cheatControlState.overlayRoot) {
                 cheatControlState.overlayRoot.remove();
             }
+            if (cheatControlState.miniLogRoot) {
+                cheatControlState.miniLogRoot.remove();
+            }
             cheatControlState.overlayRoot = null;
+            cheatControlState.miniLogRoot = null;
             cheatControlState.overlayPauseButton = null;
             cheatControlState.overlaySpeedButton = null;
             cheatControlState.overlayNextFrameButton = null;
+            cheatControlState.overlayResetButton = null;
+            cheatControlState.overlayMiniLogButton = null;
+            cheatControlState.overlayMiniLogPanel = null;
             return;
         }
 
@@ -457,9 +630,13 @@
                 debugExcludeList = Array.isArray(payload?.excludeList)
                     ? payload.excludeList.filter((value) => typeof value === "string")
                     : [];
-                debugWhiteList = Array.isArray(payload?.whiteList)
-                    ? payload.whiteList.filter((value) => typeof value === "string")
+                debugHighlightList = Array.isArray(payload?.highlightList)
+                    ? payload.highlightList.filter((value) => typeof value === "string")
                     : [];
+                debugHighlightColor = typeof payload?.highlightColor === "string"
+                    ? payload.highlightColor
+                    : "red";
+                renderMiniLogEntries();
                 break;
             default:
                 break;
@@ -737,14 +914,12 @@
 
                 if (unmatchedDebugCount < MAX_DEBUG_UNMATCHED_MESSAGES) {
                     const preview = await getDebugPreview(event.data);
-                    if (!shouldEmitDebugLine(preview)) {
-                        return;
-                    }
                     unmatchedDebugCount += 1;
                     emitDebugEvent("socket-message-unmatched", {
                         url: socket.url,
                         dataType: typeof event.data,
                         preview,
+                        highlight: getHighlightMeta(preview),
                     });
                 }
             });
@@ -774,6 +949,7 @@
 
             const wrappedMethod = function (...args) {
                 let shouldSuppressConsoleOutput = false;
+                let highlightedOutputHandled = false;
                 try {
                     const joined = args
                         .map((arg) => {
@@ -789,12 +965,16 @@
                         })
                         .join(" ");
 
+                    highlightedOutputHandled = emitHighlightedConsoleLine(originalMethod, args, joined);
                     shouldSuppressConsoleOutput = shouldSuppressConsoleLine(joined) || inspectConsoleArgs(args);
+                    if (!highlightedOutputHandled && !shouldSuppressConsoleOutput) {
+                        appendMiniLogEntry(buildHighlightedConsoleText(args) || joined);
+                    }
                 } catch {
                     // ignore console inspection failures
                 }
 
-                if (shouldSuppressConsoleOutput) {
+                if (shouldSuppressConsoleOutput || highlightedOutputHandled) {
                     return;
                 }
 
@@ -834,19 +1014,23 @@
 
         const isSocketLog = firstArg.includes("SocketManagerNewMessage") || joined.includes("SocketManagerNewMessage");
         const isEventManagerLog = firstArg.includes("EventManager - newEvent") || joined.includes("EventManager - newEvent");
+        const highlightMeta = getHighlightMeta(joined);
 
         if (!isSocketLog && !isEventManagerLog) {
+            if (highlightMeta) {
+                emitDebugEvent("console-highlight", {
+                    preview: joined.slice(0, 220),
+                    highlight: highlightMeta,
+                });
+            }
             return false;
-        }
-
-        if (!shouldEmitDebugLine(joined)) {
-            return true;
         }
 
         const candidate = extractJsonLikeSubstring(joined);
         if (!candidate) {
             emitDebugEvent("console-message-unmatched", {
                 preview: joined.slice(0, 220),
+                highlight: highlightMeta,
             });
             return false;
         }
@@ -859,6 +1043,7 @@
 
         emitDebugEvent("console-message-unmatched", {
             preview: joined.slice(0, 220),
+            highlight: highlightMeta,
         });
         return false;
     }
