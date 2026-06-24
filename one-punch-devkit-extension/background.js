@@ -13,14 +13,19 @@ const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "ping[]",
     "pong - latency",
     "SocketManagerNewMessage",
-    "MessageManager\\x20-\\x20_handleSocketEvent.[]",
-    "MessageManager - _initSocket",
     "[PHYSICS]",
     "[PHYSICS2D",
     "native sound init",
-    "MessageManager - closeAndCleanUp.[]",
     "my wallet update",
+    "MessageManager - sendMessage: %s - %j[\"wallet-service-id\"",
+    "EventManager - newEvent: %j[{\"event\":\"wallet-updated\"",
     "[SoundPlayerImpl]",
+    "SockerManager - health-check",
+    "MessageManager\\x20-\\x20_handleSocketEvent.",
+    "MessageManager - _initSocket",
+    "MessageManager - _handleSocketStatus.",
+    "MessageManager - closeAndCleanUp.",
+    "MessageManager - _handleSocketStatus."
 ];
 
 let socket = null;
