@@ -163,6 +163,50 @@
         gap: 8px;
       }
 
+      .accordion {
+        margin-top: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #ffffff;
+        overflow: hidden;
+      }
+
+      .accordion-toggle {
+        width: 100%;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+        cursor: pointer;
+      }
+
+      .accordion-toggle span:last-child {
+        font-size: 11px;
+        color: #64748b;
+        transition: transform 0.2s ease;
+      }
+
+      .accordion[data-open="true"] .accordion-toggle span:last-child {
+        transform: rotate(90deg);
+      }
+
+      .accordion-content {
+        display: none;
+        padding: 0 14px 14px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .accordion[data-open="true"] .accordion-content {
+        display: block;
+      }
+
       .action-button {
         width: 100%;
         border: none;
@@ -219,6 +263,24 @@
         <label class="field-label" for="custom-origins">Custom Links</label>
         <p class="field-help">One origin per line. Reload the target tab after saving.</p>
         <textarea id="custom-origins" class="textarea" placeholder="https://your-domain.example"></textarea>
+      </div>
+      <div id="log-config-accordion" class="accordion" data-open="false">
+        <button id="log-config-toggle" class="accordion-toggle" type="button" aria-expanded="false">
+          <span>Log Config</span>
+          <span>▶</span>
+        </button>
+        <div class="accordion-content">
+          <div class="field">
+            <label class="field-label" for="debug-exclude-list">Exclude List</label>
+            <p class="field-help">If a log line contains one of these values, the whole line will be ignored.</p>
+            <textarea id="debug-exclude-list" class="textarea" placeholder="One filter per line"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="debug-white-list">White List</label>
+            <p class="field-help">If this list has values, only matching log lines will be shown.</p>
+            <textarea id="debug-white-list" class="textarea" placeholder="One filter per line"></textarea>
+          </div>
+        </div>
       </div>
     </div>
     <script src="popup.js"></script>

@@ -33,6 +33,7 @@ function formatTime(seconds: number): string {
 const ZOOM_STEP = 1.2;
 
 export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNext, hasPrev }: Props) {
+    const [backgroundMode, setBackgroundMode] = useState<"transparent" | "checker">("transparent");
     const [expanded, setExpanded] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<SpineStage | null>(null);
@@ -77,7 +78,10 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
         if (!container) return;
 
         let cancelled = false;
-        const stage = new SpineStage(container);
+        const stage = new SpineStage(container, {
+            backgroundColor: 0x000000,
+            backgroundAlpha: 0,
+        });
         stageRef.current = stage;
 
         // Keyboard navigation for next/prev spine
@@ -467,7 +471,12 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                 {/* Body: canvas + controls */}
                 <div className="flex-1 flex min-h-0">
                     {/* Canvas area */}
-                    <div className="flex-1 relative bg-zinc-800 min-w-0">
+                    <div
+                        className={`flex-1 relative min-w-0 ${
+                            backgroundMode === "checker"
+                                ? "bg-[linear-gradient(45deg,rgba(255,255,255,0.4)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.4)),linear-gradient(45deg,rgba(255,255,255,0.4)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.4))] bg-[length:24px_24px] bg-[position:0_0,12px_12px] bg-[#586274]"
+                                : "bg-slate-100 dark:bg-[#161a22]"
+                        }`}>
                         <div ref={containerRef} className="w-full h-full" />
                         {isLoading && (
                             <div className="absolute inset-0 flex items-center justify-center text-zinc-400 text-xs font-mono">
@@ -494,8 +503,35 @@ export default function SpinePreviewModal({ item, onClose, onNext, onPrev, hasNe
                             </div>
                         )}
 
-                        {/* Zoom controls (top-right) */}
-                        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1.5 rounded-xl bg-black/60 backdrop-blur">
+                        {/* Background + zoom controls (top-right) */}
+                        <div className="absolute top-3 right-3 flex items-center gap-2 px-2 py-1.5 rounded-xl bg-black/60 backdrop-blur">
+                            <div className="flex items-center gap-2 rounded-lg bg-white/5 p-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setBackgroundMode("transparent")}
+                                    title="Use app theme background"
+                                    aria-label="Use app theme background"
+                                    className={`relative h-[34px] w-[34px] overflow-hidden rounded-[10px] border transition-all cursor-pointer ${
+                                        backgroundMode === "transparent"
+                                            ? "border-[#d7d0ff] shadow-[0_0_0_2px_#d7d0ff]"
+                                            : "border-white/10 hover:-translate-y-[1px]"
+                                    }`}>
+                                    <span className="absolute inset-0 bg-slate-100 dark:bg-[#161a22]" />
+                                    <span className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(125,109,247,0.18),transparent_58%)] dark:bg-[radial-gradient(circle_at_top,rgba(125,109,247,0.16),transparent_58%)]" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBackgroundMode("checker")}
+                                    title="Use checker background"
+                                    aria-label="Use checker background"
+                                    className={`relative h-[34px] w-[34px] overflow-hidden rounded-[10px] border transition-all cursor-pointer ${
+                                        backgroundMode === "checker"
+                                            ? "border-[#d7d0ff] shadow-[0_0_0_2px_#d7d0ff]"
+                                            : "border-white/10 hover:-translate-y-[1px]"
+                                    }`}>
+                                    <span className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.48)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.48)_75%,rgba(255,255,255,0.48)),linear-gradient(45deg,rgba(255,255,255,0.48)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.48)_75%,rgba(255,255,255,0.48))] bg-[length:16px_16px] bg-[position:0_0,8px_8px] bg-[#586274]" />
+                                </button>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => handleZoom(1 / ZOOM_STEP)}

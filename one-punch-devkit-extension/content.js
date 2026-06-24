@@ -9,6 +9,8 @@
     let isExtensionContextAlive = true;
     let isLocalSocketEnabled = true;
     let isDebugControlsEnabled = false;
+    let debugExcludeList = [];
+    let debugWhiteList = [];
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
         "https://iframe-tektale.staging.enostd.gay",
@@ -120,6 +122,17 @@
         return [...new Set([...DEFAULT_ALLOWED_ORIGINS, ...customOrigins])];
     }
 
+    function applyDebugFilterLists() {
+        window.postMessage({
+            source: PAGE_CONTROL_EVENT_TYPE,
+            command: "set-debug-filter-lists",
+            payload: {
+                excludeList: debugExcludeList,
+                whiteList: debugWhiteList,
+            },
+        }, "*");
+    }
+
     function applyDebugVisibilityWithRetry(enabled) {
         const dispatch = () => {
             window.postMessage({
@@ -153,6 +166,7 @@
 
         injectPageHook();
         window[CONTENT_BOOTSTRAP_MARKER] = true;
+        applyDebugFilterLists();
         if (isDebugControlsEnabled) {
             applyDebugVisibilityWithRetry(true);
         }
@@ -234,15 +248,31 @@
                     return;
                 }
 
-                window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
-                    ? result.customAllowedOrigins
-                    : [];
-                bootstrap();
-                sendResponse({
-                    ok: true,
-                    bridged: Boolean(window[CONTENT_BOOTSTRAP_MARKER]),
-                    origin: window.location.origin,
-                    pageUrl: window.location.href,
+                chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
+                    if (chrome.runtime.lastError || !filterResponse?.ok) {
+                        sendResponse({
+                            ok: false,
+                            message: chrome.runtime.lastError?.message || "Could not load debug filter settings.",
+                        });
+                        return;
+                    }
+
+                    debugExcludeList = Array.isArray(filterResponse.debugExcludeList)
+                        ? filterResponse.debugExcludeList
+                        : [];
+                    debugWhiteList = Array.isArray(filterResponse.debugWhiteList)
+                        ? filterResponse.debugWhiteList
+                        : [];
+                    window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
+                        ? result.customAllowedOrigins
+                        : [];
+                    bootstrap();
+                    sendResponse({
+                        ok: true,
+                        bridged: Boolean(window[CONTENT_BOOTSTRAP_MARKER]),
+                        origin: window.location.origin,
+                        pageUrl: window.location.href,
+                    });
                 });
             });
             return true;
@@ -279,7 +309,11 @@
             isLocalSocketEnabled = true;
             isDebugControlsEnabled = false;
             window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = [];
-            bootstrap();
+            chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
+                debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
+                debugWhiteList = Array.isArray(filterResponse?.debugWhiteList) ? filterResponse.debugWhiteList : [];
+                bootstrap();
+            });
             return;
         }
 
@@ -288,6 +322,10 @@
         window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
             ? result.customAllowedOrigins
             : [];
-        bootstrap();
+        chrome.runtime.sendMessage({ type: "get-debug-filter-settings" }, (filterResponse) => {
+            debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
+            debugWhiteList = Array.isArray(filterResponse?.debugWhiteList) ? filterResponse.debugWhiteList : [];
+            bootstrap();
+        });
     });
 })();

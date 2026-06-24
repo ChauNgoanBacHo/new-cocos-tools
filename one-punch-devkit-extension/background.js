@@ -5,6 +5,23 @@ const CUSTOM_ORIGINS_KEY = "customAllowedOrigins";
 const AUTOPLAY_GAME_ID_KEY = "autoplayGameId";
 const CHEAT_SPEED_KEY = "cheatSpeed";
 const SHOW_DEBUG_KEY = "showDebugControls";
+const DEBUG_EXCLUDE_LIST_KEY = "debugExcludeList";
+const DEBUG_WHITE_LIST_KEY = "debugWhiteList";
+const DEFAULT_DEBUG_EXCLUDE_LIST = [
+    "SocketManager",
+    "CommandManager",
+    "ping[]",
+    "pong - latency",
+    "SocketManagerNewMessage",
+    "MessageManager\\x20-\\x20_handleSocketEvent.[]",
+    "MessageManager - _initSocket",
+    "[PHYSICS]",
+    "[PHYSICS2D",
+    "native sound init",
+    "MessageManager - closeAndCleanUp.[]",
+    "my wallet update",
+    "[SoundPlayerImpl]",
+];
 
 let socket = null;
 let reconnectTimeout = null;
@@ -189,16 +206,29 @@ async function sendPageControlToTabs(command, payload, options = {}) {
 }
 
 async function syncControlSettingsToTabs(options = {}) {
-    const result = await chrome.storage.local.get([CHEAT_SPEED_KEY, SHOW_DEBUG_KEY]);
+    const result = await chrome.storage.local.get([
+        CHEAT_SPEED_KEY,
+        SHOW_DEBUG_KEY,
+        DEBUG_EXCLUDE_LIST_KEY,
+        DEBUG_WHITE_LIST_KEY,
+    ]);
     const cheatSpeed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
     const showDebugControls = result[SHOW_DEBUG_KEY] === true;
+    const debugExcludeList = Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST;
+    const debugWhiteList = Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [];
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
+    await sendPageControlToTabs("set-debug-filter-lists", {
+        excludeList: debugExcludeList,
+        whiteList: debugWhiteList,
+    }, options);
 
     return {
         cheatSpeed,
         showDebugControls,
+        debugExcludeList,
+        debugWhiteList,
     };
 }
 
@@ -315,7 +345,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 
     if (message.type === "get-extension-settings") {
-        void chrome.storage.local.get([CUSTOM_ORIGINS_KEY, AUTOPLAY_GAME_ID_KEY, CHEAT_SPEED_KEY, SHOW_DEBUG_KEY]).then((result) => {
+        void chrome.storage.local.get([
+            CUSTOM_ORIGINS_KEY,
+            AUTOPLAY_GAME_ID_KEY,
+            CHEAT_SPEED_KEY,
+            SHOW_DEBUG_KEY,
+            DEBUG_EXCLUDE_LIST_KEY,
+            DEBUG_WHITE_LIST_KEY,
+        ]).then((result) => {
             sendResponse({
                 ok: true,
                 enabled: localSocketEnabled,
@@ -326,6 +363,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 autoplayGameId: typeof result[AUTOPLAY_GAME_ID_KEY] === "string" ? result[AUTOPLAY_GAME_ID_KEY] : "",
                 cheatSpeed: typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1,
                 showDebugControls: result[SHOW_DEBUG_KEY] === true,
+                debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
+                debugWhiteList: Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [],
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "get-debug-filter-settings") {
+        void chrome.storage.local.get([
+            DEBUG_EXCLUDE_LIST_KEY,
+            DEBUG_WHITE_LIST_KEY,
+        ]).then((result) => {
+            sendResponse({
+                ok: true,
+                debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
+                debugWhiteList: Array.isArray(result[DEBUG_WHITE_LIST_KEY]) ? result[DEBUG_WHITE_LIST_KEY] : [],
             });
         });
         return true;
@@ -438,6 +491,44 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             sendResponse({
                 ok: true,
                 customAllowedOrigins: nextOrigins,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-debug-exclude-list") {
+        const nextList = Array.isArray(message.values)
+            ? message.values.filter((value) => typeof value === "string")
+            : [];
+        void chrome.storage.local.set({
+            [DEBUG_EXCLUDE_LIST_KEY]: nextList,
+        }).then(async () => {
+            await sendPageControlToTabs("set-debug-filter-lists", {
+                excludeList: nextList,
+                whiteList: (await chrome.storage.local.get(DEBUG_WHITE_LIST_KEY))[DEBUG_WHITE_LIST_KEY] ?? [],
+            }, { activeOnly: false });
+            sendResponse({
+                ok: true,
+                debugExcludeList: nextList,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-debug-white-list") {
+        const nextList = Array.isArray(message.values)
+            ? message.values.filter((value) => typeof value === "string")
+            : [];
+        void chrome.storage.local.set({
+            [DEBUG_WHITE_LIST_KEY]: nextList,
+        }).then(async () => {
+            await sendPageControlToTabs("set-debug-filter-lists", {
+                excludeList: (await chrome.storage.local.get(DEBUG_EXCLUDE_LIST_KEY))[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
+                whiteList: nextList,
+            }, { activeOnly: false });
+            sendResponse({
+                ok: true,
+                debugWhiteList: nextList,
             });
         });
         return true;

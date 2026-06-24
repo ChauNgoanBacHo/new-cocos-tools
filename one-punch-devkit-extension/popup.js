@@ -7,11 +7,17 @@ const cheatSpeedInput = document.getElementById("cheat-speed");
 const debugToggleButton = document.getElementById("debug-toggle-button");
 const autoplayGameIdInput = document.getElementById("autoplay-game-id");
 const customOriginsInput = document.getElementById("custom-origins");
+const debugExcludeListInput = document.getElementById("debug-exclude-list");
+const debugWhiteListInput = document.getElementById("debug-white-list");
+const logConfigAccordion = document.getElementById("log-config-accordion");
+const logConfigToggle = document.getElementById("log-config-toggle");
 const AUTO_SAVE_DELAY_MS = 450;
 
 let saveGameIdTimeout = null;
 let saveOriginsTimeout = null;
 let saveCheatSpeedTimeout = null;
+let saveExcludeListTimeout = null;
+let saveWhiteListTimeout = null;
 
 function getStatusMessage(enabled, connected, hasActiveBridgeContext, lastConnectionError) {
     if (!enabled) {
@@ -31,6 +37,11 @@ function getStatusMessage(enabled, connected, hasActiveBridgeContext, lastConnec
     }
 
     return "Enabled, waiting for Electron local socket...";
+}
+
+function setLogConfigOpen(open) {
+    logConfigAccordion.dataset.open = String(open);
+    logConfigToggle.setAttribute("aria-expanded", String(open));
 }
 
 function applyState(enabled, connected, hasActiveBridgeContext, lastConnectionError) {
@@ -69,6 +80,12 @@ function requestState() {
         customOriginsInput.value = Array.isArray(response.customAllowedOrigins)
             ? response.customAllowedOrigins.join("\n")
             : "";
+        debugExcludeListInput.value = Array.isArray(response.debugExcludeList)
+            ? response.debugExcludeList.join("\n")
+            : "";
+        debugWhiteListInput.value = Array.isArray(response.debugWhiteList)
+            ? response.debugWhiteList.join("\n")
+            : "";
     });
 }
 
@@ -87,6 +104,13 @@ function getNormalizedOrigins() {
                 return line;
             }
         })
+        .filter(Boolean);
+}
+
+function getNormalizedFilterLines(input) {
+    return input.value
+        .split("\n")
+        .map((line) => line.trim())
         .filter(Boolean);
 }
 
@@ -135,6 +159,40 @@ function saveCheatSpeedSilently() {
 
         cheatSpeedInput.value = String(response.cheatSpeed);
         connectionMeta.textContent = `Cheat speed set to x${response.cheatSpeed}.`;
+        connectionMeta.className = "meta connected";
+    });
+}
+
+function saveDebugExcludeListSilently() {
+    const values = getNormalizedFilterLines(debugExcludeListInput);
+    chrome.runtime.sendMessage({ type: "set-debug-exclude-list", values }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            connectionMeta.textContent = chrome.runtime.lastError?.message || "Could not auto-save debug exclude list.";
+            connectionMeta.className = "meta";
+            return;
+        }
+
+        debugExcludeListInput.value = Array.isArray(response.debugExcludeList)
+            ? response.debugExcludeList.join("\n")
+            : "";
+        connectionMeta.textContent = "Debug exclude list auto-saved.";
+        connectionMeta.className = "meta connected";
+    });
+}
+
+function saveDebugWhiteListSilently() {
+    const values = getNormalizedFilterLines(debugWhiteListInput);
+    chrome.runtime.sendMessage({ type: "set-debug-white-list", values }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            connectionMeta.textContent = chrome.runtime.lastError?.message || "Could not auto-save debug white list.";
+            connectionMeta.className = "meta";
+            return;
+        }
+
+        debugWhiteListInput.value = Array.isArray(response.debugWhiteList)
+            ? response.debugWhiteList.join("\n")
+            : "";
+        connectionMeta.textContent = "Debug white list auto-saved.";
         connectionMeta.className = "meta connected";
     });
 }
@@ -247,6 +305,30 @@ cheatSpeedInput.addEventListener("input", () => {
     saveCheatSpeedTimeout = window.setTimeout(() => {
         saveCheatSpeedSilently();
     }, AUTO_SAVE_DELAY_MS);
+});
+
+debugExcludeListInput.addEventListener("input", () => {
+    if (saveExcludeListTimeout) {
+        window.clearTimeout(saveExcludeListTimeout);
+    }
+
+    saveExcludeListTimeout = window.setTimeout(() => {
+        saveDebugExcludeListSilently();
+    }, AUTO_SAVE_DELAY_MS);
+});
+
+debugWhiteListInput.addEventListener("input", () => {
+    if (saveWhiteListTimeout) {
+        window.clearTimeout(saveWhiteListTimeout);
+    }
+
+    saveWhiteListTimeout = window.setTimeout(() => {
+        saveDebugWhiteListSilently();
+    }, AUTO_SAVE_DELAY_MS);
+});
+
+logConfigToggle.addEventListener("click", () => {
+    setLogConfigOpen(logConfigAccordion.dataset.open !== "true");
 });
 
 requestState();

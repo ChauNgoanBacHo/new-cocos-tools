@@ -77,44 +77,12 @@ export class SpineStage {
         view.style.width = "100%";
         view.style.height = "100%";
         view.style.display = "block";
+        view.style.background = "transparent";
         container.appendChild(view);
-
-        // Load default background image from src/assets/background.jpg.
-        // Use new URL(...) so Vite resolves the asset in both dev and production.
-        const defaultBgUrl = new URL("../assets/background.jpg", import.meta.url).href;
-        this.loadBackgroundImage(defaultBgUrl).catch(err => {
-            console.error("Failed to load default background:", err);
-        });
 
         // Re-fit spine and background on canvas resize
         const resizeObserver = new ResizeObserver(() => this.onResize());
         resizeObserver.observe(container);
-    }
-
-    /** Load an image and use it as a background sprite (cover mode). */
-    private async loadBackgroundImage(imageUrl: string): Promise<void> {
-        if (this.destroyed) return;
-        try {
-            const texture = await PIXI.Assets.load<PIXI.Texture>(imageUrl);
-            if (this.destroyed) return;
-            // Remove existing
-            if (this.bgSprite) {
-                this.app.stage.removeChild(this.bgSprite);
-                this.bgSprite.destroy();
-                this.bgSprite = null;
-            }
-            this.bgSprite = new PIXI.Sprite(texture);
-            const sw = this.app.renderer.width / this.app.renderer.resolution;
-            const sh = this.app.renderer.height / this.app.renderer.resolution;
-            const scale = Math.max(sw / texture.width, sh / texture.height);
-            this.bgSprite.width = texture.width * scale;
-            this.bgSprite.height = texture.height * scale;
-            this.bgSprite.x = (sw - this.bgSprite.width) / 2;
-            this.bgSprite.y = (sh - this.bgSprite.height) / 2;
-            this.app.stage.addChildAt(this.bgSprite, 0);
-        } catch (err) {
-            console.error("Failed to load background image:", err);
-        }
     }
 
     /** Load a spine from local json+atlas. Adds it to the stage and returns it. */

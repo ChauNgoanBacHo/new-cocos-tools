@@ -5,6 +5,8 @@
     const MAX_DEBUG_UNMATCHED_MESSAGES = 5;
     const OVERLAY_ID = "one-punch-devkit-debug-controls";
     let unmatchedDebugCount = 0;
+    let debugExcludeList = [];
+    let debugWhiteList = [];
     const cheatControlState = {
         configuredSpeed: 1,
         boostEnabled: false,
@@ -41,6 +43,64 @@
             debugType,
             payload,
         });
+    }
+
+    function normalizeFilterText(value) {
+        if (typeof value !== "string") {
+            return "";
+        }
+
+        return value
+            .replace(/\\x20/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+    }
+
+    function shouldEmitDebugLine(rawText) {
+        const normalizedText = normalizeFilterText(rawText);
+        if (!normalizedText) {
+            return false;
+        }
+
+        const normalizedWhiteList = debugWhiteList
+            .map(normalizeFilterText)
+            .filter(Boolean);
+
+        if (normalizedWhiteList.length > 0 && !normalizedWhiteList.some((entry) => normalizedText.includes(entry))) {
+            return false;
+        }
+
+        const normalizedExcludeList = debugExcludeList
+            .map(normalizeFilterText)
+            .filter(Boolean);
+
+        if (normalizedExcludeList.some((entry) => normalizedText.includes(entry))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function shouldSuppressConsoleLine(rawText) {
+        const normalizedText = normalizeFilterText(rawText);
+        if (!normalizedText) {
+            return false;
+        }
+
+        const normalizedWhiteList = debugWhiteList
+            .map(normalizeFilterText)
+            .filter(Boolean);
+
+        if (normalizedWhiteList.length > 0 && !normalizedWhiteList.some((entry) => normalizedText.includes(entry))) {
+            return true;
+        }
+
+        const normalizedExcludeList = debugExcludeList
+            .map(normalizeFilterText)
+            .filter(Boolean);
+
+        return normalizedExcludeList.some((entry) => normalizedText.includes(entry));
     }
 
     function getCocosRuntime() {
@@ -393,6 +453,14 @@
             case "set-debug-visibility":
                 setOverlayVisibility(payload?.enabled === true);
                 break;
+            case "set-debug-filter-lists":
+                debugExcludeList = Array.isArray(payload?.excludeList)
+                    ? payload.excludeList.filter((value) => typeof value === "string")
+                    : [];
+                debugWhiteList = Array.isArray(payload?.whiteList)
+                    ? payload.whiteList.filter((value) => typeof value === "string")
+                    : [];
+                break;
             default:
                 break;
         }
@@ -668,11 +736,15 @@
                 }
 
                 if (unmatchedDebugCount < MAX_DEBUG_UNMATCHED_MESSAGES) {
+                    const preview = await getDebugPreview(event.data);
+                    if (!shouldEmitDebugLine(preview)) {
+                        return;
+                    }
                     unmatchedDebugCount += 1;
                     emitDebugEvent("socket-message-unmatched", {
                         url: socket.url,
                         dataType: typeof event.data,
-                        preview: await getDebugPreview(event.data),
+                        preview,
                     });
                 }
             });
@@ -701,10 +773,29 @@
             }
 
             const wrappedMethod = function (...args) {
+                let shouldSuppressConsoleOutput = false;
                 try {
-                    inspectConsoleArgs(args);
+                    const joined = args
+                        .map((arg) => {
+                            if (typeof arg === "string") {
+                                return arg;
+                            }
+
+                            try {
+                                return JSON.stringify(arg);
+                            } catch {
+                                return String(arg);
+                            }
+                        })
+                        .join(" ");
+
+                    shouldSuppressConsoleOutput = shouldSuppressConsoleLine(joined) || inspectConsoleArgs(args);
                 } catch {
                     // ignore console inspection failures
+                }
+
+                if (shouldSuppressConsoleOutput) {
+                    return;
                 }
 
                 return originalMethod.apply(this, args);
@@ -723,7 +814,7 @@
 
     function inspectConsoleArgs(args) {
         if (!Array.isArray(args) || args.length === 0) {
-            return;
+            return false;
         }
 
         const firstArg = typeof args[0] === "string" ? args[0] : "";
@@ -745,7 +836,11 @@
         const isEventManagerLog = firstArg.includes("EventManager - newEvent") || joined.includes("EventManager - newEvent");
 
         if (!isSocketLog && !isEventManagerLog) {
-            return;
+            return false;
+        }
+
+        if (!shouldEmitDebugLine(joined)) {
+            return true;
         }
 
         const candidate = extractJsonLikeSubstring(joined);
@@ -753,18 +848,19 @@
             emitDebugEvent("console-message-unmatched", {
                 preview: joined.slice(0, 220),
             });
-            return;
+            return false;
         }
 
         const normalizedPayload = normalizeSocketPayload(candidate, "console-bridge");
         if (normalizedPayload) {
             emitBridgeEvent(normalizedPayload);
-            return;
+            return true;
         }
 
         emitDebugEvent("console-message-unmatched", {
             preview: joined.slice(0, 220),
         });
+        return false;
     }
 
     function extractJsonLikeSubstring(text) {
