@@ -297,8 +297,8 @@
         });
 
         root.appendChild(pauseButton);
-        root.appendChild(speedButton);
         root.appendChild(nextFrameButton);
+        root.appendChild(speedButton);
         root.appendChild(resetButton);
         (document.body || document.documentElement).appendChild(root);
 

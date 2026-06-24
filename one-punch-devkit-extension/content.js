@@ -5,8 +5,10 @@
     const CONTENT_BOOTSTRAP_MARKER = "__ONE_PUNCH_TOOLS_BRIDGE_BOOTSTRAPPED__";
     const PAGE_HOOK_MARKER = "data-one-punch-devkit-bridge";
     const LOCAL_SOCKET_STORAGE_KEY = "localSocketEnabled";
+    const SHOW_DEBUG_STORAGE_KEY = "showDebugControls";
     let isExtensionContextAlive = true;
     let isLocalSocketEnabled = true;
+    let isDebugControlsEnabled = false;
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
         "https://iframe-tektale.staging.enostd.gay",
@@ -118,12 +120,27 @@
         return [...new Set([...DEFAULT_ALLOWED_ORIGINS, ...customOrigins])];
     }
 
+    function applyDebugVisibilityWithRetry(enabled) {
+        const dispatch = () => {
+            window.postMessage({
+                source: PAGE_CONTROL_EVENT_TYPE,
+                command: "set-debug-visibility",
+                payload: { enabled },
+            }, "*");
+        };
+
+        dispatch();
+        window.setTimeout(dispatch, 60);
+        window.setTimeout(dispatch, 180);
+        window.setTimeout(dispatch, 360);
+    }
+
     function bootstrap() {
         if (!isExtensionContextAlive) {
             return;
         }
 
-        if (!isLocalSocketEnabled) {
+        if (!isLocalSocketEnabled && !isDebugControlsEnabled) {
             removePageHook();
             return;
         }
@@ -136,6 +153,13 @@
 
         injectPageHook();
         window[CONTENT_BOOTSTRAP_MARKER] = true;
+        if (isDebugControlsEnabled) {
+            applyDebugVisibilityWithRetry(true);
+        }
+        if (!isLocalSocketEnabled) {
+            return;
+        }
+
         let extensionVersion = "unknown";
         try {
             extensionVersion = chrome.runtime.getManifest().version;
@@ -228,12 +252,19 @@
     });
 
     chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName !== "local" || !changes[LOCAL_SOCKET_STORAGE_KEY]) {
+        if (areaName !== "local") {
             return;
         }
 
-        isLocalSocketEnabled = changes[LOCAL_SOCKET_STORAGE_KEY].newValue !== false;
-        if (isLocalSocketEnabled) {
+        if (changes[LOCAL_SOCKET_STORAGE_KEY]) {
+            isLocalSocketEnabled = changes[LOCAL_SOCKET_STORAGE_KEY].newValue !== false;
+        }
+
+        if (changes[SHOW_DEBUG_STORAGE_KEY]) {
+            isDebugControlsEnabled = changes[SHOW_DEBUG_STORAGE_KEY].newValue === true;
+        }
+
+        if (isLocalSocketEnabled || isDebugControlsEnabled) {
             bootstrap();
             return;
         }
@@ -241,17 +272,19 @@
         removePageHook();
     });
 
-    chrome.storage.local.get([LOCAL_SOCKET_STORAGE_KEY, "customAllowedOrigins"], (result) => {
+    chrome.storage.local.get([LOCAL_SOCKET_STORAGE_KEY, SHOW_DEBUG_STORAGE_KEY, "customAllowedOrigins"], (result) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
             console.warn("[One Punch Assistant] load origins failed:", runtimeError.message);
             isLocalSocketEnabled = true;
+            isDebugControlsEnabled = false;
             window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = [];
             bootstrap();
             return;
         }
 
         isLocalSocketEnabled = result[LOCAL_SOCKET_STORAGE_KEY] !== false;
+        isDebugControlsEnabled = result[SHOW_DEBUG_STORAGE_KEY] === true;
         window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
             ? result.customAllowedOrigins
             : [];
