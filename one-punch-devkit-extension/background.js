@@ -8,6 +8,7 @@ const SHOW_DEBUG_KEY = "showDebugControls";
 const DEBUG_EXCLUDE_LIST_KEY = "debugExcludeList";
 const DEBUG_HIGHLIGHT_LIST_KEY = "debugHighlightList";
 const DEBUG_HIGHLIGHT_COLOR_KEY = "debugHighlightColor";
+const MINI_LOG_LINES_KEY = "miniLogLines";
 const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "SocketManager",
     "CommandManager",
@@ -218,12 +219,14 @@ async function syncControlSettingsToTabs(options = {}) {
         DEBUG_EXCLUDE_LIST_KEY,
         DEBUG_HIGHLIGHT_LIST_KEY,
         DEBUG_HIGHLIGHT_COLOR_KEY,
+        MINI_LOG_LINES_KEY,
     ]);
     const cheatSpeed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
     const showDebugControls = result[SHOW_DEBUG_KEY] === true;
     const debugExcludeList = Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST;
     const debugHighlightList = Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [];
     const debugHighlightColor = typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red";
+    const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
@@ -231,6 +234,7 @@ async function syncControlSettingsToTabs(options = {}) {
         excludeList: debugExcludeList,
         highlightList: debugHighlightList,
         highlightColor: debugHighlightColor,
+        miniLogLines,
     }, options);
 
     return {
@@ -239,6 +243,7 @@ async function syncControlSettingsToTabs(options = {}) {
         debugExcludeList,
         debugHighlightList,
         debugHighlightColor,
+        miniLogLines,
     };
 }
 
@@ -329,12 +334,10 @@ async function requestBridgeReconnectForActiveTabs() {
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("[One Punch Assistant] Extension installed");
-    void resetDebugControlsToDefault();
 });
 
 chrome.runtime.onStartup.addListener(() => {
     void initializeLocalSocketState();
-    void resetDebugControlsToDefault();
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -363,6 +366,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             DEBUG_EXCLUDE_LIST_KEY,
             DEBUG_HIGHLIGHT_LIST_KEY,
             DEBUG_HIGHLIGHT_COLOR_KEY,
+            MINI_LOG_LINES_KEY,
         ]).then((result) => {
             sendResponse({
                 ok: true,
@@ -377,6 +381,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -387,12 +392,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             DEBUG_EXCLUDE_LIST_KEY,
             DEBUG_HIGHLIGHT_LIST_KEY,
             DEBUG_HIGHLIGHT_COLOR_KEY,
+            MINI_LOG_LINES_KEY,
         ]).then((result) => {
             sendResponse({
                 ok: true,
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -527,6 +534,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 highlightColor: typeof highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY] === "string"
                     ? highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
+                miniLogLines: typeof highlightSettings[MINI_LOG_LINES_KEY] === "number"
+                    ? Math.min(20, Math.max(1, highlightSettings[MINI_LOG_LINES_KEY]))
+                    : 5,
             }, { activeOnly: false });
             sendResponse({
                 ok: true,
@@ -546,6 +556,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             const filterSettings = await chrome.storage.local.get([
                 DEBUG_EXCLUDE_LIST_KEY,
                 DEBUG_HIGHLIGHT_COLOR_KEY,
+                MINI_LOG_LINES_KEY,
             ]);
             await sendPageControlToTabs("set-debug-filter-lists", {
                 excludeList: filterSettings[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
@@ -553,6 +564,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 highlightColor: typeof filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY] === "string"
                     ? filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
+                miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
+                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    : 5,
             }, { activeOnly: false });
             sendResponse({
                 ok: true,
@@ -573,15 +587,47 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             const filterSettings = await chrome.storage.local.get([
                 DEBUG_EXCLUDE_LIST_KEY,
                 DEBUG_HIGHLIGHT_LIST_KEY,
+                MINI_LOG_LINES_KEY,
             ]);
             await sendPageControlToTabs("set-debug-filter-lists", {
                 excludeList: filterSettings[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
                 highlightList: filterSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
                 highlightColor: nextColor,
+                miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
+                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    : 5,
             }, { activeOnly: false });
             sendResponse({
                 ok: true,
                 debugHighlightColor: nextColor,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-mini-log-lines") {
+        const nextLines = Number.isFinite(Number(message.lines))
+            ? Math.min(20, Math.max(1, Number(message.lines)))
+            : 5;
+        void chrome.storage.local.set({
+            [MINI_LOG_LINES_KEY]: nextLines,
+        }).then(async () => {
+            const filterSettings = await chrome.storage.local.get([
+                DEBUG_EXCLUDE_LIST_KEY,
+                DEBUG_HIGHLIGHT_LIST_KEY,
+                DEBUG_HIGHLIGHT_COLOR_KEY,
+            ]);
+            await sendPageControlToTabs("set-debug-filter-lists", {
+                excludeList: filterSettings[DEBUG_EXCLUDE_LIST_KEY] ?? DEFAULT_DEBUG_EXCLUDE_LIST,
+                highlightList: filterSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
+                highlightColor: typeof filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY] === "string"
+                    ? filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
+                    : "red",
+                miniLogLines: nextLines,
+            }, { activeOnly: false });
+            sendResponse({
+                ok: true,
+                miniLogLines: nextLines,
             });
         });
         return true;
@@ -681,14 +727,6 @@ async function initializeLocalSocketState() {
     closeSocket();
 }
 
-async function resetDebugControlsToDefault() {
-    await chrome.storage.local.set({
-        [SHOW_DEBUG_KEY]: false,
-    });
-
-    await sendPageControlToTabs("set-debug-visibility", { enabled: false }, { activeOnly: false });
-}
-
 async function setLocalSocketEnabled(enabled) {
     localSocketEnabled = enabled;
     lastConnectionError = null;
@@ -706,4 +744,3 @@ async function setLocalSocketEnabled(enabled) {
 }
 
 void initializeLocalSocketState();
-void resetDebugControlsToDefault();

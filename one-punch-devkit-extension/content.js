@@ -12,6 +12,7 @@
     let debugExcludeList = [];
     let debugHighlightList = [];
     let debugHighlightColor = "red";
+    let miniLogLines = 5;
     const DEFAULT_ALLOWED_ORIGINS = [
         "http://localhost:7456",
         "https://iframe-tektale.staging.enostd.gay",
@@ -131,6 +132,7 @@
                 excludeList: debugExcludeList,
                 highlightList: debugHighlightList,
                 highlightColor: debugHighlightColor,
+                miniLogLines,
             },
         }, "*");
     }
@@ -150,6 +152,9 @@
             debugHighlightColor = typeof filterResponse.debugHighlightColor === "string"
                 ? filterResponse.debugHighlightColor
                 : "red";
+            miniLogLines = typeof filterResponse.miniLogLines === "number"
+                ? Math.min(20, Math.max(1, filterResponse.miniLogLines))
+                : 5;
             applyDebugFilterLists();
         });
     }
@@ -177,11 +182,6 @@
         const shouldEnableBrowserTools = isDebugControlsEnabled;
         const shouldEnableElectronBridge = isLocalSocketEnabled;
 
-        if (!shouldEnableBrowserTools && !shouldEnableElectronBridge) {
-            removePageHook();
-            return;
-        }
-
         const allowedOrigins = getAllowedOrigins();
         if (!allowedOrigins.includes(window.location.origin)) {
             window[CONTENT_BOOTSTRAP_MARKER] = false;
@@ -191,9 +191,7 @@
         injectPageHook();
         window[CONTENT_BOOTSTRAP_MARKER] = true;
         applyDebugFilterLists();
-        if (shouldEnableBrowserTools) {
-            applyDebugVisibilityWithRetry(true);
-        }
+        applyDebugVisibilityWithRetry(shouldEnableBrowserTools);
         if (!shouldEnableElectronBridge) {
             return;
         }
@@ -290,6 +288,9 @@
                     debugHighlightColor = typeof filterResponse.debugHighlightColor === "string"
                         ? filterResponse.debugHighlightColor
                         : "red";
+                    miniLogLines = typeof filterResponse.miniLogLines === "number"
+                        ? Math.min(20, Math.max(1, filterResponse.miniLogLines))
+                        : 5;
                     window.__ONE_PUNCH_TOOLS_ALLOWED_ORIGINS__ = Array.isArray(result.customAllowedOrigins)
                         ? result.customAllowedOrigins
                         : [];
@@ -325,16 +326,12 @@
             changes.debugExcludeList
             || changes.debugHighlightList
             || changes.debugHighlightColor
+            || changes.miniLogLines
         ) {
             applyDebugFilterSettingsFromStorage();
         }
 
-        if (isLocalSocketEnabled || isDebugControlsEnabled) {
-            bootstrap();
-            return;
-        }
-
-        removePageHook();
+        bootstrap();
     });
 
     chrome.storage.local.get([LOCAL_SOCKET_STORAGE_KEY, SHOW_DEBUG_STORAGE_KEY, "customAllowedOrigins"], (result) => {
@@ -348,6 +345,9 @@
                 debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
                 debugHighlightList = Array.isArray(filterResponse?.debugHighlightList) ? filterResponse.debugHighlightList : [];
                 debugHighlightColor = typeof filterResponse?.debugHighlightColor === "string" ? filterResponse.debugHighlightColor : "red";
+                miniLogLines = typeof filterResponse?.miniLogLines === "number"
+                    ? Math.min(20, Math.max(1, filterResponse.miniLogLines))
+                    : 5;
                 bootstrap();
             });
             return;
@@ -362,6 +362,9 @@
             debugExcludeList = Array.isArray(filterResponse?.debugExcludeList) ? filterResponse.debugExcludeList : [];
             debugHighlightList = Array.isArray(filterResponse?.debugHighlightList) ? filterResponse.debugHighlightList : [];
             debugHighlightColor = typeof filterResponse?.debugHighlightColor === "string" ? filterResponse.debugHighlightColor : "red";
+            miniLogLines = typeof filterResponse?.miniLogLines === "number"
+                ? Math.min(20, Math.max(1, filterResponse.miniLogLines))
+                : 5;
             bootstrap();
         });
     });

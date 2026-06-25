@@ -11,6 +11,7 @@ const customOriginsInput = document.getElementById("custom-origins");
 const debugExcludeListInput = document.getElementById("debug-exclude-list");
 const debugHighlightListInput = document.getElementById("debug-highlight-list");
 const debugHighlightColorInput = document.getElementById("debug-highlight-color");
+const miniLogLinesInput = document.getElementById("mini-log-lines");
 const AUTO_SAVE_DELAY_MS = 450;
 
 let saveGameIdTimeout = null;
@@ -19,6 +20,7 @@ let saveCheatSpeedTimeout = null;
 let saveExcludeListTimeout = null;
 let saveHighlightListTimeout = null;
 let saveHighlightColorTimeout = null;
+let saveMiniLogLinesTimeout = null;
 
 function getStatusMessage(enabled, connected, hasActiveBridgeContext, lastConnectionError) {
     if (!enabled) {
@@ -85,6 +87,11 @@ function requestState() {
         debugHighlightColorInput.value = typeof response.debugHighlightColor === "string"
             ? response.debugHighlightColor
             : "red";
+        miniLogLinesInput.value = String(
+            typeof response.miniLogLines === "number" && Number.isFinite(response.miniLogLines)
+                ? response.miniLogLines
+                : 5,
+        );
     });
 }
 
@@ -212,6 +219,27 @@ function saveDebugHighlightColorSilently() {
             ? response.debugHighlightColor
             : "red";
         browserMeta.textContent = `Debug highlight color set to ${debugHighlightColorInput.value}.`;
+        browserMeta.className = "meta browser";
+    });
+}
+
+function saveMiniLogLinesSilently() {
+    const parsedValue = Number.parseInt(miniLogLinesInput.value, 10);
+    const lines = Number.isFinite(parsedValue) ? Math.min(20, Math.max(1, parsedValue)) : 5;
+
+    chrome.runtime.sendMessage({ type: "set-mini-log-lines", lines }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            browserMeta.textContent = chrome.runtime.lastError?.message || "Could not auto-save mini log lines.";
+            browserMeta.className = "meta browser";
+            return;
+        }
+
+        miniLogLinesInput.value = String(
+            typeof response.miniLogLines === "number" && Number.isFinite(response.miniLogLines)
+                ? response.miniLogLines
+                : 5,
+        );
+        browserMeta.textContent = `Mini log lines set to ${miniLogLinesInput.value}.`;
         browserMeta.className = "meta browser";
     });
 }
@@ -354,6 +382,16 @@ debugHighlightColorInput.addEventListener("change", () => {
     saveHighlightColorTimeout = window.setTimeout(() => {
         saveDebugHighlightColorSilently();
     }, 0);
+});
+
+miniLogLinesInput.addEventListener("input", () => {
+    if (saveMiniLogLinesTimeout) {
+        window.clearTimeout(saveMiniLogLinesTimeout);
+    }
+
+    saveMiniLogLinesTimeout = window.setTimeout(() => {
+        saveMiniLogLinesSilently();
+    }, AUTO_SAVE_DELAY_MS);
 });
 
 requestState();

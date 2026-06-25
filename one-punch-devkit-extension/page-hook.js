@@ -4,11 +4,17 @@
     const ACCEPTED_EVENT_NAMES = new Set(["n", "f"]);
     const MAX_DEBUG_UNMATCHED_MESSAGES = 5;
     const OVERLAY_ID = "one-punch-devkit-debug-controls";
+    const MINI_LOG_ROOT_ID = "one-punch-devkit-mini-log";
+    const OVERLAY_POSITION_STORAGE_KEY = "one-punch-devkit-overlay-position";
+    const OVERLAY_VIEWPORT_MARGIN = 8;
+    let overlayRestoreObserver = null;
+    let overlayResizeHandlerBound = false;
     const MINI_LOG_MAX_ENTRIES = 20;
     let unmatchedDebugCount = 0;
     let debugExcludeList = [];
     let debugHighlightList = [];
     let debugHighlightColor = "red";
+    let miniLogLines = 5;
     const cheatControlState = {
         configuredSpeed: 1,
         boostEnabled: false,
@@ -16,6 +22,7 @@
         stepFramePending: false,
         overlayVisible: false,
         overlayRoot: null,
+        overlayPosition: null,
         miniLogRoot: null,
         overlayPauseButton: null,
         overlaySpeedButton: null,
@@ -156,6 +163,9 @@
         }
 
         const normalizedMessage = message.trim();
+        if (shouldSuppressConsoleLine(normalizedMessage)) {
+            return;
+        }
         const shouldFilterByHighlight = debugHighlightList.length > 0;
         const isHighlighted = matchesHighlightRule(normalizedMessage);
 
@@ -172,6 +182,11 @@
         renderMiniLogEntries();
     }
 
+    function getMiniLogPanelHeightPx(lineCount) {
+        const safeLineCount = Math.min(20, Math.max(1, Number.isFinite(Number(lineCount)) ? Number(lineCount) : 5));
+        return safeLineCount * 28 + 16;
+    }
+
     function renderMiniLogEntries() {
         if (!cheatControlState.overlayMiniLogPanel) {
             return;
@@ -183,31 +198,40 @@
             const emptyState = document.createElement("div");
             emptyState.textContent = debugHighlightList.length > 0
                 ? "No matching highlight logs yet."
-                : "Mini log is waiting for new entries.";
-            emptyState.style.color = "rgba(226, 232, 240, 0.55)";
+                : "Refresh page to start mini log capture.";
+            emptyState.style.color = "#f8fafc";
             emptyState.style.fontSize = "11px";
             emptyState.style.lineHeight = "1.45";
             cheatControlState.overlayMiniLogPanel.appendChild(emptyState);
             return;
         }
 
-        for (const entry of cheatControlState.miniLogEntries) {
+        cheatControlState.miniLogEntries.forEach((entry, index) => {
             const line = document.createElement("div");
             line.textContent = entry.text;
             line.style.fontSize = "11px";
-            line.style.lineHeight = "1.45";
+            line.style.lineHeight = "1.6";
             line.style.whiteSpace = "nowrap";
             line.style.overflow = "hidden";
             line.style.textOverflow = "ellipsis";
+            line.style.padding = "4px 8px";
+            line.style.marginBottom = "0";
+            line.style.borderRadius = "0";
+            line.style.userSelect = "text";
+            line.style.webkitUserSelect = "text";
+            line.style.cursor = "text";
+            line.style.borderBottom = index === cheatControlState.miniLogEntries.length - 1
+                ? "none"
+                : "1px solid rgba(255, 255, 255, 0.08)";
             line.style.color = entry.color
                 ? entry.color === "amber"
                     ? "#facc15"
                     : entry.color === "cyan"
                         ? "#c084fc"
                         : "#ff4d6d"
-                : "rgba(226, 232, 240, 0.86)";
+                : "#f8fafc";
             cheatControlState.overlayMiniLogPanel.appendChild(line);
-        }
+        });
 
         cheatControlState.overlayMiniLogPanel.scrollTop = cheatControlState.overlayMiniLogPanel.scrollHeight;
     }
@@ -416,10 +440,142 @@
         return true;
     }
 
+    function loadOverlayPosition() {
+        try {
+            const raw = window.localStorage.getItem(OVERLAY_POSITION_STORAGE_KEY);
+            if (!raw) {
+                return null;
+            }
+            const parsed = JSON.parse(raw);
+            if (Number.isFinite(parsed?.left) && Number.isFinite(parsed?.top)) {
+                return { left: parsed.left, top: parsed.top };
+            }
+        } catch (error) {
+            // ignore malformed or unavailable storage
+        }
+        return null;
+    }
+
+    function saveOverlayPosition(position) {
+        try {
+            window.localStorage.setItem(OVERLAY_POSITION_STORAGE_KEY, JSON.stringify(position));
+        } catch (error) {
+            // ignore unavailable storage
+        }
+    }
+
+    function clampOverlayPosition(left, top, width, height) {
+        const maxLeft = Math.max(OVERLAY_VIEWPORT_MARGIN, window.innerWidth - width - OVERLAY_VIEWPORT_MARGIN);
+        const maxTop = Math.max(OVERLAY_VIEWPORT_MARGIN, window.innerHeight - height - OVERLAY_VIEWPORT_MARGIN);
+        return {
+            left: Math.min(Math.max(OVERLAY_VIEWPORT_MARGIN, left), maxLeft),
+            top: Math.min(Math.max(OVERLAY_VIEWPORT_MARGIN, top), maxTop),
+        };
+    }
+
+    function syncMiniLogPosition() {
+        const root = cheatControlState.overlayRoot;
+        const miniLogRoot = cheatControlState.miniLogRoot;
+        if (!root || !miniLogRoot) {
+            return;
+        }
+        const rect = root.getBoundingClientRect();
+        miniLogRoot.style.left = "auto";
+        miniLogRoot.style.right = `${Math.max(OVERLAY_VIEWPORT_MARGIN, window.innerWidth - rect.right)}px`;
+        miniLogRoot.style.top = `${rect.bottom + 6}px`;
+    }
+
+    function applyOverlayPosition(position) {
+        const root = cheatControlState.overlayRoot;
+        if (!root) {
+            return;
+        }
+        const width = root.offsetWidth || 0;
+        const height = root.offsetHeight || 0;
+        const clamped = clampOverlayPosition(position.left, position.top, width, height);
+        cheatControlState.overlayPosition = clamped;
+        root.style.right = "auto";
+        root.style.left = `${clamped.left}px`;
+        root.style.top = `${clamped.top}px`;
+        syncMiniLogPosition();
+    }
+
+    function setupOverlayDrag(handle) {
+        const root = cheatControlState.overlayRoot;
+        if (!root) {
+            return;
+        }
+
+        let dragging = false;
+        let pointerId = null;
+        let startX = 0;
+        let startY = 0;
+        let originLeft = 0;
+        let originTop = 0;
+
+        function onPointerMove(event) {
+            if (!dragging) {
+                return;
+            }
+            applyOverlayPosition({
+                left: originLeft + (event.clientX - startX),
+                top: originTop + (event.clientY - startY),
+            });
+        }
+
+        function onPointerUp(event) {
+            if (!dragging) {
+                return;
+            }
+            dragging = false;
+            handle.style.cursor = "grab";
+            window.removeEventListener("pointermove", onPointerMove, true);
+            window.removeEventListener("pointerup", onPointerUp, true);
+            if (pointerId !== null && handle.releasePointerCapture) {
+                try {
+                    handle.releasePointerCapture(pointerId);
+                } catch (error) {
+                    // ignore
+                }
+            }
+            pointerId = null;
+            if (cheatControlState.overlayPosition) {
+                saveOverlayPosition(cheatControlState.overlayPosition);
+            }
+        }
+
+        handle.addEventListener("pointerdown", (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            const rect = root.getBoundingClientRect();
+            dragging = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            originLeft = rect.left;
+            originTop = rect.top;
+            handle.style.cursor = "grabbing";
+            pointerId = event.pointerId;
+            if (handle.setPointerCapture) {
+                try {
+                    handle.setPointerCapture(pointerId);
+                } catch (error) {
+                    // ignore
+                }
+            }
+            window.addEventListener("pointermove", onPointerMove, true);
+            window.addEventListener("pointerup", onPointerUp, true);
+        });
+    }
+
     function ensureOverlay() {
         if (cheatControlState.overlayRoot?.isConnected) {
             return cheatControlState.overlayRoot;
         }
+
+        document.getElementById(OVERLAY_ID)?.remove();
+        document.getElementById(MINI_LOG_ROOT_ID)?.remove();
 
         const root = document.createElement("div");
         root.id = OVERLAY_ID;
@@ -458,6 +614,23 @@
             return button;
         }
 
+        const dragHandle = document.createElement("div");
+        dragHandle.title = "Drag to move";
+        dragHandle.textContent = "⠿";
+        dragHandle.style.height = "30px";
+        dragHandle.style.width = "18px";
+        dragHandle.style.minWidth = "18px";
+        dragHandle.style.display = "inline-flex";
+        dragHandle.style.alignItems = "center";
+        dragHandle.style.justifyContent = "center";
+        dragHandle.style.color = "rgba(255, 255, 255, 0.55)";
+        dragHandle.style.fontSize = "15px";
+        dragHandle.style.lineHeight = "1";
+        dragHandle.style.cursor = "grab";
+        dragHandle.style.userSelect = "none";
+        dragHandle.style.webkitUserSelect = "none";
+        dragHandle.style.touchAction = "none";
+
         const pauseButton = createIconButton();
         pauseButton.addEventListener("click", () => {
             togglePause();
@@ -485,6 +658,7 @@
         });
 
         const miniLogRoot = document.createElement("div");
+        miniLogRoot.id = MINI_LOG_ROOT_ID;
         miniLogRoot.style.position = "fixed";
         miniLogRoot.style.top = "54px";
         miniLogRoot.style.right = "16px";
@@ -495,16 +669,21 @@
 
         const miniLogPanel = document.createElement("div");
         miniLogPanel.style.padding = "10px";
-        miniLogPanel.style.width = "280px";
-        miniLogPanel.style.maxWidth = "280px";
-        miniLogPanel.style.maxHeight = "96px";
+        miniLogPanel.style.width = "336px";
+        miniLogPanel.style.maxWidth = "336px";
+        miniLogPanel.style.maxHeight = `${getMiniLogPanelHeightPx(miniLogLines)}px`;
         miniLogPanel.style.overflowY = "auto";
         miniLogPanel.style.borderRadius = "12px";
-        miniLogPanel.style.background = "rgba(15, 23, 42, 0.92)";
+        miniLogPanel.style.background = "rgba(39, 39, 42, 0.98)";
         miniLogPanel.style.border = "1px solid rgba(255, 255, 255, 0.08)";
-        miniLogPanel.style.boxShadow = "0 14px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.04)";
+        miniLogPanel.style.boxShadow = "0 16px 30px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255,255,255,0.04)";
         miniLogPanel.style.fontFamily = "Arial, sans-serif";
+        miniLogPanel.style.color = "#f8fafc";
+        miniLogPanel.style.userSelect = "text";
+        miniLogPanel.style.webkitUserSelect = "text";
+        miniLogPanel.style.cursor = "text";
 
+        root.appendChild(dragHandle);
         root.appendChild(pauseButton);
         root.appendChild(nextFrameButton);
         root.appendChild(speedButton);
@@ -522,15 +701,65 @@
         cheatControlState.overlayResetButton = resetButton;
         cheatControlState.overlayMiniLogButton = miniLogButton;
         cheatControlState.overlayMiniLogPanel = miniLogPanel;
+
+        setupOverlayDrag(dragHandle);
+        const savedPosition = cheatControlState.overlayPosition || loadOverlayPosition();
+        if (savedPosition) {
+            applyOverlayPosition(savedPosition);
+        }
+
+        if (!overlayResizeHandlerBound) {
+            overlayResizeHandlerBound = true;
+            window.addEventListener("resize", () => {
+                if (cheatControlState.overlayRoot && cheatControlState.overlayPosition) {
+                    applyOverlayPosition(cheatControlState.overlayPosition);
+                }
+            });
+        }
+
         renderMiniLogEntries();
         updateOverlayUi();
 
         return root;
     }
 
+    function ensureOverlayRestoreObserver() {
+        if (overlayRestoreObserver || typeof MutationObserver === "undefined") {
+            return;
+        }
+
+        overlayRestoreObserver = new MutationObserver(() => {
+            if (!cheatControlState.overlayVisible) {
+                return;
+            }
+
+            const overlayMissing = !document.getElementById(OVERLAY_ID);
+            const miniLogMissing = cheatControlState.miniLogExpanded && !document.getElementById(MINI_LOG_ROOT_ID);
+
+            if (overlayMissing || miniLogMissing) {
+                cheatControlState.overlayRoot = null;
+                cheatControlState.miniLogRoot = null;
+                cheatControlState.overlayPauseButton = null;
+                cheatControlState.overlaySpeedButton = null;
+                cheatControlState.overlayNextFrameButton = null;
+                cheatControlState.overlayResetButton = null;
+                cheatControlState.overlayMiniLogButton = null;
+                cheatControlState.overlayMiniLogPanel = null;
+                ensureOverlay();
+            }
+        });
+
+        overlayRestoreObserver.observe(document.documentElement || document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
     function updateOverlayUi() {
         if (
-            !cheatControlState.overlayPauseButton
+            !cheatControlState.overlayRoot
+            || !cheatControlState.miniLogRoot
+            || !cheatControlState.overlayPauseButton
             || !cheatControlState.overlaySpeedButton
             || !cheatControlState.overlayNextFrameButton
             || !cheatControlState.overlayResetButton
@@ -539,6 +768,8 @@
         ) {
             return;
         }
+
+        cheatControlState.overlayRoot.style.display = "flex";
 
         cheatControlState.overlayPauseButton.textContent = cheatControlState.paused ? "▶" : "❚❚";
         cheatControlState.overlayPauseButton.title = cheatControlState.paused ? "Resume game" : "Pause game";
@@ -574,12 +805,15 @@
         cheatControlState.overlayResetButton.title = `Reset speed to x1.0 (current x${cheatControlState.configuredSpeed.toFixed(1)})`;
         cheatControlState.overlayResetButton.style.background = "#475569";
 
-        cheatControlState.overlayMiniLogButton.textContent = cheatControlState.miniLogExpanded ? "🗕" : "🗖";
+        cheatControlState.overlayMiniLogButton.textContent = "☰";
         cheatControlState.overlayMiniLogButton.title = cheatControlState.miniLogExpanded ? "Hide mini log" : "Show mini log";
         cheatControlState.overlayMiniLogButton.style.background = cheatControlState.miniLogExpanded ? "#0f766e" : "#334155";
 
         if (cheatControlState.miniLogRoot) {
             cheatControlState.miniLogRoot.style.display = cheatControlState.miniLogExpanded ? "block" : "none";
+            if (cheatControlState.miniLogExpanded && cheatControlState.overlayPosition) {
+                syncMiniLogPosition();
+            }
         }
     }
 
@@ -587,23 +821,18 @@
         cheatControlState.overlayVisible = enabled === true;
         if (!cheatControlState.overlayVisible) {
             if (cheatControlState.overlayRoot) {
-                cheatControlState.overlayRoot.remove();
+                cheatControlState.overlayRoot.style.display = "none";
             }
             if (cheatControlState.miniLogRoot) {
-                cheatControlState.miniLogRoot.remove();
+                cheatControlState.miniLogRoot.style.display = "none";
             }
-            cheatControlState.overlayRoot = null;
-            cheatControlState.miniLogRoot = null;
-            cheatControlState.overlayPauseButton = null;
-            cheatControlState.overlaySpeedButton = null;
-            cheatControlState.overlayNextFrameButton = null;
-            cheatControlState.overlayResetButton = null;
-            cheatControlState.overlayMiniLogButton = null;
-            cheatControlState.overlayMiniLogPanel = null;
             return;
         }
 
+        ensureOverlayRestoreObserver();
         ensureOverlay();
+        renderMiniLogEntries();
+        updateOverlayUi();
     }
 
     function handlePageControl(command, payload) {
@@ -636,6 +865,12 @@
                 debugHighlightColor = typeof payload?.highlightColor === "string"
                     ? payload.highlightColor
                     : "red";
+                miniLogLines = typeof payload?.miniLogLines === "number"
+                    ? Math.min(20, Math.max(1, payload.miniLogLines))
+                    : 5;
+                if (cheatControlState.overlayMiniLogPanel) {
+                    cheatControlState.overlayMiniLogPanel.style.maxHeight = `${getMiniLogPanelHeightPx(miniLogLines)}px`;
+                }
                 renderMiniLogEntries();
                 break;
             default:
