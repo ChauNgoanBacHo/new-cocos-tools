@@ -1,4 +1,7 @@
 (function () {
+    if (window.__ONE_PUNCH_TOOLS_PAGE_HOOK_ACTIVE__) {
+        return;
+    }
     const BRIDGE_EVENT_TYPE = "ONE_PUNCH_TOOLS_SOCKET_EVENT";
     const PAGE_CONTROL_EVENT_TYPE = "ONE_PUNCH_TOOLS_PAGE_CONTROL";
     const ACCEPTED_EVENT_NAMES = new Set(["n", "f"]);
@@ -44,6 +47,8 @@
     if (!allowedOrigins.has(window.location.origin)) {
         return;
     }
+
+    window.__ONE_PUNCH_TOOLS_PAGE_HOOK_ACTIVE__ = true;
 
     function emitBridgeEvent(payload) {
         window.postMessage({
@@ -136,25 +141,45 @@
             return "";
         }
 
-        const firstArg = typeof args[0] === "string" ? args[0] : "";
-        const formatStyleCount = firstArg ? (firstArg.match(/%c/g) || []).length : 0;
-
-        if (formatStyleCount === 0) {
-            return args.map(stringifyConsoleArg).join(" ");
+        const firstArg = args[0];
+        if (typeof firstArg !== "string" || !/%[csdifoOj]/.test(firstArg)) {
+            return args.map(stringifyConsoleArg).join(" ").trim();
         }
 
-        const normalizedFirstArg = firstArg.replace(/%c/g, "").trim();
-        const visibleArgs = [];
+        let argIndex = 1;
+        let output = "";
 
-        if (normalizedFirstArg) {
-            visibleArgs.push(normalizedFirstArg);
+        for (let i = 0; i < firstArg.length; i += 1) {
+            const char = firstArg[i];
+            if (char === "%" && i + 1 < firstArg.length) {
+                const spec = firstArg[i + 1];
+                if (spec === "%") {
+                    output += "%";
+                    i += 1;
+                    continue;
+                }
+                if (spec === "c") {
+                    argIndex += 1;
+                    i += 1;
+                    continue;
+                }
+                if ("sdifoOj".includes(spec)) {
+                    if (argIndex < args.length) {
+                        output += stringifyConsoleArg(args[argIndex]);
+                        argIndex += 1;
+                    }
+                    i += 1;
+                    continue;
+                }
+            }
+            output += char;
         }
 
-        for (let index = 1 + formatStyleCount; index < args.length; index += 1) {
-            visibleArgs.push(stringifyConsoleArg(args[index]));
+        for (; argIndex < args.length; argIndex += 1) {
+            output += ` ${stringifyConsoleArg(args[argIndex])}`;
         }
 
-        return visibleArgs.join(" ").trim();
+        return output.trim();
     }
 
     function appendMiniLogEntry(message, options = {}) {
@@ -236,16 +261,15 @@
         cheatControlState.overlayMiniLogPanel.scrollTop = cheatControlState.overlayMiniLogPanel.scrollHeight;
     }
 
-    function emitHighlightedConsoleLine(originalMethod, args, joined) {
-        const highlightMeta = getHighlightMeta(joined);
+    function emitHighlightedConsoleLine(originalMethod, rendered) {
+        const highlightMeta = getHighlightMeta(rendered);
         if (!highlightMeta) {
             return false;
         }
 
         const highlightStyle = getConsoleHighlightStyle(highlightMeta.color);
-        const highlightedText = buildHighlightedConsoleText(args) || joined;
-        appendMiniLogEntry(highlightedText, { color: highlightMeta.color });
-        originalMethod.call(window.console, `%c${highlightedText}`, highlightStyle);
+        appendMiniLogEntry(rendered, { color: highlightMeta.color });
+        originalMethod.call(window.console, `%c${rendered}`, highlightStyle);
         return true;
     }
 
@@ -1186,24 +1210,11 @@
                 let shouldSuppressConsoleOutput = false;
                 let highlightedOutputHandled = false;
                 try {
-                    const joined = args
-                        .map((arg) => {
-                            if (typeof arg === "string") {
-                                return arg;
-                            }
-
-                            try {
-                                return JSON.stringify(arg);
-                            } catch {
-                                return String(arg);
-                            }
-                        })
-                        .join(" ");
-
-                    highlightedOutputHandled = emitHighlightedConsoleLine(originalMethod, args, joined);
-                    shouldSuppressConsoleOutput = shouldSuppressConsoleLine(joined) || inspectConsoleArgs(args);
+                    const rendered = buildHighlightedConsoleText(args);
+                    highlightedOutputHandled = emitHighlightedConsoleLine(originalMethod, rendered);
+                    shouldSuppressConsoleOutput = shouldSuppressConsoleLine(rendered) || inspectConsoleArgs(args);
                     if (!highlightedOutputHandled && !shouldSuppressConsoleOutput) {
-                        appendMiniLogEntry(buildHighlightedConsoleText(args) || joined);
+                        appendMiniLogEntry(rendered);
                     }
                 } catch {
                     // ignore console inspection failures
