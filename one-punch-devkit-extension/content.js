@@ -226,6 +226,11 @@
             return;
         }
 
+        if (data.cdpControl === "pause-on-error") {
+            sendToElectron({ type: "cdp-pause-on-error" });
+            return;
+        }
+
         sendToElectron({
             type: typeof data.debugType === "string" ? "extension-debug" : "game-socket-response",
             debugType: typeof data.debugType === "string" ? data.debugType : undefined,

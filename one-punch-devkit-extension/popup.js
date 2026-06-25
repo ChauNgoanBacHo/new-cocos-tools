@@ -12,6 +12,7 @@ const debugExcludeListInput = document.getElementById("debug-exclude-list");
 const debugHighlightListInput = document.getElementById("debug-highlight-list");
 const debugHighlightColorInput = document.getElementById("debug-highlight-color");
 const miniLogLinesInput = document.getElementById("mini-log-lines");
+const resumeSceneButton = document.getElementById("resume-scene-button");
 const AUTO_SAVE_DELAY_MS = 450;
 
 let saveGameIdTimeout = null;
@@ -225,7 +226,7 @@ function saveDebugHighlightColorSilently() {
 
 function saveMiniLogLinesSilently() {
     const parsedValue = Number.parseInt(miniLogLinesInput.value, 10);
-    const lines = Number.isFinite(parsedValue) ? Math.min(20, Math.max(1, parsedValue)) : 5;
+    const lines = Number.isFinite(parsedValue) ? Math.min(30, Math.max(1, parsedValue)) : 5;
 
     chrome.runtime.sendMessage({ type: "set-mini-log-lines", lines }, (response) => {
         if (chrome.runtime.lastError || !response?.ok) {
@@ -394,4 +395,31 @@ miniLogLinesInput.addEventListener("input", () => {
     }, AUTO_SAVE_DELAY_MS);
 });
 
+function refreshCdpState() {
+    chrome.runtime.sendMessage({ type: "get-cdp-state" }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            resumeSceneButton.disabled = true;
+            return;
+        }
+        resumeSceneButton.disabled = !response.paused;
+        resumeSceneButton.textContent = response.paused ? "Resume Scene (paused)" : "Resume Scene";
+    });
+}
+
+resumeSceneButton.addEventListener("click", () => {
+    resumeSceneButton.disabled = true;
+    chrome.runtime.sendMessage({ type: "cdp-resume-scene" }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            browserMeta.textContent = chrome.runtime.lastError?.message || "Could not resume scene.";
+            browserMeta.className = "meta browser";
+            refreshCdpState();
+            return;
+        }
+        browserMeta.textContent = "Scene resumed.";
+        browserMeta.className = "meta browser";
+        refreshCdpState();
+    });
+});
+
 requestState();
+refreshCdpState();

@@ -226,7 +226,7 @@ async function syncControlSettingsToTabs(options = {}) {
     const debugExcludeList = Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST;
     const debugHighlightList = Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [];
     const debugHighlightColor = typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red";
-    const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
+    const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
@@ -336,6 +336,108 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log("[One Punch Assistant] Extension installed");
 });
 
+const cdpAttachedTabs = new Set();
+const cdpPausedTabs = new Set();
+const CDP_PROTOCOL_VERSION = "1.3";
+
+function attachDebugger(tabId) {
+    return new Promise((resolve) => {
+        if (cdpAttachedTabs.has(tabId)) {
+            resolve(true);
+            return;
+        }
+
+        chrome.debugger.attach({ tabId }, CDP_PROTOCOL_VERSION, () => {
+            if (chrome.runtime.lastError) {
+                // Already attached by another client (e.g. DevTools open) or failed.
+                const message = chrome.runtime.lastError.message || "";
+                if (/already attached/i.test(message)) {
+                    cdpAttachedTabs.add(tabId);
+                    resolve(true);
+                    return;
+                }
+                resolve(false);
+                return;
+            }
+            cdpAttachedTabs.add(tabId);
+            chrome.debugger.sendCommand({ tabId }, "Debugger.enable", {}, () => {
+                resolve(!chrome.runtime.lastError);
+            });
+        });
+    });
+}
+
+function detachDebugger(tabId) {
+    return new Promise((resolve) => {
+        if (!cdpAttachedTabs.has(tabId)) {
+            resolve(true);
+            return;
+        }
+        chrome.debugger.detach({ tabId }, () => {
+            cdpAttachedTabs.delete(tabId);
+            cdpPausedTabs.delete(tabId);
+            resolve(!chrome.runtime.lastError);
+        });
+    });
+}
+
+async function cdpPauseTab(tabId) {
+    if (typeof tabId !== "number") {
+        return { ok: false, message: "No tab id." };
+    }
+    if (cdpPausedTabs.has(tabId)) {
+        return { ok: true, alreadyPaused: true };
+    }
+
+    const attached = await attachDebugger(tabId);
+    if (!attached) {
+        return { ok: false, message: "Could not attach debugger." };
+    }
+
+    return new Promise((resolve) => {
+        chrome.debugger.sendCommand({ tabId }, "Debugger.pause", {}, () => {
+            if (chrome.runtime.lastError) {
+                resolve({ ok: false, message: chrome.runtime.lastError.message });
+                return;
+            }
+            cdpPausedTabs.add(tabId);
+            resolve({ ok: true });
+        });
+    });
+}
+
+async function cdpResumeTab(tabId) {
+    if (typeof tabId !== "number") {
+        return { ok: false, message: "No tab id." };
+    }
+    if (!cdpAttachedTabs.has(tabId)) {
+        return { ok: true, alreadyResumed: true };
+    }
+
+    await new Promise((resolve) => {
+        chrome.debugger.sendCommand({ tabId }, "Debugger.resume", {}, () => {
+            cdpPausedTabs.delete(tabId);
+            resolve();
+        });
+    });
+
+    await detachDebugger(tabId);
+    void sendPageControlToTabs("cdp-resumed", {}, { tabIds: [tabId] });
+    return { ok: true };
+}
+
+chrome.debugger.onDetach.addListener((source) => {
+    if (typeof source.tabId === "number") {
+        cdpAttachedTabs.delete(source.tabId);
+        cdpPausedTabs.delete(source.tabId);
+    }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+    cdpAttachedTabs.delete(tabId);
+    cdpPausedTabs.delete(tabId);
+});
+
 chrome.runtime.onStartup.addListener(() => {
     void initializeLocalSocketState();
 });
@@ -344,6 +446,48 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || typeof message !== "object") {
         sendResponse({ ok: false });
         return false;
+    }
+
+    if (message.type === "cdp-pause-on-error") {
+        const tabId = typeof _sender?.tab?.id === "number" ? _sender.tab.id : null;
+        void cdpPauseTab(tabId).then((result) => {
+            sendResponse(result);
+        });
+        return true;
+    }
+
+    if (message.type === "cdp-resume-scene") {
+        void (async () => {
+            let tabId = typeof message.tabId === "number" ? message.tabId : null;
+            if (tabId === null) {
+                try {
+                    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                    tabId = tabs[0]?.id ?? null;
+                } catch {
+                    tabId = null;
+                }
+            }
+            const result = await cdpResumeTab(tabId);
+            sendResponse(result);
+        })();
+        return true;
+    }
+
+    if (message.type === "get-cdp-state") {
+        void (async () => {
+            let tabId = null;
+            try {
+                const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                tabId = tabs[0]?.id ?? null;
+            } catch {
+                tabId = null;
+            }
+            sendResponse({
+                ok: true,
+                paused: tabId !== null && cdpPausedTabs.has(tabId),
+            });
+        })();
+        return true;
     }
 
     if (message.type === "get-local-socket-state") {
@@ -381,7 +525,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
-                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -399,7 +543,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
-                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -535,7 +679,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     ? highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
                 miniLogLines: typeof highlightSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, highlightSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, highlightSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -565,7 +709,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     ? filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
                 miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -594,7 +738,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 highlightList: filterSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
                 highlightColor: nextColor,
                 miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -607,7 +751,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     if (message.type === "set-mini-log-lines") {
         const nextLines = Number.isFinite(Number(message.lines))
-            ? Math.min(20, Math.max(1, Number(message.lines)))
+            ? Math.min(30, Math.max(1, Number(message.lines)))
             : 5;
         void chrome.storage.local.set({
             [MINI_LOG_LINES_KEY]: nextLines,

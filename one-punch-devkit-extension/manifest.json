@@ -4,7 +4,8 @@
   "description": "Bridge game WebSocket responses to the One Punch DevKit Electron app.",
   "version": "0.1.0",
   "permissions": [
-    "storage"
+    "storage",
+    "debugger"
   ],
   "icons": {
     "16": "icon-16.png",

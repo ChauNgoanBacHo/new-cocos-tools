@@ -12,7 +12,7 @@
     const OVERLAY_VIEWPORT_MARGIN = 8;
     let overlayRestoreObserver = null;
     let overlayResizeHandlerBound = false;
-    const MINI_LOG_MAX_ENTRIES = 20;
+    const MINI_LOG_MAX_ENTRIES = 30;
     let unmatchedDebugCount = 0;
     let debugExcludeList = [];
     let debugHighlightList = [];
@@ -39,6 +39,7 @@
         version: null,
         scheduler: null,
         originalTick: null,
+        cdpPauseRequested: false,
     };
     const currentScript = document.currentScript;
     const customAllowedOrigins = parseAllowedOrigins(currentScript?.dataset?.allowedOrigins);
@@ -207,8 +208,40 @@
         renderMiniLogEntries();
     }
 
+    function appendErrorMiniLogEntry(message) {
+        if (typeof message !== "string" || !message.trim()) {
+            return;
+        }
+
+        const entry = {
+            text: `⛔ ${message.trim()}`.slice(0, 280),
+            color: null,
+            isError: true,
+        };
+
+        cheatControlState.miniLogEntries = [...cheatControlState.miniLogEntries.slice(-(MINI_LOG_MAX_ENTRIES - 1)), entry];
+        renderMiniLogEntries();
+    }
+
+    function reportRuntimeError(message) {
+        if (!cheatControlState.overlayVisible) {
+            return;
+        }
+
+        appendErrorMiniLogEntry(message);
+
+        if (!cheatControlState.cdpPauseRequested) {
+            cheatControlState.cdpPauseRequested = true;
+            appendErrorMiniLogEntry("Freezing scene via debugger... Resume from the extension popup.");
+            window.postMessage({
+                source: BRIDGE_EVENT_TYPE,
+                cdpControl: "pause-on-error",
+            }, "*");
+        }
+    }
+
     function getMiniLogPanelHeightPx(lineCount) {
-        const safeLineCount = Math.min(20, Math.max(1, Number.isFinite(Number(lineCount)) ? Number(lineCount) : 5));
+        const safeLineCount = Math.min(30, Math.max(1, Number.isFinite(Number(lineCount)) ? Number(lineCount) : 5));
         return safeLineCount * 28 + 16;
     }
 
@@ -248,13 +281,20 @@
             line.style.borderBottom = index === cheatControlState.miniLogEntries.length - 1
                 ? "none"
                 : "1px solid rgba(255, 255, 255, 0.08)";
-            line.style.color = entry.color
-                ? entry.color === "amber"
-                    ? "#facc15"
-                    : entry.color === "cyan"
-                        ? "#c084fc"
-                        : "#ff4d6d"
-                : "#f8fafc";
+            if (entry.isError) {
+                line.style.color = "#fecaca";
+                line.style.background = "rgba(220, 38, 38, 0.22)";
+                line.style.fontWeight = "700";
+                line.style.whiteSpace = "normal";
+            } else {
+                line.style.color = entry.color
+                    ? entry.color === "amber"
+                        ? "#facc15"
+                        : entry.color === "cyan"
+                            ? "#c084fc"
+                            : "#ff4d6d"
+                    : "#f8fafc";
+            }
             cheatControlState.overlayMiniLogPanel.appendChild(line);
         });
 
@@ -864,6 +904,10 @@
             case "set-speed":
                 setCheatSpeed(payload?.speed);
                 break;
+            case "cdp-resumed":
+                cheatControlState.cdpPauseRequested = false;
+                appendErrorMiniLogEntry("Scene resumed.");
+                break;
             case "toggle-speed-boost":
                 if (Number.isFinite(Number(payload?.speed))) {
                     cheatControlState.configuredSpeed = Math.max(0.1, Number(payload.speed));
@@ -890,7 +934,7 @@
                     ? payload.highlightColor
                     : "red";
                 miniLogLines = typeof payload?.miniLogLines === "number"
-                    ? Math.min(20, Math.max(1, payload.miniLogLines))
+                    ? Math.min(30, Math.max(1, payload.miniLogLines))
                     : 5;
                 if (cheatControlState.overlayMiniLogPanel) {
                     cheatControlState.overlayMiniLogPanel.style.maxHeight = `${getMiniLogPanelHeightPx(miniLogLines)}px`;
@@ -1236,6 +1280,35 @@
 
             window.console[methodName] = wrappedMethod;
         }
+
+        patchConsoleError();
+    }
+
+    function patchConsoleError() {
+        const originalError = window.console?.error;
+        if (typeof originalError !== "function" || originalError.__onePunchDevKitPatched) {
+            return;
+        }
+
+        const wrappedError = function (...args) {
+            try {
+                const rendered = buildHighlightedConsoleText(args);
+                reportRuntimeError(rendered);
+            } catch {
+                // ignore console inspection failures
+            }
+
+            return originalError.apply(this, args);
+        };
+
+        Object.defineProperty(wrappedError, "__onePunchDevKitPatched", {
+            value: true,
+            configurable: false,
+            enumerable: false,
+            writable: false,
+        });
+
+        window.console.error = wrappedError;
     }
 
     function inspectConsoleArgs(args) {
@@ -1382,6 +1455,27 @@
         }
 
         handlePageControl(data.command, data.payload ?? {});
+    });
+
+    window.addEventListener("error", (event) => {
+        const message = event?.message
+            || (event?.error && event.error.stack)
+            || (event?.error && String(event.error))
+            || "Uncaught error";
+        const location = event?.filename
+            ? ` (${event.filename}:${event.lineno ?? "?"})`
+            : "";
+        reportRuntimeError(`${message}${location}`);
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+        const reason = event?.reason;
+        const message = reason && reason.stack
+            ? reason.stack
+            : reason && reason.message
+                ? reason.message
+                : String(reason ?? "Unhandled promise rejection");
+        reportRuntimeError(`Unhandled rejection: ${message}`);
     });
 
     patchWebSocket();
