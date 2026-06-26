@@ -12,7 +12,9 @@
     const OVERLAY_VIEWPORT_MARGIN = 8;
     let overlayRestoreObserver = null;
     let overlayResizeHandlerBound = false;
-    const MINI_LOG_MAX_ENTRIES = 20;
+    let errorEntrySeq = 0;
+    let pendingErrorScrollId = null;
+    const MINI_LOG_MAX_ENTRIES = 30;
     let unmatchedDebugCount = 0;
     let debugExcludeList = [];
     let debugHighlightList = [];
@@ -39,6 +41,7 @@
         version: null,
         scheduler: null,
         originalTick: null,
+        pausedOnError: false,
     };
     const currentScript = document.currentScript;
     const customAllowedOrigins = parseAllowedOrigins(currentScript?.dataset?.allowedOrigins);
@@ -207,8 +210,46 @@
         renderMiniLogEntries();
     }
 
+    function appendErrorMiniLogEntry(message) {
+        if (typeof message !== "string" || !message.trim()) {
+            return;
+        }
+
+        errorEntrySeq += 1;
+        const domId = `one-punch-devkit-error-${errorEntrySeq}`;
+        const entry = {
+            text: `⛔ ${message.trim()}`.slice(0, 280),
+            color: null,
+            isError: true,
+            domId,
+        };
+        pendingErrorScrollId = domId;
+
+        cheatControlState.miniLogEntries = [...cheatControlState.miniLogEntries.slice(-(MINI_LOG_MAX_ENTRIES - 1)), entry];
+        renderMiniLogEntries();
+    }
+
+    function reportRuntimeError(message) {
+        if (!cheatControlState.overlayVisible) {
+            return;
+        }
+
+        if (!cheatControlState.miniLogExpanded) {
+            cheatControlState.miniLogExpanded = true;
+            updateOverlayUi();
+        }
+
+        appendErrorMiniLogEntry(message);
+
+        if (!cheatControlState.paused) {
+            const paused = pauseGame();
+            cheatControlState.pausedOnError = paused;
+            appendErrorMiniLogEntry(paused ? "Scene paused on error." : "Could not pause scene (game runtime not ready).");
+        }
+    }
+
     function getMiniLogPanelHeightPx(lineCount) {
-        const safeLineCount = Math.min(20, Math.max(1, Number.isFinite(Number(lineCount)) ? Number(lineCount) : 5));
+        const safeLineCount = Math.min(30, Math.max(1, Number.isFinite(Number(lineCount)) ? Number(lineCount) : 5));
         return safeLineCount * 28 + 16;
     }
 
@@ -248,17 +289,48 @@
             line.style.borderBottom = index === cheatControlState.miniLogEntries.length - 1
                 ? "none"
                 : "1px solid rgba(255, 255, 255, 0.08)";
-            line.style.color = entry.color
-                ? entry.color === "amber"
-                    ? "#facc15"
-                    : entry.color === "cyan"
-                        ? "#c084fc"
-                        : "#ff4d6d"
-                : "#f8fafc";
+            if (entry.isError) {
+                if (entry.domId) {
+                    line.id = entry.domId;
+                }
+                line.style.color = "#fecaca";
+                line.style.background = "rgba(220, 38, 38, 0.22)";
+                line.style.fontWeight = "700";
+                line.style.whiteSpace = "normal";
+            } else {
+                line.style.color = entry.color
+                    ? entry.color === "amber"
+                        ? "#facc15"
+                        : entry.color === "cyan"
+                            ? "#c084fc"
+                            : "#ff4d6d"
+                    : "#f8fafc";
+            }
             cheatControlState.overlayMiniLogPanel.appendChild(line);
         });
 
+        if (pendingErrorScrollId) {
+            const scrollId = pendingErrorScrollId;
+            pendingErrorScrollId = null;
+            window.setTimeout(() => scrollMiniLogToError(scrollId), 60);
+            return;
+        }
+
         cheatControlState.overlayMiniLogPanel.scrollTop = cheatControlState.overlayMiniLogPanel.scrollHeight;
+    }
+
+    function scrollMiniLogToError(scrollId) {
+        const panel = cheatControlState.overlayMiniLogPanel;
+        if (!panel) {
+            return;
+        }
+        const target = panel.querySelector(`#${CSS.escape(scrollId)}`);
+        if (!target) {
+            return;
+        }
+        const targetRect = target.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        panel.scrollTop += targetRect.bottom - panelRect.bottom;
     }
 
     function emitHighlightedConsoleLine(originalMethod, rendered) {
@@ -395,6 +467,7 @@
         }
 
         cheatControlState.paused = false;
+        cheatControlState.pausedOnError = false;
         applySpeed();
         updateOverlayUi();
         return true;
@@ -890,7 +963,7 @@
                     ? payload.highlightColor
                     : "red";
                 miniLogLines = typeof payload?.miniLogLines === "number"
-                    ? Math.min(20, Math.max(1, payload.miniLogLines))
+                    ? Math.min(30, Math.max(1, payload.miniLogLines))
                     : 5;
                 if (cheatControlState.overlayMiniLogPanel) {
                     cheatControlState.overlayMiniLogPanel.style.maxHeight = `${getMiniLogPanelHeightPx(miniLogLines)}px`;
@@ -1207,20 +1280,39 @@
             }
 
             const wrappedMethod = function (...args) {
-                let shouldSuppressConsoleOutput = false;
-                let highlightedOutputHandled = false;
+                let rendered = "";
                 try {
-                    const rendered = buildHighlightedConsoleText(args);
+                    rendered = buildHighlightedConsoleText(args);
+                } catch {
+                    rendered = "";
+                }
+
+                let suppressByExclude = false;
+                try {
+                    suppressByExclude = shouldSuppressConsoleLine(rendered);
+                } catch {
+                    suppressByExclude = false;
+                }
+
+                if (suppressByExclude) {
+                    return;
+                }
+
+                let highlightedOutputHandled = false;
+                let suppressByInspect = false;
+                try {
                     highlightedOutputHandled = emitHighlightedConsoleLine(originalMethod, rendered);
-                    shouldSuppressConsoleOutput = shouldSuppressConsoleLine(rendered) || inspectConsoleArgs(args);
-                    if (!highlightedOutputHandled && !shouldSuppressConsoleOutput) {
-                        appendMiniLogEntry(rendered);
+                    if (!highlightedOutputHandled) {
+                        suppressByInspect = inspectConsoleArgs(args);
+                        if (!suppressByInspect) {
+                            appendMiniLogEntry(rendered);
+                        }
                     }
                 } catch {
                     // ignore console inspection failures
                 }
 
-                if (shouldSuppressConsoleOutput || highlightedOutputHandled) {
+                if (highlightedOutputHandled || suppressByInspect) {
                     return;
                 }
 
@@ -1236,6 +1328,35 @@
 
             window.console[methodName] = wrappedMethod;
         }
+
+        patchConsoleError();
+    }
+
+    function patchConsoleError() {
+        const originalError = window.console?.error;
+        if (typeof originalError !== "function" || originalError.__onePunchDevKitPatched) {
+            return;
+        }
+
+        const wrappedError = function (...args) {
+            try {
+                const rendered = buildHighlightedConsoleText(args);
+                reportRuntimeError(rendered);
+            } catch {
+                // ignore console inspection failures
+            }
+
+            return originalError.apply(this, args);
+        };
+
+        Object.defineProperty(wrappedError, "__onePunchDevKitPatched", {
+            value: true,
+            configurable: false,
+            enumerable: false,
+            writable: false,
+        });
+
+        window.console.error = wrappedError;
     }
 
     function inspectConsoleArgs(args) {
@@ -1382,6 +1503,27 @@
         }
 
         handlePageControl(data.command, data.payload ?? {});
+    });
+
+    window.addEventListener("error", (event) => {
+        const message = event?.message
+            || (event?.error && event.error.stack)
+            || (event?.error && String(event.error))
+            || "Uncaught error";
+        const location = event?.filename
+            ? ` (${event.filename}:${event.lineno ?? "?"})`
+            : "";
+        reportRuntimeError(`${message}${location}`);
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+        const reason = event?.reason;
+        const message = reason && reason.stack
+            ? reason.stack
+            : reason && reason.message
+                ? reason.message
+                : String(reason ?? "Unhandled promise rejection");
+        reportRuntimeError(`Unhandled rejection: ${message}`);
     });
 
     patchWebSocket();

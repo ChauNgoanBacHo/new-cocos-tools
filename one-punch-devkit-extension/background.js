@@ -226,7 +226,7 @@ async function syncControlSettingsToTabs(options = {}) {
     const debugExcludeList = Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST;
     const debugHighlightList = Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [];
     const debugHighlightColor = typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red";
-    const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
+    const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
@@ -381,7 +381,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
-                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -399,7 +399,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugExcludeList: Array.isArray(result[DEBUG_EXCLUDE_LIST_KEY]) ? result[DEBUG_EXCLUDE_LIST_KEY] : DEFAULT_DEBUG_EXCLUDE_LIST,
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
-                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(20, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
+                miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
             });
         });
         return true;
@@ -535,7 +535,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     ? highlightSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
                 miniLogLines: typeof highlightSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, highlightSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, highlightSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -565,7 +565,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     ? filterSettings[DEBUG_HIGHLIGHT_COLOR_KEY]
                     : "red",
                 miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -594,7 +594,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 highlightList: filterSettings[DEBUG_HIGHLIGHT_LIST_KEY] ?? [],
                 highlightColor: nextColor,
                 miniLogLines: typeof filterSettings[MINI_LOG_LINES_KEY] === "number"
-                    ? Math.min(20, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
+                    ? Math.min(30, Math.max(1, filterSettings[MINI_LOG_LINES_KEY]))
                     : 5,
             }, { activeOnly: false });
             sendResponse({
@@ -607,7 +607,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     if (message.type === "set-mini-log-lines") {
         const nextLines = Number.isFinite(Number(message.lines))
-            ? Math.min(20, Math.max(1, Number(message.lines)))
+            ? Math.min(30, Math.max(1, Number(message.lines)))
             : 5;
         void chrome.storage.local.set({
             [MINI_LOG_LINES_KEY]: nextLines,

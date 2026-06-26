@@ -225,7 +225,7 @@ function saveDebugHighlightColorSilently() {
 
 function saveMiniLogLinesSilently() {
     const parsedValue = Number.parseInt(miniLogLinesInput.value, 10);
-    const lines = Number.isFinite(parsedValue) ? Math.min(20, Math.max(1, parsedValue)) : 5;
+    const lines = Number.isFinite(parsedValue) ? Math.min(30, Math.max(1, parsedValue)) : 5;
 
     chrome.runtime.sendMessage({ type: "set-mini-log-lines", lines }, (response) => {
         if (chrome.runtime.lastError || !response?.ok) {
