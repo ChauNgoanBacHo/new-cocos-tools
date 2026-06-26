@@ -42,6 +42,7 @@
         scheduler: null,
         originalTick: null,
         pausedOnError: false,
+        pauseOnErrorEnabled: true,
     };
     const currentScript = document.currentScript;
     const customAllowedOrigins = parseAllowedOrigins(currentScript?.dataset?.allowedOrigins);
@@ -194,12 +195,7 @@
         if (shouldSuppressConsoleLine(normalizedMessage)) {
             return;
         }
-        const shouldFilterByHighlight = debugHighlightList.length > 0;
         const isHighlighted = matchesHighlightRule(normalizedMessage);
-
-        if (shouldFilterByHighlight && !isHighlighted) {
-            return;
-        }
 
         const entry = {
             text: normalizedMessage.slice(0, 280),
@@ -241,7 +237,7 @@
 
         appendErrorMiniLogEntry(message);
 
-        if (!cheatControlState.paused) {
+        if (cheatControlState.pauseOnErrorEnabled && !cheatControlState.paused) {
             const paused = pauseGame();
             cheatControlState.pausedOnError = paused;
             appendErrorMiniLogEntry(paused ? "Scene paused on error." : "Could not pause scene (game runtime not ready).");
@@ -262,9 +258,7 @@
 
         if (cheatControlState.miniLogEntries.length === 0) {
             const emptyState = document.createElement("div");
-            emptyState.textContent = debugHighlightList.length > 0
-                ? "No matching highlight logs yet."
-                : "Refresh page to start mini log capture.";
+            emptyState.textContent = "Refresh page to start mini log capture.";
             emptyState.style.color = "#f8fafc";
             emptyState.style.fontSize = "11px";
             emptyState.style.lineHeight = "1.45";
@@ -951,6 +945,9 @@
                 break;
             case "set-debug-visibility":
                 setOverlayVisibility(payload?.enabled === true);
+                break;
+            case "set-pause-on-error":
+                cheatControlState.pauseOnErrorEnabled = payload?.enabled !== false;
                 break;
             case "set-debug-filter-lists":
                 debugExcludeList = Array.isArray(payload?.excludeList)

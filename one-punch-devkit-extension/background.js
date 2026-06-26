@@ -9,6 +9,7 @@ const DEBUG_EXCLUDE_LIST_KEY = "debugExcludeList";
 const DEBUG_HIGHLIGHT_LIST_KEY = "debugHighlightList";
 const DEBUG_HIGHLIGHT_COLOR_KEY = "debugHighlightColor";
 const MINI_LOG_LINES_KEY = "miniLogLines";
+const PAUSE_ON_ERROR_KEY = "pauseOnError";
 const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "SocketManager",
     "CommandManager",
@@ -220,6 +221,7 @@ async function syncControlSettingsToTabs(options = {}) {
         DEBUG_HIGHLIGHT_LIST_KEY,
         DEBUG_HIGHLIGHT_COLOR_KEY,
         MINI_LOG_LINES_KEY,
+        PAUSE_ON_ERROR_KEY,
     ]);
     const cheatSpeed = typeof result[CHEAT_SPEED_KEY] === "number" ? result[CHEAT_SPEED_KEY] : 1;
     const showDebugControls = result[SHOW_DEBUG_KEY] === true;
@@ -227,9 +229,11 @@ async function syncControlSettingsToTabs(options = {}) {
     const debugHighlightList = Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [];
     const debugHighlightColor = typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red";
     const miniLogLines = typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5;
+    const pauseOnError = result[PAUSE_ON_ERROR_KEY] !== false;
 
     await sendPageControlToTabs("set-debug-visibility", { enabled: showDebugControls }, options);
     await sendPageControlToTabs("set-speed", { speed: cheatSpeed }, options);
+    await sendPageControlToTabs("set-pause-on-error", { enabled: pauseOnError }, options);
     await sendPageControlToTabs("set-debug-filter-lists", {
         excludeList: debugExcludeList,
         highlightList: debugHighlightList,
@@ -244,6 +248,7 @@ async function syncControlSettingsToTabs(options = {}) {
         debugHighlightList,
         debugHighlightColor,
         miniLogLines,
+        pauseOnError,
     };
 }
 
@@ -367,6 +372,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             DEBUG_HIGHLIGHT_LIST_KEY,
             DEBUG_HIGHLIGHT_COLOR_KEY,
             MINI_LOG_LINES_KEY,
+            PAUSE_ON_ERROR_KEY,
         ]).then((result) => {
             sendResponse({
                 ok: true,
@@ -382,6 +388,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 debugHighlightList: Array.isArray(result[DEBUG_HIGHLIGHT_LIST_KEY]) ? result[DEBUG_HIGHLIGHT_LIST_KEY] : [],
                 debugHighlightColor: typeof result[DEBUG_HIGHLIGHT_COLOR_KEY] === "string" ? result[DEBUG_HIGHLIGHT_COLOR_KEY] : "red",
                 miniLogLines: typeof result[MINI_LOG_LINES_KEY] === "number" ? Math.min(30, Math.max(1, result[MINI_LOG_LINES_KEY])) : 5,
+                pauseOnError: result[PAUSE_ON_ERROR_KEY] !== false,
             });
         });
         return true;
@@ -428,6 +435,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             sendResponse({
                 ok: true,
                 showDebugControls,
+            });
+        });
+        return true;
+    }
+
+    if (message.type === "set-pause-on-error") {
+        const pauseOnError = message.enabled === true;
+        void chrome.storage.local.set({
+            [PAUSE_ON_ERROR_KEY]: pauseOnError,
+        }).then(async () => {
+            await sendPageControlToTabs("set-pause-on-error", { enabled: pauseOnError }, { activeOnly: false });
+            sendResponse({
+                ok: true,
+                pauseOnError,
             });
         });
         return true;

@@ -6,6 +6,7 @@ const startAutoplayButton = document.getElementById("start-autoplay-button");
 const reconnectButton = document.getElementById("reconnect-button");
 const cheatSpeedInput = document.getElementById("cheat-speed");
 const debugToggleButton = document.getElementById("debug-toggle-button");
+const pauseOnErrorButton = document.getElementById("pause-on-error-button");
 const autoplayGameIdInput = document.getElementById("autoplay-game-id");
 const customOriginsInput = document.getElementById("custom-origins");
 const debugExcludeListInput = document.getElementById("debug-exclude-list");
@@ -74,6 +75,9 @@ function requestState() {
         );
         debugToggleButton.dataset.enabled = String(response.showDebugControls === true);
         debugToggleButton.setAttribute("aria-pressed", String(response.showDebugControls === true));
+        const pauseOnError = response.pauseOnError !== false;
+        pauseOnErrorButton.dataset.enabled = String(pauseOnError);
+        pauseOnErrorButton.setAttribute("aria-pressed", String(pauseOnError));
         autoplayGameIdInput.value = typeof response.autoplayGameId === "string" ? response.autoplayGameId : "";
         customOriginsInput.value = Array.isArray(response.customAllowedOrigins)
             ? response.customAllowedOrigins.join("\n")
@@ -320,6 +324,25 @@ debugToggleButton.addEventListener("click", () => {
         browserMeta.textContent = response.showDebugControls
             ? "Debug controls are visible on the game page."
             : "Debug controls are hidden.";
+        browserMeta.className = "meta browser";
+    });
+});
+
+pauseOnErrorButton.addEventListener("click", () => {
+    const enabled = pauseOnErrorButton.dataset.enabled !== "true";
+    chrome.runtime.sendMessage({ type: "set-pause-on-error", enabled }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+            browserMeta.textContent = chrome.runtime.lastError?.message || "Could not update pause-on-error.";
+            browserMeta.className = "meta browser";
+            return;
+        }
+
+        const pauseOnError = response.pauseOnError !== false;
+        pauseOnErrorButton.dataset.enabled = String(pauseOnError);
+        pauseOnErrorButton.setAttribute("aria-pressed", String(pauseOnError));
+        browserMeta.textContent = pauseOnError
+            ? "Scene will pause when an error is caught."
+            : "Scene will keep running on error.";
         browserMeta.className = "meta browser";
     });
 });
