@@ -6,6 +6,19 @@ function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function toConstName(filename: string, suffix: string): string {
+    let name = filename.replace(/\.json$/i, "").toUpperCase();
+    const prefix = name.match(/^\d+_/);
+    if (prefix) {
+        name = name.slice(prefix[0].length);
+    }
+    name = name + suffix;
+    if (/^\d/.test(name)) {
+        name = "_" + name;
+    }
+    return name;
+}
+
 function extractTemplatePrefixes(template: string): string[] {
     const prefixes = new Set<string>();
     const normalized = template.replace(/\s+/g, "");
@@ -27,8 +40,9 @@ export function registerCheckConfigHandler() {
         try {
             const configContent = fs.readFileSync(configFilePath, "utf-8");
             const configLines = configContent.split("\n");
+            const isAnimConfig = /^AnimConfig/i.test(path.basename(configFilePath));
 
-            const objects: Record<string, string[]> = {};
+            const objects: Record<string, { key: string; value: string }[]> = {};
             let currentObj: string | null = null;
             let buffer: string[] = [];
             let braceCount = 0;
@@ -47,13 +61,16 @@ export function registerCheckConfigHandler() {
                     if (braceCount === 0) {
                         const block = buffer.join("\n");
                         const pairs = [...block.matchAll(/(\w+)\s*:\s*([^,\n]+)/g)];
-                        const keys: string[] = [];
-                        for (const [, key, value] of pairs) {
-                            if (/^['"].*['"]$/.test(value.trim())) {
-                                keys.push(key);
+                        const entries: { key: string; value: string }[] = [];
+                        const seen = new Set<string>();
+                        for (const [, key, rawValue] of pairs) {
+                            const trimmed = rawValue.trim();
+                            if (/^['"].*['"]$/.test(trimmed) && !seen.has(key)) {
+                                seen.add(key);
+                                entries.push({ key, value: trimmed.slice(1, -1) });
                             }
                         }
-                        objects[currentObj] = [...new Set(keys)];
+                        objects[currentObj] = entries;
                         currentObj = null;
                         buffer = [];
                     }
@@ -83,10 +100,13 @@ export function registerCheckConfigHandler() {
 
             const lines: string[] = [];
             let unusedCount = 0;
+            const objectAnalysis = new Map<string, Array<{ key: string; value: string; status: "used" | "dynamic" | "unused" }>>();
 
-            for (const [obj, keys] of Object.entries(objects)) {
+            for (const [obj, entries] of Object.entries(objects)) {
                 lines.push(`--- ${obj} ---`);
 
+                const keys = entries.map((entry) => entry.key);
+                const valueByKey = new Map(entries.map((entry) => [entry.key, entry.value]));
                 const usedKeys = new Set<string>();
                 const dynamicKeys = new Set<string>();
                 const escapedObj = escapeRegExp(obj);
@@ -150,30 +170,108 @@ export function registerCheckConfigHandler() {
                     }
                 }
 
+                const analyzedEntries: Array<{ key: string; value: string; status: "used" | "dynamic" | "unused" }> = [];
                 for (const key of keys) {
+                    const value = valueByKey.get(key) ?? key;
                     if (usedKeys.has(key)) {
-                        lines.push(`  ${obj}.${key}`);
+                        lines.push(`  ${obj}.${key} -> ${value}`);
+                        analyzedEntries.push({ key, value, status: "used" });
                     } else if (dynamicKeys.has(key)) {
-                        lines.push(`  DYNAMIC: ${obj}.${key}`);
+                        lines.push(`  DYNAMIC: ${obj}.${key} -> ${value}`);
+                        analyzedEntries.push({ key, value, status: "dynamic" });
                     } else {
-                        lines.push(`  UNUSED: ${obj}.${key}`);
+                        lines.push(`  UNUSED: ${obj}.${key} -> ${value}`);
+                        analyzedEntries.push({ key, value, status: "unused" });
                         unusedCount++;
                     }
                 }
+
+                objectAnalysis.set(obj, analyzedEntries);
             }
 
             const output = lines.join("\n");
+
+            // Spine summary for the animation team: read the real animation names
+            // straight from each spine .json under the source folder, then flag the
+            // ones the code never references (value not in used/dynamic set).
+            function walkSpineJson(dir: string): string[] {
+                const found: string[] = [];
+                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(dir, entry.name);
+                    if (entry.isDirectory()) {
+                        found.push(...walkSpineJson(fullPath));
+                    } else if (entry.name.endsWith(".json")) {
+                        found.push(fullPath);
+                    }
+                }
+                return found;
+            }
+
+            const spineSummary: { spine: string; unusedAnims: string[] }[] = [];
+
+            if (isAnimConfig) {
+                let spineRoots: string[] = [];
+                try {
+                    spineRoots = walkSpineJson(sourcePath);
+                } catch {
+                    spineRoots = [];
+                }
+
+                for (const jsonPath of spineRoots) {
+                    let parsed: unknown;
+                    try {
+                        parsed = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+                    } catch {
+                        continue;
+                    }
+                    if (
+                        !parsed
+                        || typeof parsed !== "object"
+                        || !("skeleton" in parsed)
+                        || !("animations" in parsed)
+                    ) {
+                        continue;
+                    }
+
+                    const animations = (parsed as { animations?: Record<string, unknown> }).animations;
+                    if (!animations || typeof animations !== "object") {
+                        continue;
+                    }
+
+                    const spineName = path.basename(jsonPath, ".json");
+                    const objectName = toConstName(spineName, "_ANIM");
+                    const analyzedEntries = objectAnalysis.get(objectName);
+                    if (!analyzedEntries) {
+                        continue;
+                    }
+
+                    const availableAnimNames = new Set(Object.keys(animations));
+                    const unusedAnims = analyzedEntries
+                        .filter((entry) => entry.status === "unused" && availableAnimNames.has(entry.value))
+                        .map((entry) => entry.value);
+
+                    if (unusedAnims.length > 0) {
+                        spineSummary.push({
+                            spine: spineName,
+                            unusedAnims: [...new Set(unusedAnims)],
+                        });
+                    }
+                }
+            }
 
             return {
                 stdout: output || "No config objects found",
                 stderr: "",
                 exitCode: unusedCount > 0 ? 1 : 0,
+                spineSummary,
             };
         } catch (error: unknown) {
             return {
                 stdout: "",
                 stderr: error instanceof Error ? error.message : "Unknown error",
                 exitCode: 2,
+                spineSummary: [],
             };
         }
     });

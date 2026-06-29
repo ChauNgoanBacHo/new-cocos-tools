@@ -20,15 +20,15 @@ const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "[PHYSICS2D",
     "native sound init",
     "my wallet update",
-    "MessageManager - sendMessage: %s - %j[\"wallet-service-id\"",
-    "EventManager - newEvent: %j[{\"event\":\"wallet-updated\"",
-    "[SoundPlayerImpl]",
-    "SockerManager - health-check",
-    "MessageManager\\x20-\\x20_handleSocketEvent.",
-    "MessageManager - _initSocket",
-    "MessageManager - _handleSocketStatus.",
-    "MessageManager - closeAndCleanUp.",
-    "MessageManager - _handleSocketStatus."
+    "wallet-service-id",
+    "wallet-updated",
+    "SoundPlayerImpl",
+    "health-check",
+    "x20_handleSocketEvent",
+    "_initSocket",
+    "_handleSocketStatus",
+    "closeAndCleanUp",
+    "_handleSocketStatus"
 ];
 
 let socket = null;

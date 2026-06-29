@@ -102,6 +102,7 @@ interface ElectronAPI {
         stdout: string;
         stderr: string;
         exitCode: number;
+        spineSummary: { spine: string; unusedAnims: string[] }[];
     }>;
     createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) => Promise<{
         stdout: string;

@@ -1,11 +1,33 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 import { SPINE_ALIASES_STORAGE_KEY, type PathAlias } from "../constants/spineAliases";
+
+interface SpineSummaryEntry {
+    spine: string;
+    unusedAnims: string[];
+}
 
 interface CheckResult {
     stdout: string;
     stderr: string;
     exitCode: number;
+    spineSummary: SpineSummaryEntry[];
+}
+
+interface ParsedSection {
+    title: string;
+    lines: string[];
+}
+
+function parseSections(output: string): ParsedSection[] {
+    return output.split("\n").reduce<ParsedSection[]>((acc, line) => {
+        if (line.startsWith("---")) {
+            acc.push({ title: line.replace(/---/g, "").trim(), lines: [] });
+        } else if (line.trim() && acc.length > 0) {
+            acc[acc.length - 1].lines.push(line);
+        }
+        return acc;
+    }, []);
 }
 
 export default function CheckConfigs() {
@@ -19,9 +41,31 @@ export default function CheckConfigs() {
         message: "",
     });
     const [selectedSourceAliasId, setSelectedSourceAliasId] = useState("");
+    const [copied, setCopied] = useState(false);
     const sortedAliases = [...aliases].sort((left, right) =>
         left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" }),
     );
+
+    const sections = useMemo(
+        () => (result ? parseSections(result.stdout || result.stderr || "No output") : []),
+        [result],
+    );
+
+    const summary = useMemo(() => result?.spineSummary ?? [], [result]);
+
+    const handleCopySummary = async () => {
+        if (summary.length === 0) return;
+        const text = summary
+            .map((entry) => `${entry.spine}\n${entry.unusedAnims.map((anim) => `  - ${anim}`).join("\n")}`)
+            .join("\n\n");
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1500);
+        } catch {
+            setCopied(false);
+        }
+    };
 
     const handleSelectConfigFile = async () => {
         const file = await window.electronAPI.selectFile();
@@ -268,17 +312,46 @@ export default function CheckConfigs() {
 
                     {result && (
                         <div className="px-6 space-y-4 max-h-[500px] overflow-y-auto">
-                            {(result.stdout || result.stderr || "No output")
-                                .split("\n")
-                                .reduce<{ title: string; lines: string[] }[]>((acc, line) => {
-                                    if (line.startsWith("---")) {
-                                        acc.push({ title: line.replace(/---/g, "").trim(), lines: [] });
-                                    } else if (line.trim() && acc.length > 0) {
-                                        acc[acc.length - 1].lines.push(line);
-                                    }
-                                    return acc;
-                                }, [])
-                                .map((section, i) => (
+                            {summary.length > 0 && (
+                                <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-2xl overflow-hidden">
+                                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-200 dark:bg-zinc-800 border-b border-slate-300 dark:border-zinc-700">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
+                                            Summary
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopySummary}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all cursor-pointer ${
+                                                copied
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-400/30 dark:text-emerald-300"
+                                                    : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600 dark:bg-[#1b2029] dark:hover:bg-[#232938] dark:border-white/5 dark:text-zinc-300"
+                                            }`}>
+                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                {copied ? (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                ) : (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5V6.75A2.25 2.25 0 0110.25 4.5h7A2.25 2.25 0 0119.5 6.75v7a2.25 2.25 0 01-2.25 2.25H16.5M6.75 9.5h7a2.25 2.25 0 012.25 2.25v7A2.25 2.25 0 0113.75 21h-7a2.25 2.25 0 01-2.25-2.25v-7A2.25 2.25 0 016.75 9.5z" />
+                                                )}
+                                            </svg>
+                                            {copied ? "Copied" : "Copy"}
+                                        </button>
+                                    </div>
+                                    <div className="p-4 text-sm font-mono text-left space-y-3">
+                                        {summary.map((entry, i) => (
+                                            <div key={i}>
+                                                <div className="text-amber-600 dark:text-amber-400 font-bold">{entry.spine}</div>
+                                                <div className="mt-1 pl-3 space-y-0.5">
+                                                    {entry.unusedAnims.map((anim, j) => (
+                                                        <div key={j} className="text-red-600 dark:text-red-400">- {anim}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {sections.map((section, i) => (
                                     <div key={i} className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-2xl overflow-hidden">
                                         <div className="flex items-center justify-between px-4 py-2.5 bg-slate-200 dark:bg-zinc-800 border-b border-slate-300 dark:border-zinc-700">
                                             <span className="text-xs font-mono text-amber-600 dark:text-amber-400 font-bold">{section.title}</span>
