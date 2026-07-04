@@ -3,6 +3,10 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join, dirname } from 'path';
 import type { ChangeEvent } from './types';
 
+function isGoogleWorkspaceMimeType(mimeType: string) {
+  return mimeType.startsWith('application/vnd.google-apps.');
+}
+
 export class FileSync {
   private client: DriveSyncClient;
   private rootMappings: Map<string, string>;
@@ -27,6 +31,10 @@ export class FileSync {
     }
 
     if (event.action === 'added' || event.action === 'updated') {
+      if (isGoogleWorkspaceMimeType(event.mimeType)) {
+        return;
+      }
+
       await mkdir(dirname(localPath), { recursive: true });
       const data = await this.client.downloadFile(event.fileId);
       await writeFile(localPath, Buffer.from(data));

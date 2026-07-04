@@ -188,6 +188,30 @@ Mục đích:
 4. Trả về tổng dung lượng file để estimate progress theo bytes
 5. Trả luôn normalized file list để app sync đúng path local
 
+### Backend filter expectation
+
+`sync-plan` dành cho asset sync trong Electron, nên `items` chỉ nên chứa file có thể download trực tiếp ở dạng binary.
+
+Server nên exclude các file Google Workspace nội bộ, ví dụ:
+
+- `application/vnd.google-apps.spreadsheet`
+- `application/vnd.google-apps.document`
+- `application/vnd.google-apps.presentation`
+- `application/vnd.google-apps.folder`
+- các mime type bắt đầu bằng `application/vnd.google-apps.`
+
+Lý do:
+
+- Electron app hiện sync theo flow `plan -> download file binary`
+- các file Google Workspace không phù hợp với endpoint download asset thông thường
+- nếu backend vẫn đưa các item này vào `items`, app sẽ phải skip hoặc báo lỗi dù thực tế folder asset không có vấn đề
+
+Khuyến nghị:
+
+- với folder sound, chỉ trả các file như `audio/mpeg`, `audio/wav`, `audio/ogg`
+- với folder art/spine, chỉ trả các file như `image/png`, `application/json`, `text/plain`, `application/octet-stream`
+- `totalFiles` và `totalBytes` phải được tính sau khi đã apply filter này, để progress trong app khớp với số file thật sự tải được
+
 ### Request
 
 ```http

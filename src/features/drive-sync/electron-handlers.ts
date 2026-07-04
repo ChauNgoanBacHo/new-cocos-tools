@@ -5,6 +5,10 @@ import { DriveSyncClient } from './api-client';
 import { DriveSyncPoller } from './poller';
 import { FileSync } from './file-sync';
 
+function isGoogleWorkspaceMimeType(mimeType: string) {
+  return mimeType.startsWith('application/vnd.google-apps.');
+}
+
 export function setupDriveSyncHandlers(
   baseUrl: string,
   apiKey?: string,
@@ -63,6 +67,13 @@ export function setupDriveSyncHandlers(
       }
 
       try {
+        if (isGoogleWorkspaceMimeType(item.mimeType)) {
+          throw new Error(
+            `Unsupported Google Workspace file (${item.mimeType}). ` +
+            'Please choose a Drive folder that contains downloadable assets such as mp3/png/json instead.'
+          );
+        }
+
         const filePath = join(localPath, item.filePathFromRoot);
         await mkdir(join(filePath, '..'), { recursive: true });
         const data = await client.downloadFile(item.fileId);

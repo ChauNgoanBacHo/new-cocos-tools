@@ -1402,7 +1402,7 @@
         const normalizedPayload = normalizeSocketPayload(candidate, "console-bridge");
         if (normalizedPayload) {
             emitBridgeEvent(normalizedPayload);
-            return true;
+            return isSocketLog;
         }
 
         emitDebugEvent("console-message-unmatched", {

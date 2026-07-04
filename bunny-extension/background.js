@@ -22,7 +22,6 @@ const DEFAULT_DEBUG_EXCLUDE_LIST = [
     "_initSocket",
     "_handleSocketStatus",
     "closeAndCleanUp",
-    "_handleSocketStatus"
 ];
 
 function isSupportedUrl(url) {
