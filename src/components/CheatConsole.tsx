@@ -71,10 +71,11 @@ interface PanelData {
     powerUpSymbolCode?: string;
     matrixLightningData?: string;
     jackpotType?: string;
+    [key: string]: string | boolean | number | undefined;
 }
 
 // Các field optional trong mục Additional Data. `key` cũng chính là tên field POST lên server.
-const ADDITIONAL_FIELDS: { key: keyof PanelData; label: string }[] = [
+const ADDITIONAL_FIELDS: { key: string; label: string }[] = [
     { key: "stackedReel1", label: "Stacked Reel 1" },
     { key: "stackedReel5", label: "Stacked Reel 5" },
     { key: "stackedCodeReel1", label: "Stacked Code Reel 1" },
@@ -89,7 +90,7 @@ const ADDITIONAL_FIELDS: { key: keyof PanelData; label: string }[] = [
 ];
 
 interface FieldConfig {
-    key: keyof PanelData;
+    key: string;
     label: string;
     visible: boolean;
 }
@@ -104,13 +105,18 @@ function getResolvedFieldConfig(fieldConfig?: FieldConfig[]): FieldConfig[] {
     }
 
     const fieldConfigMap = new Map(fieldConfig.map((field) => [field.key, field]));
-
-    return ADDITIONAL_FIELDS.map((field) => {
+    const resolvedDefaults = ADDITIONAL_FIELDS.map((field) => {
         const savedField = fieldConfigMap.get(field.key);
         return savedField
             ? { ...field, ...savedField }
             : { ...field, visible: true };
     });
+
+    const extraFields = fieldConfig.filter(
+        (field) => !ADDITIONAL_FIELDS.some((defaultField) => defaultField.key === field.key),
+    );
+
+    return [...resolvedDefaults, ...extraFields];
 }
 
 // Append mọi field Additional Data có giá trị vào body POST (chỉ field visible).
@@ -191,6 +197,8 @@ interface GameData {
     env: "staging" | "dev";
     panels: PanelData[];
     fieldConfig?: FieldConfig[];
+    fieldDefaults?: Record<string, string>;
+    defaultTableFormat?: string;
 }
 
 interface RemoteMatrixTemplateListItem {
@@ -229,6 +237,63 @@ function buildAdditionalDataPayload(panel: PanelData, fieldConfig?: FieldConfig[
     return additionalData;
 }
 
+interface CrawledFieldConfig {
+    key: string;
+    label: string;
+    defaultValue: string;
+}
+
+const CRAWL_EXCLUDED_FIELD_NAMES = new Set(["userId", "serviceId", "matrixData"]);
+
+function normalizeCrawledLabel(label: string) {
+    return label
+        .replace(/\s+/g, " ")
+        .replace(/\s*[:=]+\s*$/g, "")
+        .trim();
+}
+
+function mergeFieldConfigWithCrawledFields(
+    currentFieldConfig: FieldConfig[] | undefined,
+    crawledFields: CrawledFieldConfig[],
+) {
+    const mergedConfig = [...getResolvedFieldConfig(currentFieldConfig)];
+    const crawledFieldKeys = new Set(crawledFields.map((field) => field.key));
+    const fieldIndexMap = new Map(mergedConfig.map((field, index) => [field.key, index]));
+
+    for (let index = 0; index < mergedConfig.length; index += 1) {
+        mergedConfig[index] = {
+            ...mergedConfig[index],
+            visible: crawledFieldKeys.has(mergedConfig[index].key),
+        };
+    }
+
+    for (const crawledField of crawledFields) {
+        const existingIndex = fieldIndexMap.get(crawledField.key);
+        if (existingIndex !== undefined) {
+            mergedConfig[existingIndex] = {
+                ...mergedConfig[existingIndex],
+                label: crawledField.label,
+                visible: true,
+            };
+            continue;
+        }
+
+        mergedConfig.push({
+            key: crawledField.key,
+            label: crawledField.label,
+            visible: true,
+        });
+        fieldIndexMap.set(crawledField.key, mergedConfig.length - 1);
+    }
+
+    return mergedConfig;
+}
+
+function getPanelFieldValue(panel: PanelData, key: string) {
+    const value = panel[key];
+    return typeof value === "string" ? value : "";
+}
+
 interface CheatConsoleProps {
     resetSignal?: number;
 }
@@ -265,6 +330,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
     const [isFieldConfigOpen, setIsFieldConfigOpen] = useState(false);
     const [isRemoteLibraryOpen, setIsRemoteLibraryOpen] = useState(false);
     const [isFetchingRemoteTemplates, setIsFetchingRemoteTemplates] = useState(false);
+    const [isCrawlingFieldConfig, setIsCrawlingFieldConfig] = useState(false);
     const [remoteTemplates, setRemoteTemplates] = useState<RemoteMatrixTemplateListItem[]>([]);
     const [selectedRemoteTemplateId, setSelectedRemoteTemplateId] = useState<string | null>(null);
     const [selectedRemoteTemplateDetail, setSelectedRemoteTemplateDetail] = useState<RemoteMatrixTemplateDetail | null>(null);
@@ -717,6 +783,130 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
         });
     };
 
+    const handleCrawlFieldConfig = async () => {
+        if (!activeGame) {
+            setStatus({ type: "error", message: "❌ Hãy chọn game trước khi crawl form data." });
+            return;
+        }
+
+        setIsCrawlingFieldConfig(true);
+
+        try {
+            const crawlUrl = `https://cheat.${activeGame.env}.enostd.gay/${activeGame.id}/inputdata`;
+            const response = await fetch(crawlUrl);
+
+            if (!response.ok) {
+                throw new Error(`Cannot load inputdata page (${response.status}).`);
+            }
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const form = doc.querySelector('form[name="inputMatrix"]');
+
+            if (!form) {
+                throw new Error("Input matrix form was not found on cheat page.");
+            }
+
+            const crawledFields: CrawledFieldConfig[] = [];
+            let crawledTableFormat = "";
+
+            form.querySelectorAll("p").forEach((paragraph) => {
+                const input = paragraph.querySelector("input[name], textarea[name], select[name]");
+                if (!input) {
+                    return;
+                }
+
+                const name = input.getAttribute("name")?.trim();
+                if (!name || CRAWL_EXCLUDED_FIELD_NAMES.has(name) || paragraph.querySelector("#tableMatrix")) {
+                    return;
+                }
+
+                const inputType = input instanceof HTMLInputElement ? input.type : "";
+                if (inputType === "submit" || inputType === "hidden") {
+                    return;
+                }
+
+                if (name === "tableFormat") {
+                    const tableFormatValue = input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement
+                        ? input.value?.trim() || ""
+                        : input instanceof HTMLSelectElement
+                            ? input.value?.trim() || ""
+                            : "";
+                    crawledTableFormat = tableFormatValue;
+                    return;
+                }
+
+                const defaultValue = input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement
+                    ? (input.getAttribute("placeholder")?.trim() || input.value?.trim() || "")
+                    : input instanceof HTMLSelectElement
+                        ? input.value?.trim() || ""
+                        : "";
+
+                const clonedParagraph = paragraph.cloneNode(true) as HTMLParagraphElement;
+                clonedParagraph.querySelectorAll("input, textarea, select, table, br").forEach((node) => node.remove());
+                const label = normalizeCrawledLabel(clonedParagraph.textContent || "");
+
+                if (!label) {
+                    return;
+                }
+
+                crawledFields.push({ key: name, label, defaultValue });
+            });
+
+            if (crawledFields.length === 0) {
+                setStatus({
+                    type: "error",
+                    message: "❌ Không crawl được field nào từ trang inputdata.",
+                });
+                return;
+            }
+
+            const mergedFieldConfig = mergeFieldConfigWithCrawledFields(activeGame.fieldConfig, crawledFields);
+            const nextFieldDefaults = crawledFields.reduce<Record<string, string>>((acc, field) => {
+                acc[field.key] = field.defaultValue;
+                return acc;
+            }, {});
+
+            setGames((prev) =>
+                prev.map((game) =>
+                    game.id === selectedGameId
+                        ? {
+                            ...game,
+                            fieldConfig: mergedFieldConfig,
+                            fieldDefaults: nextFieldDefaults,
+                            defaultTableFormat: crawledTableFormat || game.defaultTableFormat || "3,3,3,3,3",
+                            panels: game.panels.map((panel) => {
+                                const nextPanel = { ...panel };
+                                for (const field of crawledFields) {
+                                    nextPanel[field.key] = "";
+                                }
+                                if ((!nextPanel.tableFormat || !nextPanel.tableFormat.trim()) && (crawledTableFormat || game.defaultTableFormat)) {
+                                    nextPanel.tableFormat = crawledTableFormat || game.defaultTableFormat || nextPanel.tableFormat;
+                                }
+                                return nextPanel;
+                            }),
+                        }
+                        : game,
+                ),
+            );
+            setIsFieldConfigOpen(true);
+            setStatus({
+                type: "success",
+                message: `🧭 Đã crawl ${crawledFields.length} field từ trang inputdata, cập nhật label/default và đồng bộ Configure Fields.`,
+            });
+        } catch (error) {
+            setStatus({
+                type: "error",
+                message: error instanceof Error
+                    ? `❌ Crawl form data thất bại: ${error.message}`
+                    : "❌ Crawl form data thất bại.",
+            });
+        } finally {
+            setIsCrawlingFieldConfig(false);
+        }
+    };
+
     const handlePublishPanel = async (panel: PanelData) => {
         if (!activeGame) return;
 
@@ -883,7 +1073,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                 id: newId,
                 title: "",
                 matrixData: "",
-                tableFormat: "3,3,3,3,3",
+                tableFormat: activeGame.defaultTableFormat || "3,3,3,3,3",
                 jackpotTypeLeft: "",
                 isExpanded: true,
                 delay: 2,
@@ -1419,22 +1609,65 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                     {isCommonDataOpen && (
                                         <div className="p-6 space-y-4">
                                             <div className="flex justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsFieldConfigOpen(prev => !prev)}
-                                                    className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
-                                                        isFieldConfigOpen
-                                                            ? "bg-[#7d6df7]/14 border-[#7d6df7]/35 text-[#5d4fd1] dark:text-[#c2b7ff]"
-                                                            : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
-                                                    } cursor-pointer`}
-                                                >
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9m-9 6h9m-9 6h9M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
-                                                        </svg>
-                                                        <span>{isFieldConfigOpen ? "Close Config" : "Configure Fields"}</span>
-                                                    </span>
-                                                </button>
+                                                <div className="flex flex-wrap items-center justify-end gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            void handleCrawlFieldConfig();
+                                                        }}
+                                                        disabled={isCrawlingFieldConfig}
+                                                        className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
+                                                            isCrawlingFieldConfig
+                                                                ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700"
+                                                                : "bg-cyan-50 hover:bg-cyan-100 border-cyan-200 text-cyan-700 cursor-pointer dark:bg-cyan-500/10 dark:hover:bg-cyan-500/15 dark:border-cyan-400/30 dark:text-cyan-300"
+                                                        }`}
+                                                    >
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            {isCrawlingFieldConfig ? (
+                                                                <svg
+                                                                    className="h-3.5 w-3.5 animate-spin"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24">
+                                                                    <circle
+                                                                        className="opacity-25"
+                                                                        cx="12"
+                                                                        cy="12"
+                                                                        r="10"
+                                                                        stroke="currentColor"
+                                                                        strokeWidth="4"
+                                                                    />
+                                                                    <path
+                                                                        className="opacity-75"
+                                                                        fill="currentColor"
+                                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                    />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h11.25M8.25 12h11.25M8.25 17.25h11.25" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 6.75h.008v.008H4.5V6.75zm0 5.25h.008v.008H4.5V12zm0 5.25h.008v.008H4.5v-.008z" />
+                                                                </svg>
+                                                            )}
+                                                            <span>{isCrawlingFieldConfig ? "Crawling..." : "Crawl Form Data"}</span>
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsFieldConfigOpen(prev => !prev)}
+                                                        className={`px-2.5 py-1 text-[10px] rounded-lg border font-semibold transition-all ${
+                                                            isFieldConfigOpen
+                                                                ? "bg-[#7d6df7]/14 border-[#7d6df7]/35 text-[#5d4fd1] dark:text-[#c2b7ff]"
+                                                                : "bg-white dark:bg-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-600 border-slate-300 dark:border-zinc-500 text-slate-700 dark:text-zinc-200"
+                                                        } cursor-pointer`}
+                                                    >
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9m-9 6h9m-9 6h9M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
+                                                            </svg>
+                                                            <span>{isFieldConfigOpen ? "Close Config" : "Configure Fields"}</span>
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             {isFieldConfigOpen && (
@@ -2212,9 +2445,9 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                                             <input
                                                                                 type="text"
                                                                                 id={`${key}-${panel.id}`}
-                                                                                value={(panel[key] as string) ?? ""}
+                                                                                value={getPanelFieldValue(panel, key)}
                                                                                 onChange={(e) => updatePanelField(panel.id, key, e.target.value)}
-                                                                                placeholder={label}
+                                                                                placeholder={activeGame.fieldDefaults?.[key] || label}
                                                                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
                                                                             />
                                                                         </div>

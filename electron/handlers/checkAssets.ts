@@ -135,6 +135,7 @@ export function registerCheckAssetsHandler() {
             const pngFiles = walkFiles(sourceDir, ".png");
             const animFiles = walkFiles(sourceDir, ".anim");
             const mtlFiles = walkFiles(sourceDir, ".mtl");
+            const atlasFiles = walkFiles(sourceDir, ".atlas");
             const tsFiles = walkFiles(sourceDir, ".ts").filter((file) => !isDeclarationFile(file));
             const tsMetaFiles = walkFiles(sourceDir, ".ts.meta");
             const tsCandidatePaths = Array.from(new Set([
@@ -280,6 +281,51 @@ export function registerCheckAssetsHandler() {
             }
             liveRefContent += animRefContent;
 
+            const atlasFilesByDir = new Map<string, string[]>();
+            for (const atlasPath of atlasFiles) {
+                const atlasDir = normalizeFilePath(path.dirname(atlasPath));
+                atlasFilesByDir.set(atlasDir, [...(atlasFilesByDir.get(atlasDir) ?? []), atlasPath]);
+            }
+
+            function atlasReferencesTexture(atlasPath: string, textureFileName: string): boolean {
+                try {
+                    return fs.readFileSync(atlasPath, "utf-8")
+                        .split(/\r?\n/)
+                        .some((line) => line.trim() === textureFileName);
+                } catch {
+                    return false;
+                }
+            }
+
+            function hasUsedMetaRef(metaPath: string): boolean {
+                if (!fs.existsSync(metaPath)) return false;
+
+                const metaData = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+                const uuids = collectMetaUuids(metaData);
+                return uuids.length > 0 && (hasAnyUuidRef(liveRefContent, uuids) || isReferencedByUsedMaterial(uuids));
+            }
+
+            function isTextureReferencedBySiblingAtlas(pngPath: string): boolean {
+                const pngDir = normalizeFilePath(path.dirname(pngPath));
+                const textureFileName = path.basename(pngPath);
+                const siblingAtlasFiles = atlasFilesByDir.get(pngDir) ?? [];
+
+                return siblingAtlasFiles.some((atlasPath) => atlasReferencesTexture(atlasPath, textureFileName));
+            }
+
+            function isTextureReferencedByUsedAtlas(pngPath: string): boolean {
+                const pngDir = normalizeFilePath(path.dirname(pngPath));
+                const textureFileName = path.basename(pngPath);
+                const siblingAtlasFiles = atlasFilesByDir.get(pngDir) ?? [];
+
+                return siblingAtlasFiles.some((atlasPath) => {
+                    if (!atlasReferencesTexture(atlasPath, textureFileName)) return false;
+
+                    const atlasBasePath = atlasPath.slice(0, -".atlas".length);
+                    return hasUsedMetaRef(`${atlasBasePath}.json.meta`) || hasUsedMetaRef(`${atlasPath}.meta`);
+                });
+            }
+
             const sections: AssetSection[] = [];
 
             // --- MP3 Check ---
@@ -350,7 +396,7 @@ export function registerCheckAssetsHandler() {
                         });
                     }
                 } else if (isSpriteFrame) {
-                    if (hasAnyUuidRef(liveRefContent, uuids) || isReferencedByUsedMaterial(uuids)) {
+                    if (hasAnyUuidRef(liveRefContent, uuids) || isReferencedByUsedMaterial(uuids) || isTextureReferencedBySiblingAtlas(pngPath)) {
                         pngSection.used++;
                     } else {
                         pngSection.unused.push({ label: relativePath, files: [pngPath, metaPath] });
@@ -363,7 +409,10 @@ export function registerCheckAssetsHandler() {
                         const jsonMetaData = JSON.parse(fs.readFileSync(jsonMetaPath, "utf-8"));
                         const jsonUuids = collectMetaUuids(jsonMetaData);
 
-                        if (jsonUuids.length > 0 && (hasAnyUuidRef(liveRefContent, jsonUuids) || isReferencedByUsedMaterial(jsonUuids))) {
+                        if (
+                            (jsonUuids.length > 0 && (hasAnyUuidRef(liveRefContent, jsonUuids) || isReferencedByUsedMaterial(jsonUuids)))
+                            || isTextureReferencedByUsedAtlas(pngPath)
+                        ) {
                             pngSection.used++;
                         } else {
                             const relDir = relativeToSource(pngDir);
@@ -379,7 +428,7 @@ export function registerCheckAssetsHandler() {
                             });
                         }
                     } else {
-                        if (hasAnyUuidRef(liveRefContent, uuids) || isReferencedByUsedMaterial(uuids)) {
+                        if (hasAnyUuidRef(liveRefContent, uuids) || isReferencedByUsedMaterial(uuids) || isTextureReferencedBySiblingAtlas(pngPath)) {
                             pngSection.used++;
                         } else {
                             pngSection.unused.push({ label: relativePath, files: [pngPath, metaPath] });
