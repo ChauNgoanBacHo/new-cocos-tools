@@ -22,7 +22,6 @@ type MenuGroup = {
 };
 
 type SettingsPanelProps = {
-    isDark: boolean;
     menuGroups: MenuGroup[];
     hiddenMenuGroupIds: string[];
     onToggleMenuGroupVisibility: (groupId: string) => void;
@@ -31,7 +30,6 @@ type SettingsPanelProps = {
 };
 
 export function SettingsPanel({
-    isDark,
     menuGroups,
     hiddenMenuGroupIds,
     onToggleMenuGroupVisibility,
@@ -39,7 +37,6 @@ export function SettingsPanel({
     onResetMenuOrder,
 }: SettingsPanelProps) {
     const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
-    const [isExporting, setIsExporting] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string>("");
     const [soundExcludeList, setSoundExcludeList] = useStoredState<string[]>(
         "sound-generator-exclude-list",
@@ -62,29 +59,6 @@ export function SettingsPanel({
         left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" })
     );
     const sortedSpineAliases = useMemo(() => sortAliases(spineAliases), [spineAliases]);
-
-    const handleDownloadExtension = async () => {
-        setIsExporting(true);
-        setStatusMessage("");
-
-        try {
-            const result = await window.electronAPI.cheatExtension.exportZip();
-            if (!result.ok) {
-                setStatusMessage("Export extension was cancelled.");
-                return;
-            }
-
-            setStatusMessage(`Extension ZIP exported: ${result.filePath}`);
-        } catch (error) {
-            setStatusMessage(
-                error instanceof Error
-                    ? `Export failed: ${error.message}`
-                    : "Export failed.",
-            );
-        } finally {
-            setIsExporting(false);
-        }
-    };
 
     const resetAliasForm = () => {
         setAliasName("");
@@ -224,7 +198,7 @@ export function SettingsPanel({
                             Settings
                         </h2>
                         <p className="text-slate-500 dark:text-zinc-400 text-xs">
-                            Manage sidebar visibility, menu order, and extension download.
+                            Manage sidebar visibility, menu order, shared aliases, and generator defaults.
                         </p>
                     </div>
                 </div>
@@ -384,6 +358,12 @@ export function SettingsPanel({
                                 </button>
                             </div>
 
+                            {statusMessage && (
+                                <div className="text-xs text-slate-500 dark:text-zinc-400">
+                                    {statusMessage}
+                                </div>
+                            )}
+
                             {sortedSpineAliases.length > 0 ? (
                                 <div className="space-y-2">
                                     {sortedSpineAliases.map((alias) => (
@@ -419,52 +399,6 @@ export function SettingsPanel({
                                 <div className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-500 dark:border-white/5 dark:text-zinc-500">
                                     No aliases yet. Add a few common paths here for faster access.
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-6 space-y-4">
-                    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
-                        <span className="text-sm">🧩</span>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
-                            Extension Download
-                        </h3>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-3">
-                        <p className="text-sm text-slate-600 dark:text-zinc-300 leading-6">
-                            Download the latest browser extension ZIP here, then load it from <span className="font-mono">chrome://extensions</span> using developer mode.
-                        </p>
-                        <div className="text-xs text-slate-500 dark:text-zinc-400 leading-6">
-                            1. Download the ZIP file.
-                            <br />
-                            2. Extract it to a folder.
-                            <br />
-                            3. Open Chrome Extensions.
-                            <br />
-                            4. Turn on Developer Mode.
-                            <br />
-                            5. Choose Load unpacked and select the extracted folder.
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    void handleDownloadExtension();
-                                }}
-                                disabled={isExporting}
-                                className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                    isExporting
-                                        ? "bg-slate-300 text-slate-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                                        : "bg-[#7d6df7] hover:bg-[#9387ff] text-white cursor-pointer shadow-md shadow-[#7d6df7]/25"
-                                }`}>
-                                {isExporting ? "Exporting..." : "Download Extension ZIP"}
-                            </button>
-                            {statusMessage && (
-                                <span className={`text-xs ${isDark ? "text-zinc-400" : "text-slate-500"}`}>
-                                    {statusMessage}
-                                </span>
                             )}
                         </div>
                     </div>

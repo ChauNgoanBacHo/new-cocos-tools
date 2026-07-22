@@ -108,6 +108,75 @@ export class SpineStage {
         return spine;
     }
 
+    removeSpine(spine: Spine | null | undefined): void {
+        if (!spine) return;
+        this.spines = this.spines.filter((item) => item !== spine);
+        spine.parent?.removeChild(spine);
+        spine.destroy();
+        if (this.fit?.spine === spine) {
+            this.fit = null;
+        }
+    }
+
+    clearSpines(): void {
+        for (const spine of [...this.spines]) {
+            this.removeSpine(spine);
+        }
+    }
+
+    clientToCanvasPoint(clientX: number, clientY: number): { x: number; y: number } {
+        const view = this.app.view as HTMLCanvasElement;
+        const rect = view.getBoundingClientRect();
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top,
+        };
+    }
+
+    centerSpineAt(spine: Spine, x: number, y: number): void {
+        const bounds = spine.getLocalBounds();
+        spine.position.set(
+            x - (bounds.x + bounds.width / 2) * spine.scale.x,
+            y - (bounds.y + bounds.height / 2) * spine.scale.y,
+        );
+    }
+
+    moveSpineBy(spine: Spine, deltaX: number, deltaY: number): void {
+        spine.position.set(spine.position.x + deltaX, spine.position.y + deltaY);
+    }
+
+    setSpineScale(spine: Spine, nextScale: number): number {
+        const clamped = Math.max(SpineStage.MIN_ZOOM, Math.min(SpineStage.MAX_ZOOM, nextScale));
+        const bounds = spine.getLocalBounds();
+        const center = {
+            x: spine.position.x + (bounds.x + bounds.width / 2) * spine.scale.x,
+            y: spine.position.y + (bounds.y + bounds.height / 2) * spine.scale.y,
+        };
+        spine.scale.set(clamped);
+        this.centerSpineAt(spine, center.x, center.y);
+        return clamped;
+    }
+
+    bringToFront(spine: Spine): void {
+        if (!spine.parent) return;
+        spine.parent.addChild(spine);
+        this.spines = this.spines.filter((item) => item !== spine);
+        this.spines.push(spine);
+    }
+
+    hitTest(clientX: number, clientY: number): Spine | null {
+        const point = this.clientToCanvasPoint(clientX, clientY);
+        for (let index = this.spines.length - 1; index >= 0; index -= 1) {
+            const spine = this.spines[index];
+            const bounds = spine.getBounds();
+            if (bounds.contains(point.x, point.y)) {
+                return spine;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Center a single spine and only scale it DOWN when it is larger than the
      * available view. Small spines keep their real authored size instead of

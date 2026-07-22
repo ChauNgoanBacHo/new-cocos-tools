@@ -266,7 +266,6 @@ function App() {
             case "settings":
                 return (
                     <SettingsPanel
-                        isDark={isDark}
                         menuGroups={orderedMenuGroups.map((group) => ({
                             id: group.id,
                             label: group.label,
