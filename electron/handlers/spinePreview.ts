@@ -15,6 +15,7 @@ interface SpineResult {
     version: string;
     animations: string[];
     skins: string[];
+    validationErrors: string[];
 }
 
 export function registerSpinePreviewHandler() {
@@ -79,6 +80,17 @@ export function registerSpinePreviewHandler() {
                 const version = (skeleton && typeof skeleton.spine === "string") ? skeleton.spine : "unknown";
                 const animationsObj = data.animations as Record<string, unknown> | undefined;
                 const animations = animationsObj ? Object.keys(animationsObj) : [];
+                const validationErrors = animations.flatMap((name) => {
+                    const errors: string[] = [];
+                    if (/\s/.test(name)) {
+                        errors.push(`Animation name contains whitespace: "${name}"`);
+                    }
+                    if (/^\d/.test(name)) {
+                        const key = `_${name.toUpperCase()}`;
+                        errors.push(`Animation name starts with a number: "${name}" (generated key: ${key})`);
+                    }
+                    return errors;
+                });
                 // Spine 3.x: skins is an object keyed by skin name; 4.x: array of { name }
                 const skinsRaw = data.skins;
                 let skins: string[] = [];
@@ -99,6 +111,7 @@ export function registerSpinePreviewHandler() {
                     version,
                     animations,
                     skins,
+                    validationErrors,
                 });
             }
 

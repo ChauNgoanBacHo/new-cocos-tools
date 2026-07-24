@@ -1,0 +1,265 @@
+
+9698_Symbol_K.png
+size: 1036,1036
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Blossom_A
+  rotate: false
+  xy: 577, 11
+  size: 40, 29
+  orig: 40, 29
+  offset: 0, 0
+  index: -1
+Blossom_A_White
+  rotate: false
+  xy: 932, 148
+  size: 40, 29
+  orig: 40, 29
+  offset: 0, 0
+  index: -1
+Blossom_B
+  rotate: false
+  xy: 133, 7
+  size: 41, 28
+  orig: 41, 28
+  offset: 0, 0
+  index: -1
+Blossom_B_White
+  rotate: false
+  xy: 176, 7
+  size: 41, 28
+  orig: 41, 28
+  offset: 0, 0
+  index: -1
+Blossom_C
+  rotate: false
+  xy: 599, 837
+  size: 21, 26
+  orig: 21, 26
+  offset: 0, 0
+  index: -1
+Blossom_C_White
+  rotate: false
+  xy: 599, 809
+  size: 21, 26
+  orig: 21, 26
+  offset: 0, 0
+  index: -1
+Decor_Back
+  rotate: false
+  xy: 2, 763
+  size: 285, 271
+  orig: 285, 271
+  offset: 0, 0
+  index: -1
+Decor_Back_Glow
+  rotate: false
+  xy: 2, 492
+  size: 283, 269
+  orig: 283, 269
+  offset: 0, 0
+  index: -1
+Face
+  rotate: false
+  xy: 648, 24
+  size: 132, 94
+  orig: 132, 94
+  offset: 0, 0
+  index: -1
+Fire_Cut
+  rotate: false
+  xy: 727, 265
+  size: 198, 24
+  orig: 198, 24
+  offset: 0, 0
+  index: -1
+Fx_Fire
+  rotate: true
+  xy: 932, 179
+  size: 110, 62
+  orig: 110, 62
+  offset: 0, 0
+  index: -1
+Hat_A
+  rotate: false
+  xy: 932, 769
+  size: 93, 97
+  orig: 93, 97
+  offset: 0, 0
+  index: -1
+Hat_Back_A
+  rotate: true
+  xy: 870, 5
+  size: 58, 60
+  orig: 58, 60
+  offset: 0, 0
+  index: -1
+Hat_Front
+  rotate: false
+  xy: 782, 65
+  size: 150, 53
+  orig: 150, 53
+  offset: 0, 0
+  index: -1
+Hat_Up
+  rotate: false
+  xy: 312, 6
+  size: 178, 112
+  orig: 178, 112
+  offset: 0, 0
+  index: -1
+Head_Decor_1
+  rotate: true
+  xy: 782, 20
+  size: 43, 86
+  orig: 43, 86
+  offset: 0, 0
+  index: -1
+Slash
+  rotate: false
+  xy: 289, 865
+  size: 331, 169
+  orig: 331, 169
+  offset: 0, 0
+  index: -1
+Symbol_White_1
+  rotate: false
+  xy: 492, 2
+  size: 83, 38
+  orig: 83, 38
+  offset: 0, 0
+  index: -1
+Symbol_White_1_Add
+  rotate: true
+  xy: 932, 868
+  size: 166, 76
+  orig: 166, 76
+  offset: 0, 0
+  index: -1
+Symbol_White_2_Add
+  rotate: false
+  xy: 492, 42
+  size: 154, 76
+  orig: 154, 76
+  offset: 0, 0
+  index: -1
+Symbol_Whitre_2
+  rotate: true
+  xy: 996, 212
+  size: 77, 38
+  orig: 77, 38
+  offset: 0, 0
+  index: -1
+W
+  rotate: true
+  xy: 2, 182
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_1
+  rotate: false
+  xy: 622, 891
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_10
+  rotate: true
+  xy: 582, 265
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_11
+  rotate: false
+  xy: 599, 601
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_12
+  rotate: true
+  xy: 727, 291
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_13
+  rotate: true
+  xy: 872, 291
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_14
+  rotate: false
+  xy: 622, 120
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_2
+  rotate: true
+  xy: 147, 182
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_3
+  rotate: false
+  xy: 2, 37
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_4
+  rotate: false
+  xy: 289, 720
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_5
+  rotate: false
+  xy: 287, 575
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_6
+  rotate: true
+  xy: 292, 265
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_7
+  rotate: true
+  xy: 437, 265
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_8
+  rotate: false
+  xy: 622, 746
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_LightSweep/Light_9
+  rotate: false
+  xy: 312, 120
+  size: 308, 143
+  orig: 308, 143
+  offset: 0, 0
+  index: -1
+W_Shadow
+  rotate: false
+  xy: 2, 8
+  size: 129, 27
+  orig: 129, 27
+  offset: 0, 0
+  index: -1

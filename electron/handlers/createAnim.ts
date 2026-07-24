@@ -49,6 +49,11 @@ export function registerCreateAnimHandler() {
                 return name;
             }
 
+            function toAnimKey(animName: string): string {
+                const key = animName.toUpperCase();
+                return /^\d/.test(key) ? `_${key}` : key;
+            }
+
             function walkJsonFiles(dir: string): string[] {
                 const files: string[] = [];
                 const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -138,6 +143,7 @@ export function registerCreateAnimHandler() {
             const lines: string[] = [];
             const timeLines: string[] = [];
             const animLines: string[] = [];
+            const validationIssues: Array<{ fileName: string; message: string }> = [];
             let foundTime = false;
             let foundAnim = false;
             const localTimeExports = overwrite
@@ -175,9 +181,21 @@ export function registerCreateAnimHandler() {
 
                 for (const [animName, animData] of Object.entries(animations)) {
                     const duration = getAnimationDuration(animData);
-                    const key = animName.toUpperCase();
+                    const key = toAnimKey(animName);
                     animResults.set(key, duration);
                     lines.push(`  ${key}: ${duration}s`);
+                    if (/\s/.test(animName)) {
+                        validationIssues.push({
+                            fileName,
+                            message: `Animation name contains whitespace: "${animName}"`,
+                        });
+                    }
+                    if (/^\d/.test(animName)) {
+                        validationIssues.push({
+                            fileName,
+                            message: `Animation name starts with a number: "${animName}" (generated key: ${key})`,
+                        });
+                    }
                 }
 
                 const generatedTimeEntries = Array.from(animResults.entries()).map(([key, value]) => [key, String(value)] as const);
@@ -195,8 +213,8 @@ export function registerCreateAnimHandler() {
                 foundTime = true;
 
                 const generatedAnimEntries = Object.keys(animations).map((animName) => {
-                    const key = animName.toUpperCase();
-                    return [key, `'${animName.toLowerCase()}'`] as const;
+                    const key = toAnimKey(animName);
+                    return [key, `'${animName}'`] as const;
                 });
                 if (normalizedExcludeList.has(animConst)) {
                     lines.push(`  SKIP: ${animConst} (excluded in Settings)`);
@@ -227,7 +245,15 @@ export function registerCreateAnimHandler() {
                 }
             }
 
-            const output = lines.join("\n") + "\n\n" + writeStatus;
+            const validationSummaryLines = validationIssues.length > 0
+                ? [
+                    "--- Validation Summary ---",
+                    `  Found ${validationIssues.length} animation naming issue${validationIssues.length === 1 ? "" : "s"}`,
+                    ...validationIssues.map((issue) => `  ${issue.fileName}: ${issue.message}`),
+                    "",
+                ]
+                : [];
+            const output = [...validationSummaryLines, ...lines].join("\n") + "\n\n" + writeStatus;
 
             return {
                 stdout: output || "No JSON files found",

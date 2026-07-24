@@ -155,6 +155,7 @@ interface ElectronAPI {
             version: string;
             animations: string[];
             skins: string[];
+            validationErrors: string[];
         }>;
         exitCode: number;
         error?: string;

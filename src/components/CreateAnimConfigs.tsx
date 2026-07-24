@@ -484,10 +484,28 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     }
                                     return acc;
                                 }, [])
-                                .map((section, i) => (
-                                    <div key={i} className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-2xl overflow-hidden">
-                                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-200 dark:bg-zinc-800 border-b border-slate-300 dark:border-zinc-700">
-                                            <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 font-bold">{section.title}</span>
+                                .map((section, i) => {
+                                    const isErrorSection = section.title === "Validation Summary"
+                                        || section.lines.some((line) => line.includes("ERROR:") || line.includes("Animation name contains whitespace"));
+
+                                    return (
+                                    <div
+                                        key={i}
+                                        className={`rounded-2xl overflow-hidden border ${
+                                            isErrorSection
+                                                ? "bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-400/30"
+                                                : "bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-700"
+                                        }`}>
+                                        <div className={`flex items-center justify-between px-4 py-2.5 border-b ${
+                                            isErrorSection
+                                                ? "bg-red-100 border-red-200 dark:bg-red-500/15 dark:border-red-400/30"
+                                                : "bg-slate-200 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700"
+                                        }`}>
+                                            <span className={`text-xs font-mono font-bold ${
+                                                isErrorSection
+                                                    ? "text-red-700 dark:text-red-200"
+                                                    : "text-cyan-600 dark:text-cyan-400"
+                                            }`}>{section.title}</span>
                                         </div>
                                         <div className="p-4 text-sm font-mono text-left">
                                             {(() => {
@@ -522,10 +540,10 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                                             <div>
                                                                 {plainLines.map((item, j) => (
                                                                     <div key={`plain-${j}`} className={`py-1 ${
-                                                                        item.raw.includes("ERROR:") ? "text-red-600 dark:text-red-400" :
+                                                                        item.raw.includes("ERROR:") || item.raw.includes("Animation name contains whitespace") ? "font-semibold text-red-700 dark:text-red-200" :
                                                                         item.raw.includes("Generated:") ? "text-emerald-600 dark:text-emerald-400" :
                                                                         item.raw.includes("not written") ? "text-yellow-600 dark:text-yellow-400" :
-                                                                        "text-slate-700 dark:text-zinc-200"
+                                                                        isErrorSection ? "text-red-700 dark:text-red-200" : "text-slate-700 dark:text-zinc-200"
                                                                     }`}>
                                                                         {item.raw.trim()}
                                                                     </div>
@@ -537,7 +555,8 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                             })()}
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                         </div>
                     )}
                 </div>

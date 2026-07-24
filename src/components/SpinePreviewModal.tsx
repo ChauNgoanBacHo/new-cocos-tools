@@ -14,6 +14,7 @@ export interface SpineResult {
     version: string;
     animations: string[];
     skins: string[];
+    validationErrors?: string[];
 }
 
 interface Props {

@@ -5,9 +5,8 @@ import { useStoredState } from "../hooks/useStoredState";
 import { SPINE_ALIASES_STORAGE_KEY, type SpineAlias } from "../constants/spineAliases";
 import { SpineStage } from "../spine/SpineStage";
 
-const RESULTS_STORAGE_KEY = "spine-preview-last-results";
 const SPINE_DRAG_MIME = "application/x-one-punch-spine-preview";
-const PREVIEW_FRAME = 1 / 60;
+const TIMELINE_FRAME_STEP = 1 / 60;
 
 // Rút gọn path: chỉ giữ folder cha + tên file (2 đoạn cuối), bỏ phần đầu cho gọn.
 // VD: data/9808-Animation/Cocos/9808_BG/9808_Spine/9808_UI_BG.json -> 9808_Spine/9808_UI_BG.json
@@ -18,6 +17,10 @@ function shortName(fileName: string): string {
 
 function spineDisplayName(fileName: string): string {
     return shortName(fileName).split("/").pop()?.replace(/\.json$/i, "") || fileName;
+}
+
+function formatTime(seconds: number): string {
+    return seconds.toFixed(2);
 }
 
 type PreviewInstance = {
@@ -43,7 +46,7 @@ type PreviewInstance = {
 export default function SpinePreview() {
     const [sourceDir, setSourceDir] = useStoredState<string>("spine-preview-source-dir", "");
     const [isRunning, setIsRunning] = useState(false);
-    const [results, setResults] = useStoredState<SpineResult[]>(RESULTS_STORAGE_KEY, []);
+    const [results, setResults] = useState<SpineResult[]>([]);
     const [aliases] = useStoredState<SpineAlias[]>(SPINE_ALIASES_STORAGE_KEY, []);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
         type: null,
@@ -58,6 +61,7 @@ export default function SpinePreview() {
     const [inlinePreviewError, setInlinePreviewError] = useState<string | null>(null);
     const [backgroundMode, setBackgroundMode] = useState<"theme" | "checker" | "color">("theme");
     const [backgroundColor, setBackgroundColor] = useState("#161a22");
+    const [activePlayback, setActivePlayback] = useState({ elapsed: 0, duration: 0, name: "" });
     const [spinePopover, setSpinePopover] = useState<{
         instanceId: string;
         x: number;
@@ -79,6 +83,15 @@ export default function SpinePreview() {
             ? results.filter(r => r.fileName.toLowerCase().includes(search.trim().toLowerCase()))
             : results
     ), [results, search]);
+    const validationSummary = useMemo(() => (
+        results
+            .map((item) => ({
+                item,
+                errors: item.validationErrors ?? [],
+            }))
+            .filter(({ errors }) => errors.length > 0)
+    ), [results]);
+    const validationIssueCount = validationSummary.reduce((total, entry) => total + entry.errors.length, 0);
 
     const selectedResultSet = useMemo(() => new Set(selectedResultKeys), [selectedResultKeys]);
     const activePreviewInstance = previewInstances.find((instance) => instance.id === activePreviewInstanceId) ?? previewInstances[0] ?? null;
@@ -89,6 +102,24 @@ export default function SpinePreview() {
     useEffect(() => {
         previewInstancesRef.current = previewInstances;
     }, [previewInstances]);
+
+    useEffect(() => {
+        let frameId = 0;
+
+        const tick = () => {
+            const instance = previewInstancesRef.current.find((item) => item.id === activePreviewInstanceId)
+                ?? previewInstancesRef.current[0];
+            if (instance?.spine) {
+                setActivePlayback(SpineStage.currentPlayback(instance.spine));
+            } else {
+                setActivePlayback({ elapsed: 0, duration: 0, name: "" });
+            }
+            frameId = window.requestAnimationFrame(tick);
+        };
+
+        tick();
+        return () => window.cancelAnimationFrame(frameId);
+    }, [activePreviewInstanceId]);
 
     useEffect(() => {
         if (results.length === 0 || inlineStageRef.current) return;
@@ -482,21 +513,19 @@ export default function SpinePreview() {
         stage.renderOnce();
     };
 
-    const handlePreviewStepFrame = (delta: number) => {
+    const handlePreviewTimelinePointerDown = (event: React.PointerEvent<HTMLInputElement>) => {
+        event.stopPropagation();
+    };
+
+    const handlePreviewTimelineSeek = (time: number) => {
         const stage = inlineStageRef.current;
         const instance = activePreviewInstance;
         if (!stage || !instance?.spine) return;
-        const playback = SpineStage.currentPlayback(instance.spine);
-        SpineStage.seek(instance.spine, playback.elapsed + delta);
+        SpineStage.seek(instance.spine, time);
         instance.spine.state.timeScale = 0;
         updatePreviewInstance(instance.id, { paused: true });
+        setActivePlayback(SpineStage.currentPlayback(instance.spine));
         stage.renderOnce();
-    };
-
-    const handlePreviewStepPointerDown = (event: React.PointerEvent<HTMLButtonElement>, delta: number) => {
-        event.preventDefault();
-        event.stopPropagation();
-        handlePreviewStepFrame(delta);
     };
 
     const handlePreviewDefaultMix = (value: number) => {
@@ -785,12 +814,45 @@ export default function SpinePreview() {
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search spine..."
                                         className="w-full lg:w-[320px] px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
-                                    />
-                                </div>
+	                                    />
+	                                </div>
+	
+                                    {validationSummary.length > 0 && (
+                                        <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-left dark:border-red-400/30 dark:bg-red-500/10">
+                                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                                <div className="text-xs font-bold text-red-700 dark:text-red-200">
+                                                    Found {validationIssueCount} animation naming issue{validationIssueCount === 1 ? "" : "s"} in {validationSummary.length} file{validationSummary.length === 1 ? "" : "s"}
+                                                </div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-300">
+                                                    Needs anim team fix
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 space-y-1.5">
+                                                {validationSummary.slice(0, 6).map(({ item, errors }) => (
+                                                    <div key={item.jsonPath} className="rounded-lg bg-white/70 px-2.5 py-1.5 text-[11px] dark:bg-black/15">
+                                                        <div className="font-bold text-red-700 dark:text-red-200">
+                                                            {spineDisplayName(item.fileName)}
+                                                        </div>
+                                                        {errors.map((error) => (
+                                                            <div key={error} className="font-semibold text-red-600 dark:text-red-300">
+                                                                {error}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ))}
+                                                {validationSummary.length > 6 && (
+                                                    <div className="px-2.5 text-[11px] font-semibold text-red-500 dark:text-red-300">
+                                                        + {validationSummary.length - 6} more file{validationSummary.length - 6 === 1 ? "" : "s"} with issues
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
 
-                                <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/5 dark:bg-[#1b2029]">
-                                    {filteredResults.map((row) => {
+	                                <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/5 dark:bg-[#1b2029]">
+	                                    {filteredResults.map((row) => {
                                         const isLoaded = previewInstances.some((instance) => instance.item.jsonPath === row.jsonPath);
+                                        const hasValidationErrors = (row.validationErrors?.length ?? 0) > 0;
                                         return (
                                             <div
                                                 key={row.jsonPath}
@@ -799,14 +861,24 @@ export default function SpinePreview() {
                                                     if (!isLoaded) toggleSelectedResult(row.jsonPath);
                                                 }}
                                                 onDragStart={(event) => handleResultDragStart(event, row)}
-                                                title={shortName(row.fileName)}
-                                                className={`inline-flex min-h-9 max-w-full items-center rounded-lg border px-3 py-2 text-xs font-semibold leading-4 transition-all cursor-grab active:cursor-grabbing ${
-                                                    isLoaded
+                                                title={[
+                                                    shortName(row.fileName),
+                                                    ...(row.validationErrors ?? []),
+                                                ].join("\n")}
+                                                className={`inline-flex min-h-9 max-w-full flex-col items-start rounded-lg border px-3 py-2 text-xs font-semibold leading-4 transition-all cursor-grab active:cursor-grabbing ${
+	                                                    hasValidationErrors
+	                                                        ? "border-red-300 bg-red-50 text-red-700 hover:border-red-400 dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-200"
+                                                        : isLoaded
                                                         ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 dark:border-emerald-400/35 dark:bg-emerald-500/10 dark:text-emerald-200"
-                                                        : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:text-emerald-700 dark:border-white/5 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-400/35 dark:hover:text-emerald-200"
-                                                }`}>
-                                                <span className="whitespace-normal break-words">{spineDisplayName(row.fileName)}</span>
-                                            </div>
+	                                                    : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:text-emerald-700 dark:border-white/5 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-400/35 dark:hover:text-emerald-200"
+	                                                }`}>
+	                                                <span className="whitespace-normal break-words">{spineDisplayName(row.fileName)}</span>
+                                                    {hasValidationErrors && (
+                                                        <span className="mt-1 text-[10px] font-bold text-red-600 dark:text-red-300">
+                                                            {row.validationErrors?.length} issue{row.validationErrors?.length === 1 ? "" : "s"}
+                                                        </span>
+                                                    )}
+	                                            </div>
                                         );
                                     })}
                                 </div>
@@ -840,6 +912,14 @@ export default function SpinePreview() {
                                                     ))}
                                                 </select>
                                             </label>
+
+                                            {(activePreviewInstance.item.validationErrors?.length ?? 0) > 0 && (
+                                                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200">
+                                                    {activePreviewInstance.item.validationErrors?.map((error) => (
+                                                        <div key={error}>{error}</div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             <label className="block space-y-1.5">
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
@@ -1169,72 +1249,73 @@ export default function SpinePreview() {
                                         </div>
                                         <div
                                             onPointerDown={(event) => event.stopPropagation()}
-                                            className="absolute bottom-3 left-1/2 z-10 flex w-[min(92%,520px)] -translate-x-1/2 items-center justify-center gap-2.5 rounded-xl bg-black/60 px-4 py-2.5 backdrop-blur">
-                                            <button
-                                                type="button"
-                                                disabled={!activePreviewInstance?.spine}
-                                                onPointerDown={(event) => handlePreviewStepPointerDown(event, -PREVIEW_FRAME)}
-                                                title="Previous frame"
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 16.811c0 .864-.933 1.405-1.683.977l-7.108-4.062a1.125 1.125 0 0 1 0-1.953l7.108-4.062A1.125 1.125 0 0 1 21 8.688v8.123zM11.25 16.811c0 .864-.933 1.405-1.683.977l-7.108-4.062a1.125 1.125 0 0 1 0-1.953l7.108-4.062a1.125 1.125 0 0 1 1.683.977v8.123z" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={!activePreviewInstance?.spine}
-                                                onPointerDown={(event) => event.stopPropagation()}
-                                                onClick={handleTogglePreviewPaused}
-                                                title={activePreviewInstance?.paused ? "Play" : "Pause"}
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7d6df7]/85 text-white transition-all hover:bg-[#7d6df7] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
-                                                {activePreviewInstance?.paused ? (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M8 5v14l11-7z" />
+                                            className="absolute bottom-3 left-1/2 z-10 flex w-[min(92%,560px)] -translate-x-1/2 flex-col gap-2 rounded-xl bg-black/60 px-4 py-2.5 backdrop-blur">
+                                            <div className="flex items-center justify-center gap-2.5">
+                                                <button
+                                                    type="button"
+                                                    disabled={!activePreviewInstance?.spine}
+                                                    onPointerDown={(event) => event.stopPropagation()}
+                                                    onClick={handleTogglePreviewPaused}
+                                                    title={activePreviewInstance?.paused ? "Play" : "Pause"}
+                                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7d6df7]/85 text-white transition-all hover:bg-[#7d6df7] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
+                                                    {activePreviewInstance?.paused ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M8 5v14l11-7z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={!activePreviewInstance?.spine || !activePreviewInstance?.currentAnimation}
+                                                    onPointerDown={(event) => event.stopPropagation()}
+                                                    onClick={handleTogglePreviewLoop}
+                                                    title={activePreviewInstance?.loop ? "Loop ON" : "Loop OFF"}
+                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg text-white transition-all disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer ${
+                                                        activePreviewInstance?.loop
+                                                            ? "bg-[#7d6df7]/85 hover:bg-[#7d6df7]"
+                                                            : "bg-white/10 hover:bg-white/20"
+                                                    }`}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992m0 0v-4.992m0 4.992-3.181-3.183a8.25 8.25 0 0 0-13.803 3.7M7.977 14.652H2.985m0 0v4.992m0-4.992 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7" />
                                                     </svg>
-                                                ) : (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
-                                                    </svg>
-                                                )}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={!activePreviewInstance?.spine}
-                                                onPointerDown={(event) => handlePreviewStepPointerDown(event, PREVIEW_FRAME)}
-                                                title="Next frame"
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.688c0-.864.933-1.405 1.683-.977l7.108 4.062a1.125 1.125 0 0 1 0 1.953l-7.108 4.062A1.125 1.125 0 0 1 3 16.811V8.688zM12.75 8.688c0-.864.933-1.405 1.683-.977l7.108 4.062a1.125 1.125 0 0 1 0 1.953l-7.108 4.062a1.125 1.125 0 0 1-1.683-.977V8.688z" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={!activePreviewInstance?.spine || !activePreviewInstance?.currentAnimation}
-                                                onPointerDown={(event) => event.stopPropagation()}
-                                                onClick={handleTogglePreviewLoop}
-                                                title={activePreviewInstance?.loop ? "Loop ON" : "Loop OFF"}
-                                                className={`flex h-7 w-7 items-center justify-center rounded-lg text-white transition-all disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer ${
-                                                    activePreviewInstance?.loop
-                                                        ? "bg-[#7d6df7]/85 hover:bg-[#7d6df7]"
-                                                        : "bg-white/10 hover:bg-white/20"
-                                                }`}>
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992m0 0v-4.992m0 4.992-3.181-3.183a8.25 8.25 0 0 0-13.803 3.7M7.977 14.652H2.985m0 0v4.992m0-4.992 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7" />
-                                                </svg>
-                                            </button>
-                                            <label className="flex items-center gap-2 font-mono text-[11px] text-zinc-300" title="Playback speed">
-                                                Speed {activePreviewInstance ? activePreviewInstance.speed.toFixed(1) : "1.0"}x
+                                                </button>
+                                                <label className="flex items-center gap-2 font-mono text-[11px] text-zinc-300" title="Playback speed">
+                                                    Speed {activePreviewInstance ? activePreviewInstance.speed.toFixed(1) : "1.0"}x
+                                                    <input
+                                                        type="range"
+                                                        min={0}
+                                                        max={2}
+                                                        step={0.1}
+                                                        value={activePreviewInstance?.speed ?? 1}
+                                                        disabled={!activePreviewInstance?.spine}
+                                                        onChange={(event) => handlePreviewSpeed(parseFloat(event.target.value))}
+                                                        className="w-24 accent-[#7d6df7] disabled:opacity-40 cursor-pointer"
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-300">
+                                                <span className="w-10 text-right tabular-nums">
+                                                    {formatTime(activePlayback.elapsed)}
+                                                </span>
                                                 <input
                                                     type="range"
                                                     min={0}
-                                                    max={2}
-                                                    step={0.1}
-                                                    value={activePreviewInstance?.speed ?? 1}
-                                                    disabled={!activePreviewInstance?.spine}
-                                                    onChange={(event) => handlePreviewSpeed(parseFloat(event.target.value))}
-                                                    className="w-24 accent-[#7d6df7] disabled:opacity-40 cursor-pointer"
+                                                    max={activePlayback.duration || 0}
+                                                    step={TIMELINE_FRAME_STEP}
+                                                    value={Math.min(activePlayback.elapsed, activePlayback.duration || 0)}
+                                                    disabled={!activePreviewInstance?.spine || activePlayback.duration <= 0}
+                                                    onPointerDown={handlePreviewTimelinePointerDown}
+                                                    onChange={(event) => handlePreviewTimelineSeek(parseFloat(event.target.value))}
+                                                    className="min-w-0 flex-1 accent-[#7d6df7] disabled:opacity-40 cursor-pointer"
                                                 />
-                                            </label>
+                                                <span className="w-10 tabular-nums">
+                                                    {formatTime(activePlayback.duration)}
+                                                </span>
+                                            </div>
                                         </div>
                                         {previewInstances.length === 0 && (
                                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center">
@@ -1262,6 +1343,13 @@ export default function SpinePreview() {
                                                 <div className="mb-2 min-w-0 truncate px-2 text-[11px] font-bold text-zinc-100">
                                                     {spineDisplayName(popoverPreviewInstance.item.fileName)}
                                                 </div>
+                                                {(popoverPreviewInstance.item.validationErrors?.length ?? 0) > 0 && (
+                                                    <div className="mb-2 rounded-lg border border-red-400/30 bg-red-500/12 px-2 py-1.5 text-[10px] font-semibold text-red-200">
+                                                        {popoverPreviewInstance.item.validationErrors?.map((error) => (
+                                                            <div key={error}>{error}</div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <button
                                                         type="button"
