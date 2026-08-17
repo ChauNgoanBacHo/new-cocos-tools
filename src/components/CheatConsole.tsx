@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { INTERNAL_API_BASE_URL } from "../constants/internalApi";
 import { useStoredState } from "../hooks/useStoredState";
 
 interface CheatLocalSocketStatus {
@@ -1796,7 +1797,7 @@ export default function CheatConsole({ resetSignal = 0 }: CheatConsoleProps) {
                                                             {isRemoteLibraryOpen ? "Hide Remote Library" : "Show Remote Library"}
                                                         </button>
                                                         <a
-                                                            href={`https://drive-bot-0ahh.onrender.com/matrix-simulator/games/${encodeURIComponent(activeGame.id)}`}
+                                                            href={`${INTERNAL_API_BASE_URL}/matrix-simulator/games/${encodeURIComponent(activeGame.id)}`}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100 cursor-pointer dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-200 dark:hover:bg-[#232938]">

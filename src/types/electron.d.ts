@@ -222,6 +222,12 @@ interface ElectronAPI {
         }>;
     };
     driveSync: {
+        getConfig: () => Promise<{
+            baseUrl: string;
+        }>;
+        setConfig: (config: { baseUrl?: string }) => Promise<{
+            baseUrl: string;
+        }>;
         init: () => Promise<Array<{
             rootFolderId: string;
             rootFolderName: string;
@@ -246,6 +252,7 @@ interface ElectronAPI {
         syncFolder: (rootFolderId: string, localPath: string, scope: 'today' | 'all', onProgress: (progress: { downloaded: number; total: number }) => void) => Promise<{
             success: boolean;
             failedFiles: Array<{ fileName: string; path: string; error: string }>;
+            skippedFiles: Array<{ fileName: string; path: string; reason: string }>;
         }>;
         pauseSync: () => Promise<void>;
         reportComplete: (payload: {

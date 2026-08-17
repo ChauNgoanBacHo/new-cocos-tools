@@ -5,8 +5,16 @@ export class DriveSyncClient {
   private apiKey?: string;
 
   constructor(baseUrl: string, apiKey?: string) {
-    this.baseUrl = baseUrl;
+    this.baseUrl = normalizeBaseUrl(baseUrl);
     this.apiKey = apiKey;
+  }
+
+  setBaseUrl(baseUrl: string) {
+    this.baseUrl = normalizeBaseUrl(baseUrl);
+  }
+
+  getBaseUrl() {
+    return this.baseUrl;
   }
 
   private async fetch<T>(path: string): Promise<T> {
@@ -67,4 +75,8 @@ export class DriveSyncClient {
     console.log('[DriveSyncClient] Report response:', data);
     return data;
   }
+}
+
+function normalizeBaseUrl(baseUrl: string) {
+  return String(baseUrl || '').trim().replace(/\/+$/, '');
 }

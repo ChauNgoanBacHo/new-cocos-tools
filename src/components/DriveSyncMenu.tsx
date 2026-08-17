@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import type { WatchFolder } from '../features/drive-sync/types';
+import { INTERNAL_API_BASE_URL } from '../constants/internalApi';
 import { useStoredState } from '../hooks/useStoredState';
 import { SPINE_ALIASES_STORAGE_KEY, type PathAlias } from '../constants/spineAliases';
 
 export function DriveSyncMenu() {
   const [folders, setFolders] = useState<WatchFolder[]>([]);
+  const [apiBaseUrl, setApiBaseUrl] = useStoredState<string>('drive-sync-api-base-url', INTERNAL_API_BASE_URL);
   const [selectedDrive, setSelectedDrive] = useStoredState<string>('drive-sync-selected-drive', '');
   const [localRoot, setLocalRoot] = useStoredState<string>('drive-sync-local-root', '');
   const [aliases] = useStoredState<PathAlias[]>(SPINE_ALIASES_STORAGE_KEY, []);
@@ -15,6 +17,7 @@ export function DriveSyncMenu() {
   const [totalBytes, setTotalBytes] = useState(0);
   const [scope, setScope] = useState<'today' | 'all'>('today');
   const [failedFiles, setFailedFiles] = useState<Array<{ fileName: string; path: string; error: string }>>([]);
+  const [skippedFiles, setSkippedFiles] = useState<Array<{ fileName: string; path: string; reason: string }>>([]);
   const [paused, setPaused] = useState(false);
   const [selectedOutputAliasId, setSelectedOutputAliasId] = useState('');
   const syncIdRef = useRef(0);
@@ -23,8 +26,30 @@ export function DriveSyncMenu() {
   );
 
   useEffect(() => {
-    window.electronAPI.driveSync.init().then(setFolders).catch(e => setError(e.message));
+    void handleRefreshDriveFolders();
   }, []);
+
+  const handleRefreshDriveFolders = async () => {
+    const nextBaseUrl = apiBaseUrl.trim();
+    if (!nextBaseUrl) {
+      setError('Drive API URL is required');
+      setFolders([]);
+      return;
+    }
+
+    try {
+      setError('');
+      const config = await window.electronAPI.driveSync.setConfig({ baseUrl: nextBaseUrl });
+      if (config.baseUrl !== apiBaseUrl) {
+        setApiBaseUrl(config.baseUrl);
+      }
+      const nextFolders = await window.electronAPI.driveSync.init();
+      setFolders(nextFolders);
+    } catch (e: any) {
+      setFolders([]);
+      setError(e.message || 'Failed to load Drive folders');
+    }
+  };
 
   const handleSelectFolder = async () => {
     const path = await window.electronAPI.selectFolder();
@@ -47,12 +72,15 @@ export function DriveSyncMenu() {
 
     setError('');
     setFailedFiles([]);
+    setSkippedFiles([]);
     setSyncing(true);
     setPaused(false);
     setProgress({ downloaded: 0, total: 0 });
     setScope(syncScope);
 
     try {
+      await window.electronAPI.driveSync.setConfig({ baseUrl: apiBaseUrl.trim() });
+
       console.log('[DriveSyncMenu] Calling getSyncPlan...');
       const plan = await window.electronAPI.driveSync.getSyncPlan(selectedDrive, syncScope);
       console.log('[DriveSyncMenu] getSyncPlan result:', plan);
@@ -82,6 +110,9 @@ export function DriveSyncMenu() {
       if (result.failedFiles.length > 0) {
         setFailedFiles(result.failedFiles);
         window.electronAPI.storage.set('drive-sync-failed-files', result.failedFiles).catch(() => {});
+      }
+      if (result.skippedFiles.length > 0) {
+        setSkippedFiles(result.skippedFiles);
       }
 
       // Report sync complete to backend (Discord notification)
@@ -171,6 +202,38 @@ export function DriveSyncMenu() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 font-mono">
                 Configuration
               </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
+                API URL <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={apiBaseUrl}
+                  onChange={e => setApiBaseUrl(e.target.value)}
+                  onBlur={() => {
+                    void handleRefreshDriveFolders();
+                  }}
+                  disabled={syncing}
+                  placeholder="https://black-adam-bot.onrender.com"
+                  className="min-w-0 flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-[#7d6df7] focus:ring-1 focus:ring-[#7d6df7]/25 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-[#1b2029] dark:border-white/5 dark:text-zinc-100 dark:placeholder-zinc-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRefreshDriveFolders();
+                  }}
+                  title="Reload Drive folders"
+                  aria-label="Reload Drive folders"
+                  disabled={syncing || !apiBaseUrl.trim()}
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 hover:border-[#7d6df7]/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0113.08-4.95M19.5 12a7.5 7.5 0 01-13.08 4.95M16.5 4.5H18v1.5M6 18H4.5v-1.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
@@ -270,7 +333,7 @@ export function DriveSyncMenu() {
             <button
               type="button"
               onClick={() => handleSync('today')}
-              disabled={!selectedDrive || !localRoot || syncing}
+              disabled={!apiBaseUrl.trim() || !selectedDrive || !localRoot || syncing}
               className="flex-1 px-6 py-3.5 bg-[#7d6df7] hover:bg-[#9387ff] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-[#7d6df7]/25 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
               {syncing && scope === 'today' ? `Downloading ${progress.downloaded}/${progress.total}` : (
                 <>
@@ -284,7 +347,7 @@ export function DriveSyncMenu() {
             <button
               type="button"
               onClick={() => handleSync('all')}
-              disabled={!selectedDrive || !localRoot || syncing}
+              disabled={!apiBaseUrl.trim() || !selectedDrive || !localRoot || syncing}
               className="flex-1 px-6 py-3.5 bg-[#39435a] hover:bg-[#46506a] disabled:bg-slate-300 dark:disabled:bg-zinc-700 text-white disabled:text-slate-500 dark:disabled:text-zinc-500 font-bold text-sm rounded-xl transition-all shadow-sm shadow-black/10 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
               {syncing && scope === 'all' ? `Downloading ${progress.downloaded}/${progress.total}` : (
                 <>
@@ -317,6 +380,27 @@ export function DriveSyncMenu() {
               </div>
               <div className="w-full bg-slate-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 h-2 animate-pulse bg-[length:200%_100%]" style={{ width: '100%' }} />
+              </div>
+              </div>
+            </div>
+          )}
+
+          {skippedFiles.length > 0 && (
+            <div className="px-6">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm">
+                  Skipped {skippedFiles.length} Google Workspace file(s)
+                </span>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {skippedFiles.map((file, idx) => (
+                  <div key={idx} className="text-xs bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
+                    <div className="font-mono text-amber-800 dark:text-amber-200 font-semibold">{file.fileName}</div>
+                    <div className="text-slate-500 dark:text-zinc-500 mt-1">{file.path}</div>
+                    <div className="text-amber-700 dark:text-amber-300 mt-1">{file.reason}</div>
+                  </div>
+                ))}
               </div>
               </div>
             </div>

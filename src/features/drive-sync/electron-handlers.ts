@@ -20,6 +20,20 @@ export function setupDriveSyncHandlers(
   let poller: DriveSyncPoller | undefined;
   let pauseRequested = false;
 
+  ipcMain.handle('drive-sync:get-config', () => ({
+    baseUrl: client.getBaseUrl(),
+  }));
+
+  ipcMain.handle('drive-sync:set-config', (_event, config: { baseUrl?: string }) => {
+    if (config.baseUrl) {
+      client.setBaseUrl(config.baseUrl);
+    }
+
+    return {
+      baseUrl: client.getBaseUrl(),
+    };
+  });
+
   ipcMain.handle('drive-sync:init', async () => {
     const folders = await client.getWatchFolders();
     if (localRootPath) {
@@ -54,12 +68,16 @@ export function setupDriveSyncHandlers(
     const plan = await client.getSyncPlan(rootFolderId, scope);
     pauseRequested = false;
 
-    if (plan.totalBytes === 0 || plan.items.length === 0) {
-      return { success: true, failedFiles: [] };
+    const downloadableItems = plan.items.filter(item => !isGoogleWorkspaceMimeType(item.mimeType));
+    const downloadTotal = downloadableItems.length;
+
+    if (plan.items.length === 0) {
+      return { success: true, failedFiles: [], skippedFiles: [] };
     }
 
     let downloadedCount = 0;
     const failedFiles: Array<{ fileName: string; path: string; error: string }> = [];
+    const skippedFiles: Array<{ fileName: string; path: string; reason: string }> = [];
 
     for (const item of plan.items) {
       if (pauseRequested) {
@@ -68,10 +86,12 @@ export function setupDriveSyncHandlers(
 
       try {
         if (isGoogleWorkspaceMimeType(item.mimeType)) {
-          throw new Error(
-            `Unsupported Google Workspace file (${item.mimeType}). ` +
-            'Please choose a Drive folder that contains downloadable assets such as mp3/png/json instead.'
-          );
+          skippedFiles.push({
+            fileName: item.fileName,
+            path: item.filePathFromRoot,
+            reason: `Skipped Google Workspace file (${item.mimeType})`,
+          });
+          continue;
         }
 
         const filePath = join(localPath, item.filePathFromRoot);
@@ -79,7 +99,7 @@ export function setupDriveSyncHandlers(
         const data = await client.downloadFile(item.fileId);
         await writeFile(filePath, Buffer.from(data));
         downloadedCount++;
-        win?.webContents.send('drive-sync:progress', { downloaded: downloadedCount, total: plan.items.length });
+        win?.webContents.send('drive-sync:progress', { downloaded: downloadedCount, total: downloadTotal });
       } catch (err: any) {
         console.error(`Failed to download ${item.fileName}:`, err.message);
         failedFiles.push({
@@ -90,7 +110,7 @@ export function setupDriveSyncHandlers(
       }
     }
 
-    return { success: failedFiles.length === 0, failedFiles };
+    return { success: failedFiles.length === 0, failedFiles, skippedFiles };
   });
 
   ipcMain.handle('drive-sync:pause', () => {

@@ -54,6 +54,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
         openFolder: () => ipcRenderer.invoke("cheat-extension:open-folder"),
     },
     driveSync: {
+        getConfig: () => ipcRenderer.invoke("drive-sync:get-config"),
+        setConfig: (config: { baseUrl?: string }) => ipcRenderer.invoke("drive-sync:set-config", config),
         init: () => ipcRenderer.invoke("drive-sync:init"),
         getSyncPlan: (rootFolderId: string, scope?: 'today' | 'all') => ipcRenderer.invoke("drive-sync:sync-plan", rootFolderId, scope),
         getSyncStatus: () => ipcRenderer.invoke("drive-sync:status"),
@@ -63,6 +65,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
             return ipcRenderer.invoke("drive-sync:sync-folder", rootFolderId, localPath, scope) as Promise<{
                 success: boolean;
                 failedFiles: Array<{ fileName: string; path: string; error: string }>;
+                skippedFiles: Array<{ fileName: string; path: string; reason: string }>;
             }>;
         },
         pauseSync: () => ipcRenderer.invoke("drive-sync:pause"),

@@ -17,6 +17,7 @@ import { registerCheatLocalSocketHandlers } from "./handlers/cheatLocalSocket";
 import { registerExportCheatExtensionHandlers } from "./handlers/exportCheatExtension";
 import { setupDriveSyncHandlers } from "../src/features/drive-sync/electron-handlers";
 import { setupMatrixSyncHandlers } from "../src/features/matrix-sync/electron-handlers";
+import { INTERNAL_API_BASE_URL } from "../src/constants/internalApi";
 
 app.commandLine.appendSwitch("use-mock-keychain");
 
@@ -40,7 +41,6 @@ protocol.registerSchemesAsPrivileged([
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow: BrowserWindow | null = null;
-const INTERNAL_API_BASE_URL = "https://drive-bot-0ahh.onrender.com";
 const INTERNAL_API_KEY = "e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02";
 
 function getAppIconPath() {
