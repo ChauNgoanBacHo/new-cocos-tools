@@ -1,5 +1,7 @@
 import type { WatchFolder, ChangeFeedResponse, TreeSnapshotResponse, SyncPlanResponse, SyncStatusResponse, ReportSyncCompleteRequest, ReportSyncCompleteResponse } from './types';
 
+const REQUEST_TIMEOUT_MS = 45000;
+
 export class DriveSyncClient {
   private baseUrl: string;
   private apiKey?: string;
@@ -18,11 +20,10 @@ export class DriveSyncClient {
   }
 
   private async fetch<T>(path: string): Promise<T> {
-    const headers: Record<string, string> = {};
-    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
+    const headers = this.createHeaders();
     const url = `${this.baseUrl}${path}`;
     console.log('[DriveSyncClient] Fetching:', url, 'headers:', headers);
-    const res = await fetch(url, { headers });
+    const res = await fetchWithTimeout(url, { headers });
     console.log('[DriveSyncClient] Response status:', res.status);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const data = await res.json();
@@ -45,6 +46,14 @@ export class DriveSyncClient {
     return this.fetch(`/api/drive/sync-plan?rootFolderId=${rootFolderId}&scope=${scope}`);
   }
 
+  async getRecentSyncPlan(rootFolderId: string, days = 3): Promise<SyncPlanResponse> {
+    const params = new URLSearchParams({
+      rootFolderId,
+      days: String(days),
+    });
+    return this.fetch(`/api/drive/recent-sync-plan?${params}`);
+  }
+
   async getSyncStatus(): Promise<SyncStatusResponse> {
     return this.fetch('/api/drive/sync-status');
   }
@@ -54,18 +63,16 @@ export class DriveSyncClient {
   }
 
   async downloadFile(fileId: string): Promise<ArrayBuffer> {
-    const headers: Record<string, string> = {};
-    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
-    const res = await fetch(`${this.baseUrl}/api/drive/files/${fileId}/download`, { headers });
+    const headers = this.createHeaders();
+    const res = await fetchWithTimeout(`${this.baseUrl}/api/drive/files/${fileId}/download`, { headers });
     if (!res.ok) throw new Error(`Download error: ${res.status}`);
     return res.arrayBuffer();
   }
 
   async reportSyncComplete(payload: ReportSyncCompleteRequest): Promise<ReportSyncCompleteResponse> {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
+    const headers = this.createHeaders({ 'Content-Type': 'application/json' });
     console.log('[DriveSyncClient] Reporting sync complete:', payload);
-    const res = await fetch(`${this.baseUrl}/api/drive/sync-complete`, {
+    const res = await fetchWithTimeout(`${this.baseUrl}/api/drive/sync-complete`, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload)
@@ -75,8 +82,46 @@ export class DriveSyncClient {
     console.log('[DriveSyncClient] Report response:', data);
     return data;
   }
+
+  private createHeaders(extraHeaders: Record<string, string> = {}) {
+    const headers: Record<string, string> = { ...extraHeaders };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers['x-internal-api-key'] = this.apiKey;
+    }
+    return headers;
+  }
 }
 
 function normalizeBaseUrl(baseUrl: string) {
-  return String(baseUrl || '').trim().replace(/\/+$/, '');
+  const normalized = String(baseUrl || '').trim().replace(/[),.;\s]+$/, '').replace(/\/+$/, '');
+  if (!normalized) {
+    throw new Error('Drive API URL is required');
+  }
+
+  const url = new URL(normalized);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('Drive API URL must start with http:// or https://');
+  }
+
+  return normalized;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`API request timed out after ${Math.round(REQUEST_TIMEOUT_MS / 1000)}s: ${url}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

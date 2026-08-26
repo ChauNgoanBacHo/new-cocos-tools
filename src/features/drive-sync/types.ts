@@ -70,10 +70,11 @@ export interface SyncPlanResponse {
   ok: true;
   rootFolderId: string;
   rootFolderName: string;
-  scope: 'today' | 'all';
-  dateKey: string;
+  scope: 'today' | 'all' | 'recent';
+  dateKey?: string;
+  days?: number;
   timeZone: string;
-  totalScannedFiles: number;
+  totalScannedFiles?: number;
   totalFiles: number;
   totalBytes: number;
   items: SyncPlanItem[];

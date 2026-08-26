@@ -246,10 +246,40 @@ interface ElectronAPI {
                 fileId: string;
                 fileName: string;
                 filePathFromRoot: string;
+                mimeType: string;
                 size: number;
             }>;
         }>;
+        getPendingFolders: (rootFolderId: string) => Promise<{
+            ok: true;
+            rootFolderId: string;
+            rootFolderName: string;
+            totalFiles: number;
+            totalBytes: number;
+            folders: Array<{
+                folderPath: string;
+                displayName: string;
+                fileCount: number;
+                totalBytes: number;
+                newestModifiedTime: string;
+                items: Array<{
+                    fileId: string;
+                    fileName: string;
+                    filePathFromRoot: string;
+                    parentFolderPathFromRoot: string;
+                    mimeType: string;
+                    size: number;
+                    modifiedTime: string;
+                    status: 'recent';
+                }>;
+            }>;
+        }>;
         syncFolder: (rootFolderId: string, localPath: string, scope: 'today' | 'all', onProgress: (progress: { downloaded: number; total: number }) => void) => Promise<{
+            success: boolean;
+            failedFiles: Array<{ fileName: string; path: string; error: string }>;
+            skippedFiles: Array<{ fileName: string; path: string; reason: string }>;
+        }>;
+        syncPendingFolders: (rootFolderId: string, localPath: string, folderPaths: string[], onProgress: (progress: { downloaded: number; total: number }) => void) => Promise<{
             success: boolean;
             failedFiles: Array<{ fileName: string; path: string; error: string }>;
             skippedFiles: Array<{ fileName: string; path: string; reason: string }>;

@@ -58,11 +58,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
         setConfig: (config: { baseUrl?: string }) => ipcRenderer.invoke("drive-sync:set-config", config),
         init: () => ipcRenderer.invoke("drive-sync:init"),
         getSyncPlan: (rootFolderId: string, scope?: 'today' | 'all') => ipcRenderer.invoke("drive-sync:sync-plan", rootFolderId, scope),
+        getPendingFolders: (rootFolderId: string) => ipcRenderer.invoke("drive-sync:pending-folders", rootFolderId),
         getSyncStatus: () => ipcRenderer.invoke("drive-sync:status"),
         syncFolder: (rootFolderId: string, localPath: string, scope: 'today' | 'all', onProgress: (progress: { downloaded: number; total: number }) => void) => {
             ipcRenderer.removeAllListeners("drive-sync:progress");
             ipcRenderer.on("drive-sync:progress", (_, progress) => onProgress(progress));
             return ipcRenderer.invoke("drive-sync:sync-folder", rootFolderId, localPath, scope) as Promise<{
+                success: boolean;
+                failedFiles: Array<{ fileName: string; path: string; error: string }>;
+                skippedFiles: Array<{ fileName: string; path: string; reason: string }>;
+            }>;
+        },
+        syncPendingFolders: (rootFolderId: string, localPath: string, folderPaths: string[], onProgress: (progress: { downloaded: number; total: number }) => void) => {
+            ipcRenderer.removeAllListeners("drive-sync:progress");
+            ipcRenderer.on("drive-sync:progress", (_, progress) => onProgress(progress));
+            return ipcRenderer.invoke("drive-sync:sync-pending-folders", rootFolderId, localPath, folderPaths) as Promise<{
                 success: boolean;
                 failedFiles: Array<{ fileName: string; path: string; error: string }>;
                 skippedFiles: Array<{ fileName: string; path: string; reason: string }>;
