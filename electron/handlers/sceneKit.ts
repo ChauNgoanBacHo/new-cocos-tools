@@ -116,6 +116,80 @@ export class SlotReelModule${gameId} extends SlotReelModule {
 `;
 }
 
+function createSlotSymbolModuleTemplate(gameId: string) {
+    return `import { _decorator, Color, tween, Tween, UIRenderer } from 'cc';
+import { SlotSymbolModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass } = _decorator;
+@ccclass('SlotSymbolModule${gameId}')
+export class SlotSymbolModule${gameId} extends SlotSymbolModule {
+    tweenColor(obj: UIRenderer, duration: number, targetColor: Color): Tween<any> {
+        const startColor = obj.color.clone();
+        const colorData = { r: startColor.r, g: startColor.g, b: startColor.b };
+        const toColor = { r: targetColor.r, g: targetColor.g, b: targetColor.b };
+
+        const tweenAction = tween(colorData)
+            .to(duration, toColor,
+                {
+                    onUpdate: () => {
+                        if (obj && obj.isValid) {
+                            obj.color = new Color(colorData.r, colorData.g, colorData.b, obj.color.a);
+                        }
+                    }
+                })
+            .start();
+
+        return tweenAction;
+    }
+
+    tweenRenderersColor(duration: number, targetColor: Color): void {
+        this._rendererList.forEach(renderer => {
+            if (!renderer.color.equals(targetColor)) {
+                renderer['tweenColor'] && renderer['tweenColor'].stop();
+                renderer['tweenColor'] = null;
+
+                if (duration) {
+                    const tweenColor = this.tweenColor(renderer, duration, targetColor);
+                    renderer['tweenColor'] = tweenColor;
+                } else {
+                    renderer.color = targetColor;
+                }
+            }
+        });
+    }
+
+    enableHighlight(duration: number = 0.2): void {
+        if (duration > 0) {
+            this.node["isHighlight"] = true;
+            const normalColor = this.resourceManager.getColorNormal();
+            this.tweenRenderersColor(duration, normalColor);
+            return;
+        }
+
+        super.enableHighlight();
+    }
+
+    disableHighlight(duration: number = 0.2): void {
+        if (duration > 0) {
+            this.node["isHighlight"] = false;
+            const dimColor = this.resourceManager.getColorDim();
+            this.tweenRenderersColor(duration, dimColor);
+            return;
+        }
+
+        super.disableHighlight();
+    }
+
+    onDestroy(): void {
+        super.onDestroy();
+        this._rendererList.forEach(renderer => {
+            renderer['tweenColor'] && renderer['tweenColor'].stop();
+            renderer['tweenColor'] = null;
+        });
+    }
+}
+`;
+}
+
 function createSlotTableModuleTemplate(gameId: string) {
     return `import { _decorator } from 'cc';
 import { GAME_MODE_ENUM, SlotTableModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
@@ -861,6 +935,11 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
         {
             filePath: path.join(projectRoot, "scripts", "Table", `SlotReelModule${gameId}.ts`),
             content: createSlotReelModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Table", `SlotSymbolModule${gameId}.ts`),
+            content: createSlotSymbolModuleTemplate(gameId),
             mode: "overwrite" as const,
         },
         {
