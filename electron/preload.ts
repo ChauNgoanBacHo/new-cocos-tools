@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("delete-assets", sourceDir, files),
     spinePreview: (sourceDir: string) =>
         ipcRenderer.invoke("spine-preview", sourceDir),
+    sceneKit: {
+        previewBoilerplate: (sceneFilePath: string) =>
+            ipcRenderer.invoke("scene-kit:preview-boilerplate", sceneFilePath),
+        createBoilerplate: (sceneFilePath: string) =>
+            ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath),
+    },
     cheatLocalSocket: {
         start: (port?: number) => ipcRenderer.invoke("cheat-local-socket:start", port),
         stop: () => ipcRenderer.invoke("cheat-local-socket:stop"),
@@ -80,7 +86,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         },
         pauseSync: () => ipcRenderer.invoke("drive-sync:pause"),
         reportComplete: (payload: {
-            syncType: 'today' | 'full';
+            syncType: 'today' | 'full' | 'selected';
             rootFolderId: string;
             rootFolderName?: string;
             localPath: string;

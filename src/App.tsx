@@ -9,13 +9,14 @@ import CheckConfigs from "./components/CheckConfigs";
 import CheckAssets from "./components/CheckAssets";
 import CodeHealth from "./components/CodeHealth";
 import SpinePreview from "./components/SpinePreview";
+import SceneKit from "./components/SceneKit";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ChargeUpLoadingScreen } from "./components/loading/ChargeUpLoadingScreen";
 import brandLogo from "./assets/logo.png";
 
-type TabType = "cheat" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
+type TabType = "cheat" | "scene-kit" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
 type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
@@ -29,6 +30,17 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 7.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 12l6.5-3 6.5 3-6.5 3-6.5-3z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 16.5l6.5-3 6.5 3-6.5 3-6.5-3z" />
+            </>
+        ),
+    },
+    {
+        id: "scene-kit",
+        label: "Source",
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 5.5h13v13h-13v-13z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 9h7M8.5 12h4M8.5 15h6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 3.75v3.5M20.25 8H16.75M8 16.75v3.5M3.75 16H7.25" />
             </>
         ),
     },
@@ -115,8 +127,8 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
     {
         id: "simulation",
-        label: "Data",
-        itemIds: ["cheat"],
+        label: "Game Layer",
+        itemIds: ["scene-kit"],
     },
     {
         id: "generators",
@@ -136,8 +148,8 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
 ];
 
 function App() {
-    const [activeTab, setActiveTab] = useState<TabType>("cheat");
-    const [menuPulseTab, setMenuPulseTab] = useState<TabType>("cheat");
+    const [activeTab, setActiveTab] = useState<TabType>("scene-kit");
+    const [menuPulseTab, setMenuPulseTab] = useState<TabType>("scene-kit");
     const [menuPulseTick, setMenuPulseTick] = useState(0);
     const [cheatViewResetKey, setCheatViewResetKey] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -249,6 +261,8 @@ function App() {
         switch (activeTab) {
             case "cheat":
                 return <CheatConsole resetSignal={cheatViewResetKey} />;
+            case "scene-kit":
+                return <SceneKit />;
             case "anim":
                 return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":

@@ -90,7 +90,7 @@ export interface SyncStatusResponse {
 }
 
 export interface ReportSyncCompleteRequest {
-  syncType: 'today' | 'full';
+  syncType: 'today' | 'full' | 'selected';
   rootFolderId: string;
   rootFolderName?: string;
   localPath: string;

@@ -262,6 +262,25 @@ export function DriveSyncMenu() {
         setSkippedFiles(result.skippedFiles);
       }
       if (result.success) {
+        const syncedFolders = pendingFolders.filter((folder) => selectedPendingFolderPaths.includes(folder.folderPath));
+        const syncedFileCount = syncedFolders.reduce((sum, folder) => sum + folder.fileCount, 0);
+        const syncedTotalBytes = syncedFolders.reduce((sum, folder) => sum + folder.totalBytes, 0);
+
+        try {
+          const selectedFolder = folders.find(f => f.rootFolderId === selectedDrive);
+          await window.electronAPI.driveSync.reportComplete({
+            syncType: 'selected',
+            rootFolderId: selectedDrive,
+            rootFolderName: selectedFolder?.rootFolderName,
+            localPath: localRoot,
+            totalFiles: syncedFileCount,
+            totalBytes: syncedTotalBytes,
+            success: true
+          });
+        } catch (reportErr) {
+          console.error('[DriveSyncMenu] Failed to report selected sync complete:', reportErr);
+        }
+
         const syncedFolderPaths = new Set(selectedPendingFolderPaths);
         const remainingFolders = pendingFolders.filter((folder) => !syncedFolderPaths.has(folder.folderPath));
         setPendingFolders(remainingFolders);

@@ -160,6 +160,24 @@ interface ElectronAPI {
         exitCode: number;
         error?: string;
     }>;
+    sceneKit: {
+        previewBoilerplate: (sceneFilePath: string) => Promise<{
+            gameId: string;
+            projectRoot: string;
+            files: Array<{
+                filePath: string;
+                status: "new" | "exists";
+            }>;
+        }>;
+        createBoilerplate: (sceneFilePath: string) => Promise<{
+            gameId: string;
+            projectRoot: string;
+            files: Array<{
+                filePath: string;
+                status: "created" | "exists";
+            }>;
+        }>;
+    };
     cheatLocalSocket: {
         start: (port?: number) => Promise<{
             enabled: boolean;
@@ -286,7 +304,7 @@ interface ElectronAPI {
         }>;
         pauseSync: () => Promise<void>;
         reportComplete: (payload: {
-            syncType: 'today' | 'full';
+            syncType: 'today' | 'full' | 'selected';
             rootFolderId: string;
             rootFolderName?: string;
             localPath: string;
