@@ -101,6 +101,76 @@ export class TableModuleConfig${gameId} extends TableModuleConfig {
 `;
 }
 
+function createSlotReelModuleTemplate(gameId: string) {
+    return `import { _decorator } from 'cc';
+import { GAME_MODE_ENUM, SlotReelModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass } = _decorator;
+@ccclass('SlotReelModule${gameId}')
+export class SlotReelModule${gameId} extends SlotReelModule {
+    gameMode: typeof GAME_MODE_ENUM;
+
+    setGameMode(gameMode: typeof GAME_MODE_ENUM): void {
+        this.gameMode = gameMode;
+    }
+}
+`;
+}
+
+function createSlotTableModuleTemplate(gameId: string) {
+    return `import { _decorator } from 'cc';
+import { GAME_MODE_ENUM, SlotTableModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+import { SlotReelModule${gameId} } from './SlotReelModule${gameId}';
+const { ccclass } = _decorator;
+@ccclass('SlotTableModule${gameId}')
+export class SlotTableModule${gameId} extends SlotTableModule {
+    initTable(): void {
+        super.initTable();
+        this.reels.forEach(reelComponent => {
+            (reelComponent as SlotReelModule${gameId}).setGameMode(this.gameMode);
+        });
+    }
+
+    showBeautyMatrix(): void {
+        if (this.gameMode === GAME_MODE_ENUM.FREE_GAME) {
+            return;
+        }
+        super.showBeautyMatrix();
+    }
+}
+`;
+}
+
+function createNormalGameDirectorModuleTemplate(gameId: string) {
+    return `import { _decorator } from 'cc';
+import { GAME_MODE_ENUM, NormalGameDirectorModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+import { GAME_EVENT_${gameId} } from '../DataConfig/EventConfig${gameId}';
+const { ccclass } = _decorator;
+@ccclass('NormalGameDirectorModule${gameId}')
+export class NormalGameDirectorModule${gameId} extends NormalGameDirectorModule {
+    transitionToGameModeWhenResume(mode: number): Promise<void> {
+        if (mode === GAME_MODE_ENUM.FREE_GAME) {
+            const { freeGameMatrix, matrix } = this.dataStore.playSession;
+            this.eventManager.emit(GAME_EVENT_${gameId}.PRE_RESUME_FREE_GAME_MATRIX, freeGameMatrix || matrix);
+        }
+        return Promise.resolve();
+    }
+}
+`;
+}
+
+function createFreeGameDirectorModuleTemplate(gameId: string) {
+    return `import { _decorator } from 'cc';
+import { GAME_MODE_ENUM, FreeGameDirectorModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass } = _decorator;
+@ccclass('FreeGameDirectorModule${gameId}')
+export class FreeGameDirectorModule${gameId} extends FreeGameDirectorModule {
+    preResumeFreeTable(data): void {
+        this.moduleEvent.emit('SYNC_TABLE', data, GAME_MODE_ENUM.FREE_GAME);
+    }
+}
+`;
+}
+
 function createJackpotWinModuleTemplate(gameId: string) {
     return `import { _decorator, sp, Tween, tween } from 'cc';
 import { JackpotWinModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
@@ -787,6 +857,26 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
             filePath: path.join(projectRoot, "scripts", "Table", `TableModuleConfig${gameId}.ts`),
             content: createTableModuleConfigTemplate(gameId),
             mode: "patchTableModuleConfig" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Table", `SlotReelModule${gameId}.ts`),
+            content: createSlotReelModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Table", `SlotTableModule${gameId}.ts`),
+            content: createSlotTableModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "GameMode", `NormalGameDirectorModule${gameId}.ts`),
+            content: createNormalGameDirectorModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "GameMode", `FreeGameDirectorModule${gameId}.ts`),
+            content: createFreeGameDirectorModuleTemplate(gameId),
+            mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `JackpotWinModule${gameId}.ts`),
