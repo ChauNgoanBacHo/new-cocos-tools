@@ -174,7 +174,7 @@ interface ElectronAPI {
             projectRoot: string;
             files: Array<{
                 filePath: string;
-                status: "created" | "exists";
+                status: "created" | "exists" | "updated";
             }>;
         }>;
     };

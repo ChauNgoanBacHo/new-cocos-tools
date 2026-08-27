@@ -15,7 +15,7 @@ interface BoilerplateResult {
     projectRoot: string;
     files: Array<{
         filePath: string;
-        status: "created" | "exists";
+        status: "created" | "exists" | "updated";
     }>;
 }
 
@@ -45,6 +45,11 @@ export default function SceneKit() {
 
     const createdCount = useMemo(
         () => result?.files.filter((file) => file.status === "created").length ?? 0,
+        [result],
+    );
+
+    const updatedCount = useMemo(
+        () => result?.files.filter((file) => file.status === "updated").length ?? 0,
         [result],
     );
 
@@ -98,12 +103,12 @@ export default function SceneKit() {
                 projectRoot: nextResult.projectRoot,
                 files: nextResult.files.map((file) => ({
                     filePath: file.filePath,
-                    status: file.status === "created" ? "new" : "exists",
+                    status: file.status === "exists" ? "exists" : "new",
                 })),
             });
             setStatus({
                 type: "success",
-                message: `Created ${nextResult.files.filter((file) => file.status === "created").length} file(s).`,
+                message: `Created ${nextResult.files.filter((file) => file.status === "created").length} file(s), updated ${nextResult.files.filter((file) => file.status === "updated").length} file(s).`,
             });
         } catch (error: any) {
             setStatus({ type: "error", message: error.message || "Failed to create Scene Kit files." });
@@ -192,6 +197,7 @@ export default function SceneKit() {
                                 </div>
                             </div>
                         )}
+
                     </div>
 
                     {visibleFiles.length > 0 && (
@@ -201,14 +207,15 @@ export default function SceneKit() {
                                     Files
                                 </h3>
                                 <div className="text-[11px] text-slate-500 dark:text-zinc-400">
-                                    {createdCount > 0 ? `${createdCount} created, ` : ""}{existingCount} existing
+                                    {createdCount > 0 ? `${createdCount} created, ` : ""}{updatedCount > 0 ? `${updatedCount} updated, ` : ""}{existingCount} existing
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 {visibleFiles.map((file) => {
-                                    const isDone = file.status === "created" || file.status === "exists";
+                                    const isDone = file.status === "created" || file.status === "exists" || file.status === "updated";
                                     const isExisting = file.status === "exists";
+                                    const isUpdated = file.status === "updated";
                                     return (
                                         <div
                                             key={file.filePath}
@@ -224,7 +231,9 @@ export default function SceneKit() {
                                             <span className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${
                                                 isExisting
                                                     ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
-                                                    : isDone
+                                                    : isUpdated
+                                                        ? "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
+                                                        : isDone
                                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
                                                         : "bg-[#7d6df7]/10 text-[#6b5ee8] dark:bg-[#7d6df7]/15 dark:text-[#b7a8ff]"
                                             }`}>
@@ -237,14 +246,7 @@ export default function SceneKit() {
                         </div>
                     )}
 
-                    <div className="flex gap-3">
-                        <button
-                            type="button"
-                            onClick={() => void handlePreview()}
-                            disabled={isLoading || !scenePath.trim()}
-                            className="flex-1 cursor-pointer rounded-xl bg-[#39435a] px-6 py-3.5 text-sm font-bold text-white shadow-sm shadow-black/10 transition-all hover:bg-[#46506a] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-500">
-                            {isLoading ? "Working..." : "Preview"}
-                        </button>
+                    <div className="flex">
                         <button
                             type="button"
                             onClick={() => void handleCreate()}
