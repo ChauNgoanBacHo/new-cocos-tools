@@ -101,6 +101,551 @@ export class TableModuleConfig${gameId} extends TableModuleConfig {
 `;
 }
 
+function createJackpotWinModuleTemplate(gameId: string) {
+    return `import { _decorator, sp, Tween, tween } from 'cc';
+import { JackpotWinModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass, property } = _decorator;
+const FADE_DURATION = 0.2;
+@ccclass('JackpotWinModule${gameId}')
+export class JackpotWinModule${gameId} extends JackpotWinModule {
+    @property(sp.Skeleton) jackpotWinEffect: sp.Skeleton = null;
+
+    onLoadExtend(): void {
+        super.onLoadExtend();
+        // this.jackpotWinEffect.setMix(UI_JACKPOT_ANIM.IDLE, UI_JACKPOT_ANIM.DISAPPEAR, 0.2);
+    }
+
+    initValue(): void {
+        super.initValue();
+        this.coinsEffect.emit('RESET_COIN_EFFECT');
+    }
+
+    startParticle(): void {
+        this.coinsEffect.emit('START_PARTICLE');
+    }
+
+    stopParticle(): void {
+        this.coinsEffect.emit('STOP_PARTICLE');
+    }
+
+    reset(): void {
+        Tween.stopAllByTarget(this.node);
+        this.jackpotWinEffect.node.active = false;
+    }
+
+    enter(): void {
+        this.reset();
+        this.initValue();
+        tween(this.node)
+            .call(() => {
+                this.playSoundStart();
+                this.startParticle();
+                this.playAnimationJP();
+            })
+            .delay(FADE_DURATION)
+            .call(() => {
+                this.startUpdateWinAmount();
+            })
+            .start();
+    }
+
+    playAnimationJP(): void {
+        this.jackpotWinEffect.node.active = true;
+        // this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.APPEAR, false);
+        // this.jackpotWinEffect.addAnimation(0, UI_JACKPOT_ANIM.IDLE, true);
+    }
+
+    playSoundStart(): void {
+        this.fadeOutMusic(0.5);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_JP);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING, true, 1.5);
+    }
+
+    playSoundCountingEnd(): void {
+        this.fadeInMusic(0.5);
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_COUNTING);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING_END);
+    }
+
+    playSoundSkip(): void {
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_JP);
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_COUNTING);
+
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_JP_END);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING_END);
+        this.fadeInMusic(0.5);
+    }
+
+    fadeOutMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 0);
+        } else {
+            this.soundPlayer.setMusicVolume(0);
+        }
+    }
+
+    fadeInMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 1);
+        }
+    }
+
+    onClick(): void {
+        if (!this._isUpdating) {
+            return;
+        }
+        if (!this._skippable) {
+            return;
+        }
+        if (!this._hasClicked) {
+            this._hasClicked = true;
+        } else {
+            return;
+        }
+
+        this.playSoundSkip();
+
+        if (this._tweenMoney) {
+            this._tweenMoney.stop();
+            this._tweenMoney = null;
+        }
+
+        this._tweenMoney = this.moneyTween.runNumber(this._lbWinAmount.node, 1, this.jackpotValue, {
+            onComplete: () => {
+                this.finish();
+            }
+        });
+    }
+
+    startUpdateWinAmount(): void {
+        this._tweenMoney = tween(this);
+        this._lbWinAmount.string = '0';
+        this._tweenMoney = this.moneyTween.runNumber(this._lbWinAmount.node, this.animDuration, this.jackpotValue, {
+            onComplete: () => {
+                this.playSoundCountingEnd();
+                this._skippable = false;
+                this.finish();
+            }
+        });
+    }
+
+    finish(): void {
+        this._lbWinAmount.string = this.moneyFormatter.formatMoney(this.jackpotValue);
+        this.playSoundEnd();
+        this._isUpdating = false;
+        this.stopParticle();
+        tween(this.node)
+            .delay(this.delayHideTime)
+            .call(() => {
+                // this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.DISAPPEAR, false);
+            })
+            .delay(0.5)
+            .call(() => {
+                this._lbWinAmount.string = '';
+                this.exit();
+            })
+            .start();
+    }
+}
+`;
+}
+
+function createWinEffectModuleTemplate(gameId: string) {
+    return `import { _decorator, sp, tween, Tween } from 'cc';
+import { WinEffectLevelEnum, WinEffectModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass, property } = _decorator;
+
+type BigWinAnimAction = 'APPEAR' | 'IDLE' | 'DISAPPEAR';
+const BIG_WIN_ANIM_KEY_BY_TITLE = ['BW', 'MW', 'SMW'];
+
+const WinEffectSoundDuration${gameId} = {
+    [WinEffectLevelEnum.BIG]: 4.22,
+    [WinEffectLevelEnum.MEGA]: 9.844,
+    [WinEffectLevelEnum.SUPER]: 17.344,
+}
+const MIX_TIME = 0.2;
+
+@ccclass('WinEffectModule${gameId}')
+export class WinEffectModule${gameId} extends WinEffectModule {
+    @property(sp.Skeleton) bigWinEffect: sp.Skeleton = null;
+    private playingLevelSfx: string | null = null;
+    private endWinEffectLevel: WinEffectLevelEnum = WinEffectLevelEnum.BIG;
+
+    private bigWinSoundTime: number = 0;
+    private _tweenSound: Tween<any> = null;
+
+    onLoadExtend(): void {
+        super.onLoadExtend();
+        this.setMix();
+    }
+
+    getBigWinBackgroundAnimName(titleIndex: number, action: BigWinAnimAction): string {
+        // const animKey = \`\${this.getBigWinAnimKey(titleIndex)}_\${action}\` as keyof typeof UI_BIGWIN_BACKGROUND_ANIM;
+        // return UI_BIGWIN_BACKGROUND_ANIM[animKey];
+    }
+
+    getBigWinAnimKey(titleIndex: number): any {
+        return BIG_WIN_ANIM_KEY_BY_TITLE[titleIndex] ?? 'BW';
+    }
+
+    getBigWinEffectAnimName(titleIndex: number, action: BigWinAnimAction): string {
+        // const animKey = \`\${this.getBigWinAnimKey(titleIndex)}_\${action}\` as keyof typeof UI_BIGWIN_ANIM;
+        // return UI_BIGWIN_ANIM[animKey];
+    }
+
+    private playBigWinAnimation(titleIndex: number): void {
+        // this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'APPEAR'), false);
+        // this.bigWinEffect.addAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'IDLE'), true);
+    }
+
+    updateCurrentTitle(): void {
+        const isSkipped = this._speedUp;
+        if (isSkipped) {
+            super.updateCurrentTitle(); // update title on money
+        } else {
+            this.updateTitleOnSoundTime(); // update title on SE time config
+        }
+    }
+
+    private updateTitleOnSoundTime(): void {
+        const soundTime = this.bigWinSoundTime;
+        if (soundTime >= WinEffectSoundDuration${gameId}[WinEffectLevelEnum.MEGA] &&
+            this._currentTitle === WinEffectLevelEnum.MEGA &&
+            this.canProcessToLevel(WinEffectLevelEnum.SUPER)) {
+            this.changeTitle(WinEffectLevelEnum.SUPER);
+        } else if (soundTime >= WinEffectSoundDuration${gameId}[WinEffectLevelEnum.BIG] &&
+            this._currentTitle === WinEffectLevelEnum.BIG &&
+            this.canProcessToLevel(WinEffectLevelEnum.MEGA)) {
+            this.changeTitle(WinEffectLevelEnum.MEGA);
+        }
+    }
+
+    private canProcessToLevel(level: WinEffectLevelEnum): boolean {
+        return this.endWinEffectLevel >= level;
+    }
+
+    setMix(): void {
+        Object.values(WinEffectLevelEnum)
+            .filter(value => typeof value === 'number')
+            .forEach((value) => {
+                const level = value as WinEffectLevelEnum;
+                const disappear = this.getBigWinEffectAnimName(level, 'DISAPPEAR');
+                const idle = this.getBigWinEffectAnimName(level, 'IDLE');
+                const appear = this.getBigWinEffectAnimName(level, 'APPEAR');
+                this.bigWinEffect.setMix(appear, disappear, MIX_TIME);
+                this.bigWinEffect.setMix(idle, disappear, MIX_TIME);
+            });
+    }
+
+    showEffectWin(): void {
+        this.endWinEffectLevel = this.getEndWinEffectLevel();
+        this.animDuration = WinEffectSoundDuration${gameId}[this.endWinEffectLevel] - this.delayHideTime;
+        this.playBigWinAnimation(WinEffectLevelEnum.BIG);
+
+        super.showEffectWin();
+    }
+
+    private getEndWinEffectLevel(): WinEffectLevelEnum {
+        const megaWinAmount = this.content.totalBet * this.megaRate;
+        const superWinAmount = this.content.totalBet * this.superRate;
+
+        if (this.content.winAmount >= superWinAmount) {
+            return WinEffectLevelEnum.SUPER;
+        }
+
+        if (this.content.winAmount >= megaWinAmount) {
+            return WinEffectLevelEnum.MEGA;
+        }
+
+        return WinEffectLevelEnum.BIG;
+    }
+
+    // finish(): void {
+    //     this.stopLevelSfx();
+    //     this.soundPlayer.playSfx(SOUND_CONFIG.SFX_BIGWIN_END);
+    //     this._skippable = false;
+    //     this._isUpdating = false;
+    //     this.updateCurrentTitle();
+    //     this._lbWinAmount.string = this.moneyFormatter.formatMoney(this.content.winAmount)
+    //     Tween.stopAllByTarget(this.winAmount);
+    //     this.resetSoundTime();
+    //     this.stopParticle();
+    //     this._tweenFinish = tween(this)
+    //         .delay(0.5)
+    //         .call(() => {
+    //             this.fadeInMusic(0.5);
+    //         })
+    //         .delay(this.delayHideTime)
+    //         .call(() => {
+    //             this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_BIGWIN_END);
+    //             this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(this._currentTitle, 'DISAPPEAR'), false);
+    //         })
+    //         .delay(UI_BIGWIN_TIME.BW_DISAPPEAR * 0.25)
+    //         .call(() => eno.fadeOut(this.winAmount, 0.2))
+    //         .delay(UI_BIGWIN_TIME.BW_DISAPPEAR * 0.75)
+    //         .call(() => {
+    //             this.exit();
+    //         })
+    //         .start();
+    // }
+
+    startParticle(): void {
+        if (this._isShowNormalEffect) {
+            this.coinsEffect.emit('SHOW_COINS_EFFECT', 0);
+        }
+
+        if (this._isShowFastEffect) {
+            this.coinsEffect.emit('START_TURBO_COIN');
+        }
+    }
+
+    stopParticle(): void {
+        this.coinsEffect.emit('HIDE_ALL_COINS_EFFECTS');
+    }
+
+    changeTitle(index: number): void {
+        this._currentTitle = index;
+        this.coinsEffect.emit('HIDE_COINS_EFFECT', index - 1);
+        this.coinsEffect.emit('SHOW_COINS_EFFECT', index);
+        this.playBigWinAnimation(index);
+        if (!this._speedUp) {
+            this.playLevelSfx(index);
+        }
+    }
+
+    private playLevelSfx(level: number): void {
+        const hitSfx = this.geHitSfx(level);
+        if (hitSfx) {
+            this.soundPlayer.playSfx(hitSfx);
+        }
+    }
+
+    private geHitSfx(index: number): string | undefined {
+        // return SOUND_CONFIG[\`SFX_BIGWIN_HIT_\${index}\`];
+    }
+
+    private stopLevelSfx(): void {
+        if (this.playLevelSfx == null) {
+            return;
+        }
+
+        this.soundPlayer.stopSfx(this.playingLevelSfx);
+        this.playingLevelSfx = null;
+    }
+
+    playSfxFastBigWin(): void {
+        // this.soundPlayer && this.soundPlayer.playSfx(SOUND_CONFIG.SFX_TURBO_BIGWIN);
+    }
+
+    playSoundStart(): void {
+        this.fadeOutMusic(0.5);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_RAIN_COIN, true);
+        // const sound = this.soundPlayer.playSfx(SOUND_CONFIG.SFX_BIGWIN);
+        // this.resetSoundTime();
+        // this._tweenSound = tween(sound)
+        //     .to(this.animDuration, {}, {
+        //         onUpdate: (_, ratio: number) => {
+        //             this.bigWinSoundTime = ratio * this.animDuration;
+        //         }
+        //     })
+        //     .start();
+    }
+
+    private resetSoundTime(): void {
+        this.bigWinSoundTime = 0;
+        this._tweenSound?.stop();
+        this._tweenSound = null;
+    }
+
+    playSoundCounting(): void {
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING, true, 1.5);
+    }
+
+    fadeOutMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 0);
+        } else {
+            this.soundPlayer.setMusicVolume(0);
+        }
+    }
+
+    fadeInMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 1);
+        }
+    }
+
+    playSoundSkip(): void {
+        this.unscheduleAllCallbacks();
+        this.stopLevelSfx();
+    }
+
+    playSoundCountingEnd(): void {
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_RAIN_COIN);
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_BIGWIN);
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_COUNTING);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING_END);
+    }
+}
+`;
+}
+
+function createTotalWinModuleTemplate(gameId: string) {
+    return `import { _decorator, sp, tween } from 'cc';
+import { TotalWinModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+const { ccclass, property } = _decorator;
+const WIN_LEVEL = [0, 30, 80];
+
+type TotalWinAnimAction = 'APPEAR' | 'IDLE' | 'DISAPPEAR';
+const TOTAL_WIN_ANIM_KEY_BY_LEVEL: string[] = ['LV1', 'LV2', 'LV3'];
+
+const TOTAL_WIN_SFX_DURATIONS = [
+    4.667,
+    7.846,
+    10.322
+]
+
+const DELAY_START_COUNT = 0.5;
+const MAX_TOTAL_WIN_LEVEL = 2;
+const DELAY_APPEAR = 0.5;
+@ccclass('TotalWinModule${gameId}')
+export class TotalWinModule${gameId} extends TotalWinModule {
+    @property(sp.Skeleton) totalWinAnim: sp.Skeleton = null;
+    level = 0;
+
+    getTotalWinAnimName(levelIndex: number, action: TotalWinAnimAction): string {
+        // const animKey = \`\${this.getTotalWinAnimKey(levelIndex)}_\${action}\` as keyof typeof UI_TOTALWIN_ANIM;
+        // return UI_TOTALWIN_ANIM[animKey];
+    }
+
+    getTotalWinAnimKey(levelIndex: number): any {
+        return TOTAL_WIN_ANIM_KEY_BY_LEVEL[levelIndex] ?? 'LV1';
+    }
+
+    play(content?: any, callback?: Function): void {
+        this.scheduleOnce(()=>{
+            super.play(content, callback);
+        }, DELAY_APPEAR);
+    }
+
+    show(): void {
+        super.show();
+        this._lbWinAmount.string = this.moneyFormatter.formatMoney(0);
+    }
+
+    enter(): void {
+        this.playSoundStart();
+        this.initValue();
+
+        const totalBet = this.gameLogic?.getDataModel()?.BetData.totalBet;
+        const winRate = eno.FloatUtils.div(this.getTotalWinAmount(), totalBet);
+        for (let i = 0; i < WIN_LEVEL.length; i++) {
+            if (winRate >= WIN_LEVEL[i]) {
+                this.level = i;
+            }
+        }
+        const sfxDuration = TOTAL_WIN_SFX_DURATIONS[this.level];
+        this.animDuration = sfxDuration - DELAY_START_COUNT;
+        this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'APPEAR'), false);
+        this.totalWinAnim.addAnimation(0, this.getTotalWinAnimName(this.level, 'IDLE'), true);
+        this.scheduleOnce(() => {
+            this.startParticle();
+            this.startUpdateWinAmount();
+        }, DELAY_START_COUNT);
+    }
+
+    finish(): void {
+        this._lbWinAmount.string = this.moneyFormatter.formatMoney(this._totalWinAmount);
+        this.playSoundEnd();
+        this._isUpdating = false;
+        this.stopParticle();
+        tween(this.node)
+            .delay(this.hideTime)
+            .call(() => {
+                this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'DISAPPEAR'), false);
+                this.callback && this.callback();
+                this.callback = null;
+            })
+            .delay(0.5)
+            .call(() => {
+                this._lbWinAmount.string = '';
+                this.fadeInMusic(0.5);
+                this.exit();
+            }).start();
+    }
+
+    startUpdateWinAmount(): void {
+        if (this.level > 0) {
+            super.startUpdateWinAmount();
+            // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING, true, 1.5);
+            return;
+        }
+        this._lbWinAmount.string = this.moneyFormatter.formatMoney(this._totalWinAmount);
+        this.scheduleOnce(() => {
+            this._skippable = false;
+            this.finish();
+        }, this.animDuration);
+    }
+
+    startParticle(): void {
+        this.coinsEffect.emit('SHOW_COINS_EFFECT', this.level);
+    }
+
+    stopParticle(): void {
+        this.coinsEffect.emit('HIDE_COINS_EFFECT');
+    }
+
+    playSoundStart(): void {
+        this.fadeOutMusic(0.5);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_TOTALWIN);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_RAIN_COIN, true);
+    }
+
+    playSoundEnd(): void {
+        const isPlayFull = this.level == MAX_TOTAL_WIN_LEVEL && !this._hasSkip;
+        if (!isPlayFull) {
+            // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_TOTALWIN)
+            // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_TOTALWIN_END)
+        }
+
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_RAIN_COIN)
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_COUNTING);
+    }
+
+    playSoundSkip(): void {
+        if (this.level > 0) {
+            this.playSoundCountingEnd();
+        }
+    }
+
+    playSoundCountingEnd(): void {
+        // this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_COUNTING);
+        // this.soundPlayer.playSfx(SOUND_CONFIG.SFX_COUNTING_END);
+    }
+
+    fadeOutMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 0);
+        } else {
+            this.soundPlayer.setMusicVolume(0);
+        }
+    }
+
+    fadeInMusic(duration: number): void {
+        const isFadable = !this.soundPlayer.isMuteMusic && this.soundPlayer.isEnableBGM;
+        if (isFadable) {
+            this.soundPlayer.fadeMusicTo(duration, 1);
+        }
+    }
+}
+`;
+}
+
 function ensureNamedImport(content: string, modulePath: string, importName: string) {
     const importRegex = new RegExp(`^import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${modulePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"];`, "m");
     const importMatch = content.match(importRegex);
@@ -242,6 +787,21 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
             filePath: path.join(projectRoot, "scripts", "Table", `TableModuleConfig${gameId}.ts`),
             content: createTableModuleConfigTemplate(gameId),
             mode: "patchTableModuleConfig" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Cutscene", `JackpotWinModule${gameId}.ts`),
+            content: createJackpotWinModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Cutscene", `WinEffectModule${gameId}.ts`),
+            content: createWinEffectModuleTemplate(gameId),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Cutscene", `TotalWinModule${gameId}.ts`),
+            content: createTotalWinModuleTemplate(gameId),
+            mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "DataConfig", `EventConfig${gameId}.ts`),
