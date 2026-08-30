@@ -7,6 +7,11 @@ interface BoilerplateFileResult {
     status: "created" | "exists" | "updated";
 }
 
+interface SceneKitPatchTarget {
+    filePath: string;
+    status: "exists" | "missing";
+}
+
 function extractGameIdFromScenePath(sceneFilePath: string) {
     const fileName = path.basename(sceneFilePath);
     const sceneNameMatch = fileName.match(/^g(\d{4,})(?:[A-Za-z])?\.scene$/i);
@@ -1905,6 +1910,80 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
     ];
 }
 
+function readJsonFile<T>(filePath: string): T {
+    return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
+}
+
+function getReelPrefabPatchTargets(projectRoot: string) {
+    return [
+        path.join(projectRoot, "data", "prefabs", "GameMode", "MainGamePrefab.prefab"),
+        path.join(projectRoot, "data", "prefabs", "GameMode", "FreeGamePrefab.prefab"),
+    ];
+}
+
+function getSceneKitPatchPreview(sceneFilePath: string, gameId: string): SceneKitPatchTarget[] {
+    const projectRoot = path.dirname(sceneFilePath);
+    const reelPrefabMetaPath = path.join(projectRoot, "data", "prefabs", "Table", `SlotReelPrefab${gameId}.prefab.meta`);
+
+    return [
+        {
+            filePath: reelPrefabMetaPath,
+            status: fs.existsSync(reelPrefabMetaPath) ? "exists" : "missing",
+        },
+        ...getReelPrefabPatchTargets(projectRoot).map((filePath) => ({
+            filePath,
+            status: fs.existsSync(filePath) ? "exists" as const : "missing" as const,
+        })),
+    ];
+}
+
+function patchReelPrefabRefs(projectRoot: string, gameId: string): BoilerplateFileResult[] {
+    const reelPrefabMetaPath = path.join(projectRoot, "data", "prefabs", "Table", `SlotReelPrefab${gameId}.prefab.meta`);
+    if (!fs.existsSync(reelPrefabMetaPath)) {
+        throw new Error(`SlotReelPrefab${gameId}.prefab.meta does not exist.`);
+    }
+
+    const reelPrefabMeta = readJsonFile<{ uuid?: unknown }>(reelPrefabMetaPath);
+    if (typeof reelPrefabMeta.uuid !== "string" || !reelPrefabMeta.uuid.trim()) {
+        throw new Error(`SlotReelPrefab${gameId}.prefab.meta does not contain a valid uuid.`);
+    }
+
+    const reelPrefabUuid = reelPrefabMeta.uuid.trim();
+    const results: BoilerplateFileResult[] = [];
+    const reelPrefabRefPattern = /("reelPrefab"\s*:\s*\{\s*"__uuid__"\s*:\s*")([^"]+)("\s*,\s*"__expectedType__"\s*:\s*"cc\.Prefab"\s*\})/g;
+
+    for (const prefabPath of getReelPrefabPatchTargets(projectRoot)) {
+        if (!fs.existsSync(prefabPath)) {
+            continue;
+        }
+
+        const currentContent = fs.readFileSync(prefabPath, "utf8");
+        let replacedCount = 0;
+        const nextContent = currentContent.replace(reelPrefabRefPattern, (match, prefix: string, currentUuid: string, suffix: string) => {
+            replacedCount += 1;
+            if (currentUuid === reelPrefabUuid) {
+                return match;
+            }
+            return `${prefix}${reelPrefabUuid}${suffix}`;
+        });
+
+        if (replacedCount === 0) {
+            results.push({ filePath: prefabPath, status: "exists" });
+            continue;
+        }
+
+        if (nextContent !== currentContent) {
+            JSON.parse(nextContent);
+            fs.writeFileSync(prefabPath, nextContent, "utf8");
+            results.push({ filePath: prefabPath, status: "updated" });
+        } else {
+            results.push({ filePath: prefabPath, status: "exists" });
+        }
+    }
+
+    return results;
+}
+
 export function registerSceneKitHandler() {
     ipcMain.handle("scene-kit:preview-boilerplate", async (_event, sceneFilePath: string) => {
         const normalizedScenePath = String(sceneFilePath || "").trim();
@@ -1925,6 +2004,7 @@ export function registerSceneKitHandler() {
                 filePath: file.filePath,
                 status: fs.existsSync(file.filePath) ? "exists" : "new",
             })),
+            patches: getSceneKitPatchPreview(normalizedScenePath, gameId),
         };
     });
 
@@ -1965,6 +2045,7 @@ export function registerSceneKitHandler() {
             fs.writeFileSync(file.filePath, file.content, "utf8");
             results.push({ filePath: file.filePath, status: "created" });
         }
+        results.push(...patchReelPrefabRefs(path.dirname(normalizedScenePath), gameId));
 
         return {
             gameId,
