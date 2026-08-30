@@ -4,6 +4,7 @@ import { useStoredState } from "../hooks/useStoredState";
 interface BoilerplatePreview {
     gameId: string;
     projectRoot: string;
+    tableFormat: number[];
     files: Array<{
         filePath: string;
         status: "new" | "exists";
@@ -13,6 +14,7 @@ interface BoilerplatePreview {
 interface BoilerplateResult {
     gameId: string;
     projectRoot: string;
+    tableFormat: number[];
     files: Array<{
         filePath: string;
         status: "created" | "exists" | "updated";
@@ -35,6 +37,7 @@ function getParentLabel(projectRoot: string, filePath: string) {
 
 export default function SceneKit() {
     const [scenePath, setScenePath] = useStoredState<string>("scene-kit-scene-path", "");
+    const [tableFormat, setTableFormat] = useStoredState<string>("scene-kit-table-format", "3,3,3,3,3");
     const [preview, setPreview] = useState<BoilerplatePreview | null>(null);
     const [result, setResult] = useState<BoilerplateResult | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
@@ -58,7 +61,7 @@ export default function SceneKit() {
         [preview, result],
     );
 
-    const handlePreview = async (nextScenePath = scenePath) => {
+    const handlePreview = async (nextScenePath = scenePath, nextTableFormat = tableFormat) => {
         if (!nextScenePath.trim()) {
             setPreview(null);
             setResult(null);
@@ -70,7 +73,7 @@ export default function SceneKit() {
         setResult(null);
         setStatus({ type: null, message: "" });
         try {
-            const nextPreview = await window.electronAPI.sceneKit.previewBoilerplate(nextScenePath);
+            const nextPreview = await window.electronAPI.sceneKit.previewBoilerplate(nextScenePath, nextTableFormat);
             setPreview(nextPreview);
         } catch (error: any) {
             setPreview(null);
@@ -96,11 +99,12 @@ export default function SceneKit() {
         setIsLoading(true);
         setStatus({ type: null, message: "" });
         try {
-            const nextResult = await window.electronAPI.sceneKit.createBoilerplate(scenePath);
+            const nextResult = await window.electronAPI.sceneKit.createBoilerplate(scenePath, tableFormat);
             setResult(nextResult);
             setPreview({
                 gameId: nextResult.gameId,
                 projectRoot: nextResult.projectRoot,
+                tableFormat: nextResult.tableFormat,
                 files: nextResult.files.map((file) => ({
                     filePath: file.filePath,
                     status: file.status === "exists" ? "exists" : "new",
@@ -119,7 +123,7 @@ export default function SceneKit() {
 
     useEffect(() => {
         if (scenePath.trim()) {
-            void handlePreview(scenePath);
+            void handlePreview(scenePath, tableFormat);
         }
     }, []);
 
@@ -129,7 +133,7 @@ export default function SceneKit() {
         <div className="sm:col-span-2">
             <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-4 dark:border-zinc-700 md:flex-row md:items-center md:justify-between">
                 <div className="text-left">
-                    <h2 className="mb-1 text-2xl font-bold text-[#9b8cff]">Source</h2>
+                    <h2 className="mb-1 text-2xl font-bold text-[#9b8cff]">Starter Kit</h2>
                     <p className="text-xs text-slate-500 dark:text-zinc-400">
                         Generate game-scoped source boilerplate from a Cocos scene path
                     </p>
@@ -155,7 +159,7 @@ export default function SceneKit() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 5.75V10h4.25M8.25 13h7.5M8.25 16h5" />
                             </svg>
                             <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                                Boilerplate Source
+                                Starter Kit Source
                             </h3>
                         </div>
 
@@ -185,11 +189,30 @@ export default function SceneKit() {
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
+                            <label className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                Table Format <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={tableFormat}
+                                onChange={(event) => setTableFormat(event.target.value)}
+                                onBlur={() => scenePath.trim() && void handlePreview(scenePath, tableFormat)}
+                                placeholder="3,3,3,3,3"
+                                spellCheck={false}
+                                className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                            />
+                        </div>
+
                         {preview && (
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029]">
                                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Game ID</div>
                                     <div className="mt-1 font-mono text-lg font-bold text-slate-800 dark:text-zinc-100">{preview.gameId}</div>
+                                </div>
+                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029]">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Table Format</div>
+                                    <div className="mt-1 font-mono text-lg font-bold text-slate-800 dark:text-zinc-100">[{preview.tableFormat.join(", ")}]</div>
                                 </div>
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029] sm:col-span-2">
                                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Project Root</div>

@@ -161,21 +161,40 @@ interface ElectronAPI {
         error?: string;
     }>;
     sceneKit: {
-        previewBoilerplate: (sceneFilePath: string) => Promise<{
+        selectSceneOrPrefabFile: () => Promise<string | null>;
+        previewBoilerplate: (sceneFilePath: string, tableFormat?: string) => Promise<{
             gameId: string;
             projectRoot: string;
+            tableFormat: number[];
             files: Array<{
                 filePath: string;
                 status: "new" | "exists";
             }>;
+            patches?: Array<{
+                filePath: string;
+                status: "exists" | "missing";
+            }>;
         }>;
-        createBoilerplate: (sceneFilePath: string) => Promise<{
+        createBoilerplate: (sceneFilePath: string, tableFormat?: string) => Promise<{
             gameId: string;
             projectRoot: string;
+            tableFormat: number[];
             files: Array<{
                 filePath: string;
                 status: "created" | "exists" | "updated";
             }>;
+        }>;
+        replaceUuidRef: (targetFilePath: string, oldUuid: string, newUuid: string) => Promise<{
+            targetFilePath: string;
+            oldUuid: string;
+            newUuid: string;
+            replacements: Array<{
+                from: string;
+                to: string;
+                count: number;
+            }>;
+            totalCount: number;
+            changed: boolean;
         }>;
     };
     cheatLocalSocket: {

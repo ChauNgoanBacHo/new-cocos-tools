@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { dialog, ipcMain } from "electron";
 import fs from "fs";
 import path from "path";
 
@@ -12,6 +12,14 @@ interface SceneKitPatchTarget {
     status: "exists" | "missing";
 }
 
+interface ComponentRefReplacement {
+    from: string;
+    to: string;
+    count: number;
+}
+
+const UUID_BASE64_KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
 function extractGameIdFromScenePath(sceneFilePath: string) {
     const fileName = path.basename(sceneFilePath);
     const sceneNameMatch = fileName.match(/^g(\d{4,})(?:[A-Za-z])?\.scene$/i);
@@ -21,6 +29,76 @@ function extractGameIdFromScenePath(sceneFilePath: string) {
 
     const fallbackMatch = sceneFilePath.match(/(?:^|[^\d])(\d{4,})(?:[^\d]|$)/);
     return fallbackMatch ? fallbackMatch[1] : "";
+}
+
+function parseTableFormatInput(tableFormatInput?: string): number[] {
+    const rawValue = String(tableFormatInput || "").trim();
+    const normalizedValue = rawValue || "3,3,3,3,3";
+    const withoutBrackets = normalizedValue.replace(/^\[/, "").replace(/\]$/, "");
+    const tableFormat = withoutBrackets
+        .split(",")
+        .map((value) => Number.parseInt(value.trim(), 10))
+        .filter((value) => Number.isFinite(value));
+
+    if (tableFormat.length === 0) {
+        throw new Error("Table format is required.");
+    }
+
+    if (tableFormat.some((value) => value <= 0)) {
+        throw new Error("Table format must contain positive numbers only.");
+    }
+
+    return tableFormat;
+}
+
+function formatNumberArray(values: number[]) {
+    return `[${values.join(", ")}]`;
+}
+
+function compressUuid(uuid: string, reservedLength: 2 | 5): string | null {
+    const cleanUuid = uuid.replace(/-/g, "").toLowerCase();
+    if (!/^[0-9a-f]{32}$/.test(cleanUuid)) return null;
+
+    let compressed = cleanUuid.slice(0, reservedLength);
+    for (let i = reservedLength; i < 32; i += 3) {
+        const chunk = cleanUuid.slice(i, i + 3);
+        if (chunk.length !== 3) return null;
+
+        const value = parseInt(chunk, 16);
+        compressed += UUID_BASE64_KEY_CHARS[value >> 6];
+        compressed += UUID_BASE64_KEY_CHARS[value & 0x3f];
+    }
+
+    return compressed;
+}
+
+function getUuidReplacementPairs(oldUuid: string, newUuid: string) {
+    const normalizedOldUuid = oldUuid.toLowerCase();
+    const normalizedNewUuid = newUuid.toLowerCase();
+    const oldDashlessUuid = normalizedOldUuid.replace(/-/g, "");
+    const newDashlessUuid = normalizedNewUuid.replace(/-/g, "");
+    const pairs = new Map<string, string>();
+    pairs.set(oldUuid, newUuid);
+    pairs.set(normalizedOldUuid, normalizedNewUuid);
+    pairs.set(oldDashlessUuid, newDashlessUuid);
+
+    const oldCompressedUuid = compressUuid(normalizedOldUuid, 5);
+    const newCompressedUuid = compressUuid(normalizedNewUuid, 5);
+    if (oldCompressedUuid && newCompressedUuid) {
+        pairs.set(oldCompressedUuid, newCompressedUuid);
+    }
+
+    const oldMinCompressedUuid = compressUuid(normalizedOldUuid, 2);
+    const newMinCompressedUuid = compressUuid(normalizedNewUuid, 2);
+    if (oldMinCompressedUuid && newMinCompressedUuid) {
+        pairs.set(oldMinCompressedUuid, newMinCompressedUuid);
+    }
+
+    return Array.from(pairs.entries()).map(([from, to]) => ({ from, to }));
+}
+
+function escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function createEventConfigTemplate(gameId: string) {
@@ -141,11 +219,11 @@ function createDataUtilsTemplate(gameId: string) {
 `;
 }
 
-function createGameConstantTemplate(gameId: string) {
+function createGameConstantTemplate(gameId: string, tableFormat: number[]) {
     return `export const GameConstant${gameId} = {
     SYMBOL_HEIGHT: 128,
     SYMBOL_WIDTH: 140,
-    TABLE_FORMAT: [3, 3, 3, 3, 3],
+    TABLE_FORMAT: ${formatNumberArray(tableFormat)},
     SCATTER_SYMBOL: 'A',
     WILD_SYMBOL: 'K',
 };
@@ -1774,7 +1852,7 @@ function updateTableModuleConfigContent(content: string, gameId: string) {
     throw new Error(`Cannot find TableModuleConfig${gameId} class body.`);
 }
 
-function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
+function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat: number[]) {
     const projectRoot = path.dirname(sceneFilePath);
     return [
         {
@@ -1904,7 +1982,7 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string) {
         },
         {
             filePath: path.join(projectRoot, "scripts", "Utils", `GameConstant${gameId}.ts`),
-            content: createGameConstantTemplate(gameId),
+            content: createGameConstantTemplate(gameId, tableFormat),
             mode: "overwrite" as const,
         },
     ];
@@ -1984,10 +2062,92 @@ function patchReelPrefabRefs(projectRoot: string, gameId: string): BoilerplateFi
     return results;
 }
 
+function getUuidLikeReplacementPairs(oldUuidInput: string, newUuidInput: string) {
+    const oldValue = String(oldUuidInput || "").trim();
+    const newValue = String(newUuidInput || "").trim();
+
+    if (!oldValue || !newValue) {
+        throw new Error("Old UUID and new UUID are required.");
+    }
+
+    const isOldRawUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(oldValue);
+    const isNewRawUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newValue);
+
+    if (isOldRawUuid !== isNewRawUuid) {
+        throw new Error("Old and new UUID must use the same format.");
+    }
+
+    if (isOldRawUuid && isNewRawUuid) {
+        return getUuidReplacementPairs(oldValue, newValue);
+    }
+
+    return [{ from: oldValue, to: newValue }];
+}
+
+function replaceUuidRefs(targetFilePathInput: string, oldUuidInput: string, newUuidInput: string, shouldWrite: boolean) {
+    const targetFilePath = String(targetFilePathInput || "").trim();
+
+    if (!targetFilePath || !/\.(scene|prefab)$/i.test(targetFilePath)) {
+        throw new Error("Please choose a .scene or .prefab target file.");
+    }
+    if (!fs.existsSync(targetFilePath)) {
+        throw new Error("Target scene/prefab file does not exist.");
+    }
+
+    const pairs = getUuidLikeReplacementPairs(oldUuidInput, newUuidInput);
+    const currentContent = fs.readFileSync(targetFilePath, "utf8");
+    let nextContent = currentContent;
+    const replacements: ComponentRefReplacement[] = [];
+
+    for (const pair of pairs) {
+        const pattern = new RegExp(escapeRegExp(pair.from), "g");
+        const count = nextContent.match(pattern)?.length ?? 0;
+        if (count === 0) {
+            continue;
+        }
+
+        nextContent = nextContent.replace(pattern, pair.to);
+        replacements.push({
+            from: pair.from,
+            to: pair.to,
+            count,
+        });
+    }
+
+    const totalCount = replacements.reduce((sum, item) => sum + item.count, 0);
+    const changed = nextContent !== currentContent;
+
+    if (shouldWrite && changed) {
+        JSON.parse(nextContent);
+        fs.writeFileSync(targetFilePath, nextContent, "utf8");
+    }
+
+    return {
+        targetFilePath,
+        oldUuid: String(oldUuidInput || "").trim(),
+        newUuid: String(newUuidInput || "").trim(),
+        replacements,
+        totalCount,
+        changed,
+    };
+}
+
 export function registerSceneKitHandler() {
-    ipcMain.handle("scene-kit:preview-boilerplate", async (_event, sceneFilePath: string) => {
+    ipcMain.handle("scene-kit:select-scene-or-prefab-file", async () => {
+        const result = await dialog.showOpenDialog({
+            properties: ["openFile"],
+            filters: [
+                { name: "Cocos Scene or Prefab", extensions: ["scene", "prefab"] },
+            ],
+        });
+        if (result.canceled || result.filePaths.length === 0) return null;
+        return result.filePaths[0];
+    });
+
+    ipcMain.handle("scene-kit:preview-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string) => {
         const normalizedScenePath = String(sceneFilePath || "").trim();
         const gameId = extractGameIdFromScenePath(normalizedScenePath);
+        const tableFormat = parseTableFormatInput(tableFormatInput);
 
         if (!normalizedScenePath || !normalizedScenePath.endsWith(".scene")) {
             throw new Error("Please choose a .scene file.");
@@ -2000,7 +2160,8 @@ export function registerSceneKitHandler() {
         return {
             gameId,
             projectRoot: path.dirname(normalizedScenePath),
-            files: getBoilerplateFiles(normalizedScenePath, gameId).map((file) => ({
+            tableFormat,
+            files: getBoilerplateFiles(normalizedScenePath, gameId, tableFormat).map((file) => ({
                 filePath: file.filePath,
                 status: fs.existsSync(file.filePath) ? "exists" : "new",
             })),
@@ -2008,9 +2169,10 @@ export function registerSceneKitHandler() {
         };
     });
 
-    ipcMain.handle("scene-kit:create-boilerplate", async (_event, sceneFilePath: string) => {
+    ipcMain.handle("scene-kit:create-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string) => {
         const normalizedScenePath = String(sceneFilePath || "").trim();
         const gameId = extractGameIdFromScenePath(normalizedScenePath);
+        const tableFormat = parseTableFormatInput(tableFormatInput);
 
         if (!normalizedScenePath || !normalizedScenePath.endsWith(".scene")) {
             throw new Error("Please choose a .scene file.");
@@ -2025,7 +2187,7 @@ export function registerSceneKitHandler() {
         }
 
         const results: BoilerplateFileResult[] = [];
-        for (const file of getBoilerplateFiles(normalizedScenePath, gameId)) {
+        for (const file of getBoilerplateFiles(normalizedScenePath, gameId, tableFormat)) {
             if (fs.existsSync(file.filePath)) {
                 const currentContent = fs.readFileSync(file.filePath, "utf8");
                 let nextContent = file.content;
@@ -2050,7 +2212,12 @@ export function registerSceneKitHandler() {
         return {
             gameId,
             projectRoot: path.dirname(normalizedScenePath),
+            tableFormat,
             files: results,
         };
+    });
+
+    ipcMain.handle("scene-kit:replace-uuid-ref", async (_event, targetFilePath: string, oldUuid: string, newUuid: string) => {
+        return replaceUuidRefs(targetFilePath, oldUuid, newUuid, true);
     });
 }

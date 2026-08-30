@@ -34,10 +34,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     spinePreview: (sourceDir: string) =>
         ipcRenderer.invoke("spine-preview", sourceDir),
     sceneKit: {
-        previewBoilerplate: (sceneFilePath: string) =>
-            ipcRenderer.invoke("scene-kit:preview-boilerplate", sceneFilePath),
-        createBoilerplate: (sceneFilePath: string) =>
-            ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath),
+        selectSceneOrPrefabFile: () =>
+            ipcRenderer.invoke("scene-kit:select-scene-or-prefab-file"),
+        previewBoilerplate: (sceneFilePath: string, tableFormat?: string) =>
+            ipcRenderer.invoke("scene-kit:preview-boilerplate", sceneFilePath, tableFormat),
+        createBoilerplate: (sceneFilePath: string, tableFormat?: string) =>
+            ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath, tableFormat),
+        replaceUuidRef: (targetFilePath: string, oldUuid: string, newUuid: string) =>
+            ipcRenderer.invoke("scene-kit:replace-uuid-ref", targetFilePath, oldUuid, newUuid),
     },
     cheatLocalSocket: {
         start: (port?: number) => ipcRenderer.invoke("cheat-local-socket:start", port),
