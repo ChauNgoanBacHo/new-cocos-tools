@@ -447,7 +447,9 @@ export class JackpotWinModule${gameId} extends JackpotWinModule {
     // #region Base
     onLoadExtend(): void {
         super.onLoadExtend();
-        this.jackpotWinEffect.setMix(UI_JACKPOT_ANIM.IDLE, UI_JACKPOT_ANIM.DISAPPEAR, 0.2);
+        if (this.jackpotWinEffect) {
+            this.jackpotWinEffect.setMix(UI_JACKPOT_ANIM.IDLE, UI_JACKPOT_ANIM.DISAPPEAR, 0.2);
+        }
     }
 
     initValue(): void {
@@ -465,13 +467,7 @@ export class JackpotWinModule${gameId} extends JackpotWinModule {
     // #region Base
 
     // #region Start Cutscene
-    reset(): void {
-        Tween.stopAllByTarget(this.node);
-        this.jackpotWinEffect.node.active = false;
-    }
-
     enter(): void {
-        this.reset();
         this.initValue();
         tween(this.node)
             .call(() => {
@@ -487,9 +483,10 @@ export class JackpotWinModule${gameId} extends JackpotWinModule {
     }
 
     playAnimationJP(): void {
-        this.jackpotWinEffect.node.active = true;
-        this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.APPEAR, false);
-        this.jackpotWinEffect.addAnimation(0, UI_JACKPOT_ANIM.IDLE, true);
+        if (this.jackpotWinEffect) {
+            this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.APPEAR, false);
+            this.jackpotWinEffect.addAnimation(0, UI_JACKPOT_ANIM.IDLE, true);
+        }
     }
 
     startUpdateWinAmount(): void {
@@ -581,7 +578,9 @@ export class JackpotWinModule${gameId} extends JackpotWinModule {
 		tween(this.node)
 			.delay(this.delayHideTime)
             .call(() => {
-                this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.DISAPPEAR, false);
+                if (this.jackpotWinEffect) {
+                    this.jackpotWinEffect.setAnimation(0, UI_JACKPOT_ANIM.DISAPPEAR, false);
+                }
             })
             .delay(0.5)
 			.call(() => {
@@ -648,8 +647,10 @@ export class WinEffectModule${gameId} extends WinEffectModule {
     }
 
     playBigWinAnimation(titleIndex: number): void {
-        this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'APPEAR'), false);
-        this.bigWinEffect.addAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'IDLE'), true);
+        if (this.bigWinEffect) {
+            this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'APPEAR'), false);
+            this.bigWinEffect.addAnimation(0, this.getBigWinEffectAnimName(titleIndex, 'IDLE'), true);
+        }
     }
 
     updateCurrentTitle(): void {
@@ -686,8 +687,10 @@ export class WinEffectModule${gameId} extends WinEffectModule {
                 const disappear = this.getBigWinEffectAnimName(level, 'DISAPPEAR')
                 const idle = this.getBigWinEffectAnimName(level, 'IDLE')
                 const appear = this.getBigWinEffectAnimName(level, 'APPEAR')
-                this.bigWinEffect.setMix(appear, disappear, this.mixTime);
-                this.bigWinEffect.setMix(idle, disappear, this.mixTime);
+                if (this.bigWinEffect) {
+                    this.bigWinEffect.setMix(appear, disappear, this.mixTime);
+                    this.bigWinEffect.setMix(idle, disappear, this.mixTime);
+                }
             });
     }
 
@@ -826,7 +829,9 @@ export class WinEffectModule${gameId} extends WinEffectModule {
             .delay(this.delayHideTime)
             .call(() => {
                 this.soundPlayer.stopSfx(SOUND_CONFIG.SFX_BIGWIN_END);
-                this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(this._currentTitle, 'DISAPPEAR'), false);
+                if (this.bigWinEffect) {
+                    this.bigWinEffect.setAnimation(0, this.getBigWinEffectAnimName(this._currentTitle, 'DISAPPEAR'), false);
+                }
             })
             .delay(1)
             .call(() => eno.fadeOut(this.winAmount, 0.2))
@@ -901,8 +906,10 @@ export class TotalWinModule${gameId} extends TotalWinModule {
         }
         const sfxDuration = TOTAL_WIN_SFX_DURATIONS[this.level];
         this.animDuration = sfxDuration - DELAY_APPEAR_ANIM;
-        this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'APPEAR'), false);
-        this.totalWinAnim.addAnimation(0, this.getTotalWinAnimName(this.level, 'IDLE'), true);
+        if (this.totalWinAnim) {
+            this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'APPEAR'), false);
+            this.totalWinAnim.addAnimation(0, this.getTotalWinAnimName(this.level, 'IDLE'), true);
+        }
         this.scheduleOnce(() => {
             this.startParticle();
             this.startUpdateWinAmount();
@@ -976,7 +983,9 @@ export class TotalWinModule${gameId} extends TotalWinModule {
         tween(this.node)
             .delay(this.hideTime)
             .call(() => {
-                this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'DISAPPEAR'), false);
+                if (this.totalWinAnim) {
+                    this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'DISAPPEAR'), false);
+                }
                 this.callback && this.callback();
                 this.callback = null;
             })
