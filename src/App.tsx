@@ -11,13 +11,14 @@ import CodeHealth from "./components/CodeHealth";
 import SpinePreview from "./components/SpinePreview";
 import SceneKit from "./components/SceneKit";
 import ReplaceComponentRef from "./components/ReplaceComponentRef";
+import EventGraph from "./components/EventGraph";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ChargeUpLoadingScreen } from "./components/loading/ChargeUpLoadingScreen";
 import brandLogo from "./assets/logo.png";
 
-type TabType = "cheat" | "scene-kit" | "replace-ref" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
+type TabType = "cheat" | "scene-kit" | "replace-ref" | "event-graph" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
 type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
@@ -54,6 +55,16 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 10l-3 2.5L10 15" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16.5H9.5a2.5 2.5 0 010-5H14" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 9l3-2.5L14 4" />
+            </>
+        ),
+    },
+    {
+        id: "event-graph",
+        label: "Event Graph",
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 7.5h4v4h-4v-4zM14.5 4.5h4v4h-4v-4zM14.5 15.5h4v4h-4v-4z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 9.5c2.75 0 3.25-3 5-3M9.5 9.5c2.75 0 3.25 8 5 8" />
             </>
         ),
     },
@@ -141,7 +152,7 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
     {
         id: "simulation",
         label: "Game Layer",
-        itemIds: ["scene-kit", "replace-ref"],
+        itemIds: ["scene-kit", "replace-ref", "event-graph"],
     },
     {
         id: "generators",
@@ -161,6 +172,8 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
 ];
 
 function App() {
+    const isEventMapFullscreen = window.location.hash === "#/event-map-fullscreen";
+    const isSpinePreviewFullscreen = window.location.hash === "#/spine-preview-fullscreen";
     const [activeTab, setActiveTab] = useState<TabType>("scene-kit");
     const [menuPulseTab, setMenuPulseTab] = useState<TabType>("scene-kit");
     const [menuPulseTick, setMenuPulseTick] = useState(0);
@@ -269,6 +282,14 @@ function App() {
         }, 50);
     }, [activeTab]);
 
+    if (isEventMapFullscreen) {
+        return <EventGraph isStandalone />;
+    }
+
+    if (isSpinePreviewFullscreen) {
+        return <SpinePreview isStandalone />;
+    }
+
     // Hàm render chỉ còn nhiệm vụ gọi các Component con tương ứng
     const renderContent = () => {
         switch (activeTab) {
@@ -278,6 +299,8 @@ function App() {
                 return <SceneKit />;
             case "replace-ref":
                 return <ReplaceComponentRef />;
+            case "event-graph":
+                return <EventGraph />;
             case "anim":
                 return <CreateAnimConfigs onOpenCodeHealth={handleOpenCodeHealth} />;
             case "sound":

@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("delete-assets", sourceDir, files),
     spinePreview: (sourceDir: string) =>
         ipcRenderer.invoke("spine-preview", sourceDir),
+    openSpinePreviewFullscreen: () => ipcRenderer.invoke("spine-preview:open-fullscreen"),
+    closeSpinePreviewFullscreen: () => ipcRenderer.invoke("spine-preview:close-fullscreen"),
     sceneKit: {
         selectSceneOrPrefabFile: () =>
             ipcRenderer.invoke("scene-kit:select-scene-or-prefab-file"),
@@ -42,6 +44,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
             ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath, tableFormat),
         replaceUuidRef: (targetFilePath: string, oldUuid: string, newUuid: string) =>
             ipcRenderer.invoke("scene-kit:replace-uuid-ref", targetFilePath, oldUuid, newUuid),
+    },
+    eventGraph: {
+        scan: (sourcePath: string) => ipcRenderer.invoke("event-graph:scan", sourcePath),
+        openFullscreen: () => ipcRenderer.invoke("event-graph:open-fullscreen"),
+        closeFullscreen: () => ipcRenderer.invoke("event-graph:close-fullscreen"),
     },
     cheatLocalSocket: {
         start: (port?: number) => ipcRenderer.invoke("cheat-local-socket:start", port),

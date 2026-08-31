@@ -1,7 +1,7 @@
 {
   "name": "one-punch-devkit",
   "private": true,
-  "version": "0.4.4",
+  "version": "0.5.5",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -15,6 +15,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.11.5",
+    "elkjs": "^0.12.0",
     "eslint": "^10.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2"

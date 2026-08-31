@@ -43,7 +43,7 @@ type PreviewInstance = {
     loopLast: boolean;
 };
 
-export default function SpinePreview() {
+export default function SpinePreview({ isStandalone = false }: { isStandalone?: boolean }) {
     const [sourceDir, setSourceDir] = useStoredState<string>("spine-preview-source-dir", "");
     const [isRunning, setIsRunning] = useState(false);
     const [results, setResults] = useState<SpineResult[]>([]);
@@ -282,6 +282,27 @@ export default function SpinePreview() {
             setStatus({ type: "error", message: "Lỗi khi quét. Kiểm tra lại đường dẫn." });
         } finally {
             setIsRunning(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isStandalone || !sourceDir.trim() || isRunning || results.length > 0 || status.type) return;
+        void handleRun();
+    }, [isStandalone, sourceDir, isRunning, results.length, status.type]);
+
+    const handleOpenFullscreen = async () => {
+        try {
+            await window.electronAPI.openSpinePreviewFullscreen();
+        } catch (error: any) {
+            setStatus({ type: "error", message: error.message || "Không mở được Spine Big View." });
+        }
+    };
+
+    const handleExitFullscreen = async () => {
+        try {
+            await window.electronAPI.closeSpinePreviewFullscreen();
+        } catch (error: any) {
+            setStatus({ type: "error", message: error.message || "Không đóng được Spine Big View." });
         }
     };
 
@@ -633,7 +654,7 @@ export default function SpinePreview() {
     };
 
     return (
-        <div>
+        <div className={isStandalone ? "min-h-screen bg-[#eef3fb] p-6 dark:bg-[rgb(25,27,33)]" : ""}>
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-4">
                 <div className="text-left">
                     <h2 className="text-2xl font-bold text-[#9b8cff] mb-1">
@@ -643,6 +664,21 @@ export default function SpinePreview() {
                         Quét Spine animation và preview
                     </p>
                 </div>
+                {isStandalone ? (
+                    <button
+                        type="button"
+                        onClick={() => void handleExitFullscreen()}
+                        className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-200 bg-red-50 px-5 text-sm font-bold text-red-700 transition-all hover:bg-red-100 dark:border-red-500/25 dark:bg-red-500/15 dark:text-red-300 dark:hover:bg-red-500/20">
+                        Exit Big View
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => void handleOpenFullscreen()}
+                        className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-[#7d6df7]/30 bg-[#7d6df7]/10 px-5 text-sm font-bold text-[#6657df] transition-all hover:bg-[#7d6df7]/15 dark:border-[#9b8cff]/30 dark:bg-[#7d6df7]/20 dark:text-[#c9c1ff]">
+                        Open Big View
+                    </button>
+                )}
             </div>
 
             <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden">

@@ -13,6 +13,7 @@ import { registerBindSoundRefsHandler } from "./handlers/bindSoundRefs";
 import { registerCheckAssetsHandler } from "./handlers/checkAssets";
 import { registerSpinePreviewHandler } from "./handlers/spinePreview";
 import { registerSceneKitHandler } from "./handlers/sceneKit";
+import { registerEventGraphHandler } from "./handlers/eventGraph";
 import { registerStorageHandlers } from "./storage";
 import { registerCheatLocalSocketHandlers } from "./handlers/cheatLocalSocket";
 import { registerExportCheatExtensionHandlers } from "./handlers/exportCheatExtension";
@@ -42,6 +43,8 @@ protocol.registerSchemesAsPrivileged([
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow: BrowserWindow | null = null;
+let eventGraphWindow: BrowserWindow | null = null;
+let spinePreviewWindow: BrowserWindow | null = null;
 const INTERNAL_API_KEY = "e22ec2bdcbaf04dd03fd258756ee1f9d7e4d1d627d0512bb03d98dd0e7634b02";
 
 function getAppIconPath() {
@@ -101,6 +104,102 @@ function createWindow() {
     }
 }
 
+function loadRendererWindow(targetWindow: BrowserWindow, hash?: string) {
+    if (process.env.VITE_DEV_SERVER_URL) {
+        targetWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}${hash ? `#${hash}` : ""}`);
+    } else {
+        targetWindow.loadFile(path.join(__dirname, "../dist/index.html"), hash ? { hash } : undefined);
+    }
+}
+
+function createEventGraphWindow(parentWindow?: BrowserWindow | null) {
+    if (eventGraphWindow && !eventGraphWindow.isDestroyed()) {
+        if (eventGraphWindow.isMinimized()) eventGraphWindow.restore();
+        eventGraphWindow.show();
+        eventGraphWindow.focus();
+        return;
+    }
+
+    const display = parentWindow
+        ? screen.getDisplayMatching(parentWindow.getBounds())
+        : screen.getPrimaryDisplay();
+    const { x, y, width, height } = display.workArea;
+
+    eventGraphWindow = new BrowserWindow({
+        x,
+        y,
+        width,
+        height,
+        minWidth: 1440,
+        minHeight: 900,
+        title: "Event Map Overview",
+        icon: getAppIconPath(),
+        webPreferences: {
+            preload: path.join(__dirname, "preload.mjs"),
+            contextIsolation: true,
+            nodeIntegration: false,
+            webSecurity: false,
+        },
+    });
+
+    eventGraphWindow.maximize();
+
+    eventGraphWindow.on("closed", () => {
+        eventGraphWindow = null;
+    });
+
+    eventGraphWindow.webContents.setWindowOpenHandler(({ url }) => {
+        void shell.openExternal(url);
+        return { action: "deny" };
+    });
+
+    loadRendererWindow(eventGraphWindow, "/event-map-fullscreen");
+}
+
+function createSpinePreviewWindow(parentWindow?: BrowserWindow | null) {
+    if (spinePreviewWindow && !spinePreviewWindow.isDestroyed()) {
+        if (spinePreviewWindow.isMinimized()) spinePreviewWindow.restore();
+        spinePreviewWindow.show();
+        spinePreviewWindow.focus();
+        return;
+    }
+
+    const display = parentWindow
+        ? screen.getDisplayMatching(parentWindow.getBounds())
+        : screen.getPrimaryDisplay();
+    const { x, y, width, height } = display.workArea;
+
+    spinePreviewWindow = new BrowserWindow({
+        x,
+        y,
+        width,
+        height,
+        minWidth: 1440,
+        minHeight: 900,
+        title: "Spine Viewer Big View",
+        icon: getAppIconPath(),
+        webPreferences: {
+            preload: path.join(__dirname, "preload.mjs"),
+            contextIsolation: true,
+            nodeIntegration: false,
+            webSecurity: false,
+        },
+    });
+
+    spinePreviewWindow.maximize();
+
+    spinePreviewWindow.on("closed", () => {
+        spinePreviewWindow = null;
+    });
+
+    spinePreviewWindow.webContents.setWindowOpenHandler(({ url }) => {
+        void shell.openExternal(url);
+        return { action: "deny" };
+    });
+
+    loadRendererWindow(spinePreviewWindow, "/spine-preview-fullscreen");
+}
+
 app.whenReady().then(() => {
     // Serve local files over the privileged scheme. The renderer encodes the
     // absolute path as the URL pathname, with a fixed "local" host:
@@ -158,6 +257,34 @@ ipcMain.handle("select-file", async () => {
 });
 
 ipcMain.handle("get-app-version", () => app.getVersion());
+
+ipcMain.handle("event-graph:open-fullscreen", (event) => {
+    createEventGraphWindow(BrowserWindow.fromWebContents(event.sender));
+    return { ok: true };
+});
+
+ipcMain.handle("event-graph:close-fullscreen", (event) => {
+    const targetWindow = BrowserWindow.fromWebContents(event.sender);
+    if (targetWindow && !targetWindow.isDestroyed() && targetWindow === eventGraphWindow) {
+        targetWindow.close();
+        return { ok: true };
+    }
+    return { ok: false };
+});
+
+ipcMain.handle("spine-preview:open-fullscreen", (event) => {
+    createSpinePreviewWindow(BrowserWindow.fromWebContents(event.sender));
+    return { ok: true };
+});
+
+ipcMain.handle("spine-preview:close-fullscreen", (event) => {
+    const targetWindow = BrowserWindow.fromWebContents(event.sender);
+    if (targetWindow && !targetWindow.isDestroyed() && targetWindow === spinePreviewWindow) {
+        targetWindow.close();
+        return { ok: true };
+    }
+    return { ok: false };
+});
 
 ipcMain.handle("open-external-link", async (_event, url: string) => {
     try {
@@ -276,6 +403,7 @@ registerBindSoundRefsHandler();
 registerCheckAssetsHandler();
 registerSpinePreviewHandler();
 registerSceneKitHandler();
+registerEventGraphHandler();
 registerStorageHandlers();
 registerCheatLocalSocketHandlers();
 registerExportCheatExtensionHandlers();

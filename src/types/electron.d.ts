@@ -160,6 +160,8 @@ interface ElectronAPI {
         exitCode: number;
         error?: string;
     }>;
+    openSpinePreviewFullscreen: () => Promise<{ ok: boolean }>;
+    closeSpinePreviewFullscreen: () => Promise<{ ok: boolean }>;
     sceneKit: {
         selectSceneOrPrefabFile: () => Promise<string | null>;
         previewBoilerplate: (sceneFilePath: string, tableFormat?: string) => Promise<{
@@ -196,6 +198,72 @@ interface ElectronAPI {
             totalCount: number;
             changed: boolean;
         }>;
+    };
+    eventGraph: {
+        scan: (sourcePath: string) => Promise<{
+            sourcePath: string;
+            scannedFiles: number;
+            totalEvents: number;
+            totalEmits: number;
+            totalListeners: number;
+            nodes: Array<{
+                id: string;
+                label: string;
+                filePath: string;
+                relativePath: string;
+                emitCount: number;
+                listenerCount: number;
+            }>;
+            edges: Array<{
+                id: string;
+                source: string;
+                target: string;
+                eventValue: string;
+                emitCount: number;
+                listenerCount: number;
+            }>;
+            usages: Array<{
+                id: string;
+                kind: "emit" | "on";
+                eventValue: string;
+                eventExpression: string;
+                filePath: string;
+                relativePath: string;
+                componentName: string;
+                functionName: string;
+                line: number;
+                column: number;
+                caller: string;
+            }>;
+            orphanEmits: Array<{
+                id: string;
+                kind: "emit" | "on";
+                eventValue: string;
+                eventExpression: string;
+                filePath: string;
+                relativePath: string;
+                componentName: string;
+                functionName: string;
+                line: number;
+                column: number;
+                caller: string;
+            }>;
+            orphanListeners: Array<{
+                id: string;
+                kind: "emit" | "on";
+                eventValue: string;
+                eventExpression: string;
+                filePath: string;
+                relativePath: string;
+                componentName: string;
+                functionName: string;
+                line: number;
+                column: number;
+                caller: string;
+            }>;
+        }>;
+        openFullscreen: () => Promise<{ ok: boolean }>;
+        closeFullscreen: () => Promise<{ ok: boolean }>;
     };
     cheatLocalSocket: {
         start: (port?: number) => Promise<{
