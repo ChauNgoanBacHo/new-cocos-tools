@@ -295,17 +295,36 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
     const componentSummaries = useMemo(() => groupComponents(result?.usages || []), [result]);
     const highlightedOverviewEdgeIds = useMemo(() => {
         if (!selectedOverviewComponentId) return new Set<string>();
+        const selectedEmitEventIds = new Set(
+            overviewEdges
+                .filter((edge) => edge.source === selectedOverviewComponentId && edge.target.startsWith("event:"))
+                .map((edge) => edge.target),
+        );
         return new Set(
             overviewEdges
-                .filter((edge) => edge.source === selectedOverviewComponentId || edge.target === selectedOverviewComponentId)
+                .filter((edge) => (
+                    edge.source === selectedOverviewComponentId
+                    || edge.target === selectedOverviewComponentId
+                    || (selectedEmitEventIds.has(edge.source) && edge.target.startsWith("component:"))
+                ))
                 .map((edge) => edge.id),
         );
     }, [overviewEdges, selectedOverviewComponentId]);
     const highlightedOverviewNodeIds = useMemo(() => {
         if (!selectedOverviewComponentId) return new Set<string>();
         const ids = new Set<string>([selectedOverviewComponentId]);
+        const selectedEmitEventIds = new Set<string>();
         overviewEdges.forEach((edge) => {
             if (edge.source === selectedOverviewComponentId || edge.target === selectedOverviewComponentId) {
+                ids.add(edge.source);
+                ids.add(edge.target);
+            }
+            if (edge.source === selectedOverviewComponentId && edge.target.startsWith("event:")) {
+                selectedEmitEventIds.add(edge.target);
+            }
+        });
+        overviewEdges.forEach((edge) => {
+            if (selectedEmitEventIds.has(edge.source) && edge.target.startsWith("component:")) {
                 ids.add(edge.source);
                 ids.add(edge.target);
             }
