@@ -13,6 +13,7 @@ import ELK from "elkjs/lib/elk.bundled.js";
 import { useStoredState } from "../hooks/useStoredState";
 
 type EventUsageKind = "emit" | "on";
+type EventMapViewMode = "full" | "listener-inbox";
 
 interface EventUsage {
     id: string;
@@ -45,13 +46,39 @@ interface EventGroup {
 
 interface ComponentEventSummary {
     componentName: string;
+    filePath: string;
     relativePath: string;
     emits: EventUsage[];
     listeners: EventUsage[];
     events: EventGroup[];
 }
 
+interface ComponentContextMenuState {
+    x: number;
+    y: number;
+    componentName: string;
+    filePath: string;
+}
+
 const elk = new ELK();
+const EVENT_MAP_VIEW_LABELS: Record<EventMapViewMode, string> = {
+    full: "Full",
+    "listener-inbox": "Listener Inbox",
+};
+
+interface ListenerInboxRow {
+    eventValue: string;
+    emitters: string[];
+    listenerCount: number;
+}
+
+function isComponentNodeId(nodeId: string) {
+    return nodeId.startsWith("component:");
+}
+
+function isEventLikeNodeId(nodeId: string) {
+    return nodeId.startsWith("event:");
+}
 
 function groupEvents(usages: EventUsage[]) {
     const groups = new Map<string, EventGroup>();
@@ -87,6 +114,7 @@ function groupComponents(usages: EventUsage[]) {
         const componentKey = usage.relativePath;
         const summary = componentMap.get(componentKey) || {
             componentName: usage.componentName,
+            filePath: usage.filePath,
             relativePath: usage.relativePath,
             emits: [],
             listeners: [],
@@ -204,6 +232,97 @@ function makeOverviewEventNode(group: EventGroup): Node {
     };
 }
 
+function getListenerInboxRows(summary: ComponentEventSummary, eventGroups: EventGroup[], summaryByPath: Map<string, ComponentEventSummary>) {
+    const rows = new Map<string, ListenerInboxRow>();
+
+    summary.listeners.forEach((listener) => {
+        const group = eventGroups.find((eventGroup) => eventGroup.eventValue === listener.eventValue);
+        const emitters = Array.from(new Set(
+            (group?.emits || [])
+                .map((emit) => summaryByPath.get(emit.relativePath)?.componentName || emit.componentName)
+                .filter(Boolean),
+        )).sort((left, right) => left.localeCompare(right));
+        const row = rows.get(listener.eventValue) || {
+            eventValue: listener.eventValue,
+            emitters,
+            listenerCount: 0,
+        };
+
+        row.listenerCount += 1;
+        row.emitters = Array.from(new Set([...row.emitters, ...emitters])).sort((left, right) => left.localeCompare(right));
+        rows.set(listener.eventValue, row);
+    });
+
+    return Array.from(rows.values()).sort((left, right) => {
+        const leftScore = left.listenerCount + left.emitters.length;
+        const rightScore = right.listenerCount + right.emitters.length;
+        return rightScore - leftScore || left.eventValue.localeCompare(right.eventValue);
+    });
+}
+
+function makeListenerInboxComponentNode(
+    summary: ComponentEventSummary,
+    eventGroups: EventGroup[],
+    summaryByPath: Map<string, ComponentEventSummary>,
+): Node {
+    const rows = getListenerInboxRows(summary, eventGroups, summaryByPath);
+    const hasInbox = rows.length > 0;
+    return {
+        id: `component:${summary.relativePath}`,
+        position: { x: 0, y: 0 },
+        draggable: false,
+        connectable: false,
+        data: {
+            label: (
+                <div className="w-[330px] text-left">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                            <div className="truncate text-sm font-black text-white">{summary.componentName}</div>
+                            <div className="mt-1 text-[10px] font-black uppercase tracking-wider text-cyan-50/80">
+                                Listener Inbox
+                            </div>
+                        </div>
+                        <span className="rounded-md bg-white/20 px-2 py-0.5 font-mono text-[10px] font-black text-white ring-1 ring-white/20">
+                            {summary.listeners.length} on
+                        </span>
+                    </div>
+                    <div className="nowheel nodrag mt-3 grid max-h-[178px] gap-1.5 overflow-y-auto pr-1">
+                        {rows.length ? rows.map((row) => (
+                            <div key={row.eventValue} className="grid min-w-0 gap-1 rounded-md bg-black/18 px-2 py-1.5 ring-1 ring-white/10">
+                                <div className="truncate font-mono text-[10px] font-black text-white">{row.eventValue}</div>
+                                <div className="truncate text-[10px] font-bold text-cyan-50/78">
+                                    &lt;- {row.emitters.length ? row.emitters.join(", ") : "No emitter found"}
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="rounded-md bg-black/14 px-2 py-2 text-[10px] font-bold text-cyan-50/78">
+                                No listener event. Emits {summary.emits.length} event(s).
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ),
+            type: "component",
+        },
+        style: {
+            borderRadius: 8,
+            border: hasInbox
+                ? "1px solid rgba(34, 211, 238, 0.9)"
+                : "1px solid rgba(148, 163, 184, 0.38)",
+            background: hasInbox
+                ? "linear-gradient(135deg, #06b6d4 0%, #2563eb 52%, #7c3aed 100%)"
+                : "linear-gradient(135deg, rgba(71, 85, 105, 0.9), rgba(51, 65, 85, 0.9))",
+            boxShadow: hasInbox
+                ? "0 0 0 1px rgba(255, 255, 255, 0.18), 0 16px 38px rgba(6, 182, 212, 0.34), 0 0 28px rgba(124, 58, 237, 0.42)"
+                : "0 12px 28px rgba(15, 23, 42, 0.18)",
+            padding: 12,
+            width: 370,
+            height: hasInbox ? 278 : 132,
+            overflow: "hidden",
+        },
+    };
+}
+
 async function layoutGraph(nodes: Node[], edges: Edge[]) {
     const graph = await elk.layout({
         id: "root",
@@ -280,23 +399,72 @@ function buildOverviewGraph(eventGroups: EventGroup[], componentSummaries: Compo
     };
 }
 
+function buildListenerInboxGraph(eventGroups: EventGroup[], componentSummaries: ComponentEventSummary[]) {
+    const nodes = new Map<string, Node>();
+    const edges = new Map<string, Edge & { data?: { count: number } }>();
+    const summaryByPath = new Map(componentSummaries.map((summary) => [summary.relativePath, summary]));
+
+    componentSummaries.forEach((summary) => {
+        nodes.set(`component:${summary.relativePath}`, makeListenerInboxComponentNode(summary, eventGroups, summaryByPath));
+    });
+
+    const addEdge = (source: string, target: string) => {
+        const id = `${source}->${target}`;
+        const existing = edges.get(id);
+        const count = (existing?.data?.count || 0) + 1;
+        edges.set(id, {
+            id,
+            source,
+            target,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            style: { stroke: "#0ea5e9", strokeWidth: count > 1 ? 3 : 2 },
+            data: { count },
+        });
+    };
+
+    eventGroups.forEach((group) => {
+        const emitterPaths = new Set(group.emits.map((usage) => usage.relativePath).filter((path) => summaryByPath.has(path)));
+        const listenerPaths = new Set(group.listeners.map((usage) => usage.relativePath).filter((path) => summaryByPath.has(path)));
+        emitterPaths.forEach((emitterPath) => {
+            listenerPaths.forEach((listenerPath) => {
+                addEdge(`component:${emitterPath}`, `component:${listenerPath}`);
+            });
+        });
+    });
+
+    return {
+        nodes: Array.from(nodes.values()),
+        edges: Array.from(edges.values()),
+    };
+}
+
+function buildEventMapGraph(viewMode: EventMapViewMode, eventGroups: EventGroup[], componentSummaries: ComponentEventSummary[]) {
+    if (viewMode === "listener-inbox") {
+        return buildListenerInboxGraph(eventGroups, componentSummaries);
+    }
+    return buildOverviewGraph(eventGroups, componentSummaries);
+}
+
 export default function EventGraph({ isStandalone = false }: { isStandalone?: boolean }) {
     const [sourcePath, setSourcePath] = useStoredState<string>("event-graph-source-path", "");
     const [result, setResult] = useState<EventGraphResult | null>(null);
     const [overviewNodes, setOverviewNodes] = useState<Node[]>([]);
     const [overviewEdges, setOverviewEdges] = useState<Edge[]>([]);
     const [selectedOverviewComponentId, setSelectedOverviewComponentId] = useState("");
+    const [eventMapViewMode, setEventMapViewMode] = useStoredState<EventMapViewMode>("event-map-view-mode", "full");
+    const [componentContextMenu, setComponentContextMenu] = useState<ComponentContextMenuState | null>(null);
     const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
     const [isLoading, setIsLoading] = useState(false);
     const overviewFlowRef = useRef<ReactFlowInstance<Node, Edge> | null>(null);
 
     const eventGroups = useMemo(() => groupEvents(result?.usages || []), [result]);
     const componentSummaries = useMemo(() => groupComponents(result?.usages || []), [result]);
+    const activeEventMapViewMode: EventMapViewMode = eventMapViewMode === "listener-inbox" ? "listener-inbox" : "full";
     const highlightedOverviewEdgeIds = useMemo(() => {
         if (!selectedOverviewComponentId) return new Set<string>();
         const selectedEmitEventIds = new Set(
             overviewEdges
-                .filter((edge) => edge.source === selectedOverviewComponentId && edge.target.startsWith("event:"))
+                .filter((edge) => edge.source === selectedOverviewComponentId && isEventLikeNodeId(edge.target))
                 .map((edge) => edge.target),
         );
         return new Set(
@@ -304,7 +472,7 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
                 .filter((edge) => (
                     edge.source === selectedOverviewComponentId
                     || edge.target === selectedOverviewComponentId
-                    || (selectedEmitEventIds.has(edge.source) && edge.target.startsWith("component:"))
+                    || (selectedEmitEventIds.has(edge.source) && isComponentNodeId(edge.target))
                 ))
                 .map((edge) => edge.id),
         );
@@ -318,12 +486,12 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
                 ids.add(edge.source);
                 ids.add(edge.target);
             }
-            if (edge.source === selectedOverviewComponentId && edge.target.startsWith("event:")) {
+            if (edge.source === selectedOverviewComponentId && isEventLikeNodeId(edge.target)) {
                 selectedEmitEventIds.add(edge.target);
             }
         });
         overviewEdges.forEach((edge) => {
-            if (selectedEmitEventIds.has(edge.source) && edge.target.startsWith("component:")) {
+            if (selectedEmitEventIds.has(edge.source) && isComponentNodeId(edge.target)) {
                 ids.add(edge.source);
                 ids.add(edge.target);
             }
@@ -369,10 +537,25 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
     }, [highlightedOverviewEdgeIds, overviewEdges, selectedOverviewComponentId]);
 
     useEffect(() => {
-        const graph = buildOverviewGraph(eventGroups, componentSummaries);
+        const graph = buildEventMapGraph(activeEventMapViewMode, eventGroups, componentSummaries);
         setOverviewEdges(graph.edges);
         void layoutGraph(graph.nodes, graph.edges).then(setOverviewNodes);
-    }, [eventGroups, componentSummaries]);
+    }, [eventGroups, componentSummaries, activeEventMapViewMode]);
+
+    useEffect(() => {
+        setSelectedOverviewComponentId("");
+        setComponentContextMenu(null);
+    }, [activeEventMapViewMode]);
+
+    useEffect(() => {
+        const closeMenu = () => setComponentContextMenu(null);
+        window.addEventListener("click", closeMenu);
+        window.addEventListener("blur", closeMenu);
+        return () => {
+            window.removeEventListener("click", closeMenu);
+            window.removeEventListener("blur", closeMenu);
+        };
+    }, []);
 
     const handleSelectSource = async () => {
         const folder = await window.electronAPI.selectFolder();
@@ -435,6 +618,7 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
         const nodeId = `component:${summary.relativePath}`;
         const targetNode = overviewNodes.find((node) => node.id === nodeId);
         setSelectedOverviewComponentId(nodeId);
+        setComponentContextMenu(null);
 
         if (!targetNode || !overviewFlowRef.current) return;
         const width = Number(targetNode.style?.width) || 280;
@@ -444,6 +628,20 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
             targetNode.position.y + height / 2,
             { zoom: 0.9, duration: 520 },
         );
+    };
+
+    const handleOpenComponentFile = async () => {
+        if (!componentContextMenu?.filePath) return;
+        try {
+            const response = await window.electronAPI.openInVSCode(componentContextMenu.filePath);
+            if (!response?.ok) {
+                setStatus({ type: "error", message: response?.error || "Failed to open file in VS Code." });
+            }
+        } catch (error: any) {
+            setStatus({ type: "error", message: error.message || "Failed to open file in VS Code." });
+        } finally {
+            setComponentContextMenu(null);
+        }
     };
 
     return (
@@ -579,14 +777,39 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
                                     <div>
                                         <h4 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Overall Event Flow</h4>
                                         <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                                            Green lines: component emits event. Blue lines: component listens to event. Click a component to highlight its links.
+                                            {activeEventMapViewMode === "listener-inbox"
+                                                ? "Listener Inbox groups events inside the component that handles them. Lines show which component emits into each inbox."
+                                                : "Green lines: component emits event. Blue lines: component listens to event. Click a component to highlight its links."}
                                         </p>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
+                                    <div className="flex flex-wrap justify-start gap-2 text-[11px] font-bold uppercase tracking-wider md:justify-end">
+                                        <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-white p-0.5 dark:border-white/5 dark:bg-[#232938]">
+                                            {(Object.keys(EVENT_MAP_VIEW_LABELS) as EventMapViewMode[]).map((mode) => (
+                                                <button
+                                                    key={mode}
+                                                    type="button"
+                                                    onClick={() => setEventMapViewMode(mode)}
+                                                    className={`rounded-md px-2.5 py-1 transition-colors ${
+                                                        activeEventMapViewMode === mode
+                                                            ? "bg-[#7d6df7] text-white"
+                                                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100"
+                                                    }`}>
+                                                    {EVENT_MAP_VIEW_LABELS[mode]}
+                                                </button>
+                                            ))}
+                                        </div>
                                         <span className="rounded-md border border-cyan-300/80 bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 px-2.5 py-1 text-white shadow-sm shadow-cyan-500/25">Component</span>
-                                        <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Matched Event</span>
-                                        <span className="rounded-md bg-amber-100 px-2.5 py-1 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Emit Only</span>
-                                        <span className="rounded-md bg-red-100 px-2.5 py-1 text-red-700 dark:bg-red-500/15 dark:text-red-300">On Only</span>
+                                        {activeEventMapViewMode === "listener-inbox" ? (
+                                            <span className="rounded-md bg-sky-100 px-2.5 py-1 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">Inbox Flow</span>
+                                        ) : (
+                                            <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Matched Event</span>
+                                        )}
+                                        {activeEventMapViewMode === "full" && (
+                                            <span className="rounded-md bg-amber-100 px-2.5 py-1 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Emit Only</span>
+                                        )}
+                                        {activeEventMapViewMode === "full" && (
+                                            <span className="rounded-md bg-red-100 px-2.5 py-1 text-red-700 dark:bg-red-500/15 dark:text-red-300">On Only</span>
+                                        )}
                                         {selectedOverviewComponentId && (
                                             <button
                                                 type="button"
@@ -613,16 +836,58 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
                                         onInit={(instance) => {
                                             overviewFlowRef.current = instance;
                                         }}
-                                        onPaneClick={() => setSelectedOverviewComponentId("")}
+                                        onPaneClick={() => {
+                                            setSelectedOverviewComponentId("");
+                                            setComponentContextMenu(null);
+                                        }}
                                         onNodeClick={(_event, node) => {
                                             if (node.data?.type === "component") {
                                                 const summary = componentSummaries.find((item) => `component:${item.relativePath}` === node.id);
                                                 if (summary) handleFocusComponent(summary);
                                             }
+                                        }}
+                                        onNodeContextMenu={(event, node) => {
+                                            if (node.data?.type !== "component") return;
+                                            const summary = componentSummaries.find((item) => `component:${item.relativePath}` === node.id);
+                                            if (!summary) return;
+
+                                            event.preventDefault();
+                                            setSelectedOverviewComponentId(node.id);
+                                            setComponentContextMenu({
+                                                x: Math.min(event.clientX, window.innerWidth - 240),
+                                                y: Math.min(event.clientY, window.innerHeight - 120),
+                                                componentName: summary.componentName,
+                                                filePath: summary.filePath,
+                                            });
                                         }}>
                                         <Background />
                                         <Controls showInteractive={false} />
                                     </ReactFlow>
+                                    {componentContextMenu && (
+                                        <div
+                                            className="fixed z-[80] w-56 overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-[0_18px_40px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-[#232938]"
+                                            style={{
+                                                left: componentContextMenu.x,
+                                                top: componentContextMenu.y,
+                                            }}
+                                            onClick={(event) => event.stopPropagation()}
+                                            onContextMenu={(event) => event.preventDefault()}>
+                                            <div className="border-b border-slate-200 px-3 py-2 dark:border-white/10">
+                                                <div className="truncate text-xs font-black text-slate-900 dark:text-zinc-100">
+                                                    {componentContextMenu.componentName}
+                                                </div>
+                                                <div className="mt-0.5 truncate font-mono text-[10px] text-slate-500 dark:text-zinc-400">
+                                                    {componentContextMenu.filePath}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => void handleOpenComponentFile()}
+                                                className="block w-full px-3 py-2 text-left text-xs font-bold text-slate-700 transition-colors hover:bg-cyan-50 hover:text-cyan-700 dark:text-zinc-200 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-200">
+                                                Open File
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
