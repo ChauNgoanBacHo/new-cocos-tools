@@ -140,7 +140,6 @@ function makeOverviewComponentNode(summary: ComponentEventSummary): Node {
             label: (
                 <div className="w-[240px] text-left">
                     <div className="truncate text-sm font-black text-white">{summary.componentName}</div>
-                    <div className="mt-1 truncate font-mono text-[10px] text-cyan-50/85">{summary.relativePath}</div>
                     <div className="mt-2 flex gap-2 text-[10px] font-bold uppercase tracking-wider">
                         <span className="rounded-md bg-white/20 px-2 py-0.5 text-white ring-1 ring-white/20">{summary.emits.length} emit</span>
                         <span className="rounded-md bg-white/20 px-2 py-0.5 text-white ring-1 ring-white/20">{summary.listeners.length} on</span>
