@@ -777,9 +777,7 @@ export default function EventGraph({ isStandalone = false }: { isStandalone?: bo
                                     <div>
                                         <h4 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Overall Event Flow</h4>
                                         <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                                            {activeEventMapViewMode === "listener-inbox"
-                                                ? "Listener Inbox groups events inside the component that handles them. Lines show which component emits into each inbox."
-                                                : "Green lines: component emits event. Blue lines: component listens to event. Click a component to highlight its links."}
+                                            Right click to open file
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap justify-start gap-2 text-[11px] font-bold uppercase tracking-wider md:justify-end">
