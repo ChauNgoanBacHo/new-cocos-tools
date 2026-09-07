@@ -36,12 +36,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     openSpinePreviewFullscreen: () => ipcRenderer.invoke("spine-preview:open-fullscreen"),
     closeSpinePreviewFullscreen: () => ipcRenderer.invoke("spine-preview:close-fullscreen"),
     sceneKit: {
+        selectSourceFile: (sourceType?: "scene" | "fire") =>
+            ipcRenderer.invoke("scene-kit:select-source-file", sourceType),
         selectSceneOrPrefabFile: () =>
             ipcRenderer.invoke("scene-kit:select-scene-or-prefab-file"),
-        previewBoilerplate: (sceneFilePath: string, tableFormat?: string) =>
-            ipcRenderer.invoke("scene-kit:preview-boilerplate", sceneFilePath, tableFormat),
-        createBoilerplate: (sceneFilePath: string, tableFormat?: string) =>
-            ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath, tableFormat),
+        previewBoilerplate: (sceneFilePath: string, tableFormat?: string, sourceType?: "scene" | "fire") =>
+            ipcRenderer.invoke("scene-kit:preview-boilerplate", sceneFilePath, tableFormat, sourceType),
+        createBoilerplate: (sceneFilePath: string, tableFormat?: string, sourceType?: "scene" | "fire") =>
+            ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath, tableFormat, sourceType),
         replaceUuidRef: (targetFilePath: string, oldUuid: string, newUuid: string) =>
             ipcRenderer.invoke("scene-kit:replace-uuid-ref", targetFilePath, oldUuid, newUuid),
     },

@@ -163,9 +163,11 @@ interface ElectronAPI {
     openSpinePreviewFullscreen: () => Promise<{ ok: boolean }>;
     closeSpinePreviewFullscreen: () => Promise<{ ok: boolean }>;
     sceneKit: {
+        selectSourceFile: (sourceType?: "scene" | "fire") => Promise<string | null>;
         selectSceneOrPrefabFile: () => Promise<string | null>;
-        previewBoilerplate: (sceneFilePath: string, tableFormat?: string) => Promise<{
+        previewBoilerplate: (sceneFilePath: string, tableFormat?: string, sourceType?: "scene" | "fire") => Promise<{
             gameId: string;
+            sourceType?: "scene" | "fire";
             projectRoot: string;
             tableFormat: number[];
             files: Array<{
@@ -177,8 +179,9 @@ interface ElectronAPI {
                 status: "exists" | "missing";
             }>;
         }>;
-        createBoilerplate: (sceneFilePath: string, tableFormat?: string) => Promise<{
+        createBoilerplate: (sceneFilePath: string, tableFormat?: string, sourceType?: "scene" | "fire") => Promise<{
             gameId: string;
+            sourceType?: "scene" | "fire";
             projectRoot: string;
             tableFormat: number[];
             files: Array<{

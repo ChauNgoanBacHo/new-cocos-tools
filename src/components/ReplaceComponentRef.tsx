@@ -126,7 +126,7 @@ export default function ReplaceComponentRef() {
                 <div className="text-left">
                     <h2 className="mb-1 text-2xl font-bold text-[#9b8cff]">Replace Ref</h2>
                     <p className="text-xs text-slate-500 dark:text-zinc-400">
-                        Replace UUID references inside Cocos scene or prefab files
+                        Replace UUID references inside Cocos scene, fire, or prefab files
                     </p>
                 </div>
             </div>
@@ -157,7 +157,7 @@ export default function ReplaceComponentRef() {
                         <PathInput
                             label="Target File"
                             value={targetFilePath}
-                            placeholder="Choose .scene or .prefab"
+                            placeholder="Choose .scene, .fire, or .prefab"
                             onChange={setTargetFilePath}
                             onSelect={() => void handleSelectTarget()}
                         />

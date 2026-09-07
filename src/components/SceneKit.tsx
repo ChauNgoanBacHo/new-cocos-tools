@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStoredState } from "../hooks/useStoredState";
 
+type SceneKitSourceType = "scene" | "fire";
+
 interface BoilerplatePreview {
     gameId: string;
+    sourceType?: SceneKitSourceType;
     projectRoot: string;
     tableFormat: number[];
     files: Array<{
@@ -13,6 +16,7 @@ interface BoilerplatePreview {
 
 interface BoilerplateResult {
     gameId: string;
+    sourceType?: SceneKitSourceType;
     projectRoot: string;
     tableFormat: number[];
     files: Array<{
@@ -35,8 +39,16 @@ function getParentLabel(projectRoot: string, filePath: string) {
     return slashIndex >= 0 ? relativePath.slice(0, slashIndex) : ".";
 }
 
+function getSourceTypeFromPath(filePath: string): SceneKitSourceType | null {
+    if (/\.fire$/i.test(filePath)) return "fire";
+    if (/\.scene$/i.test(filePath)) return "scene";
+    return null;
+}
+
 export default function SceneKit() {
     const [scenePath, setScenePath] = useStoredState<string>("scene-kit-scene-path", "");
+    const [firePath, setFirePath] = useStoredState<string>("scene-kit-fire-path", "");
+    const [sourceType, setSourceType] = useStoredState<SceneKitSourceType>("scene-kit-source-type", "scene");
     const [tableFormat, setTableFormat] = useStoredState<string>("scene-kit-table-format", "3,3,3,3,3");
     const [preview, setPreview] = useState<BoilerplatePreview | null>(null);
     const [result, setResult] = useState<BoilerplateResult | null>(null);
@@ -61,11 +73,29 @@ export default function SceneKit() {
         [preview, result],
     );
 
-    const handlePreview = async (nextScenePath = scenePath, nextTableFormat = tableFormat) => {
-        if (!nextScenePath.trim()) {
-            setPreview(null);
-            setResult(null);
-            setStatus({ type: "error", message: "Please choose a scene file first." });
+    const activeSourcePath = sourceType === "fire" ? firePath : scenePath;
+    const isSceneActive = sourceType === "scene";
+    const isFireActive = sourceType === "fire";
+
+    const resetPreviewState = () => {
+        setPreview(null);
+        setResult(null);
+        setStatus({ type: null, message: "" });
+    };
+
+    const handlePreview = async (
+        nextSourcePath = activeSourcePath,
+        nextTableFormat = tableFormat,
+        nextSourceType: SceneKitSourceType = sourceType,
+    ) => {
+        if (!nextSourcePath.trim()) {
+            resetPreviewState();
+            return;
+        }
+
+        const pathSourceType = getSourceTypeFromPath(nextSourcePath);
+        if (pathSourceType !== nextSourceType) {
+            resetPreviewState();
             return;
         }
 
@@ -73,7 +103,7 @@ export default function SceneKit() {
         setResult(null);
         setStatus({ type: null, message: "" });
         try {
-            const nextPreview = await window.electronAPI.sceneKit.previewBoilerplate(nextScenePath, nextTableFormat);
+            const nextPreview = await window.electronAPI.sceneKit.previewBoilerplate(nextSourcePath, nextTableFormat, nextSourceType);
             setPreview(nextPreview);
         } catch (error: any) {
             setPreview(null);
@@ -83,26 +113,42 @@ export default function SceneKit() {
         }
     };
 
-    const handleSelectScene = async () => {
-        const file = await window.electronAPI.selectSceneFile();
+    const handleSelectSource = async (nextSourceType: SceneKitSourceType) => {
+        const file = await window.electronAPI.sceneKit.selectSourceFile(nextSourceType);
         if (!file) return;
-        setScenePath(file);
-        void handlePreview(file);
+        setSourceType(nextSourceType);
+        if (nextSourceType === "fire") {
+            setFirePath(file);
+        } else {
+            setScenePath(file);
+        }
+        void handlePreview(file, tableFormat, nextSourceType);
+    };
+
+    const handleSourceTypeChange = (nextSourceType: SceneKitSourceType) => {
+        setSourceType(nextSourceType);
+        const nextPath = nextSourceType === "fire" ? firePath : scenePath;
+        if (!nextPath.trim() || getSourceTypeFromPath(nextPath) !== nextSourceType) {
+            resetPreviewState();
+            return;
+        }
+        void handlePreview(nextPath, tableFormat, nextSourceType);
     };
 
     const handleCreate = async () => {
-        if (!scenePath.trim()) {
-            setStatus({ type: "error", message: "Please choose a scene file first." });
+        if (!activeSourcePath.trim()) {
+            setStatus({ type: "error", message: `Please choose a ${sourceType === "fire" ? "fire" : "scene"} file first.` });
             return;
         }
 
         setIsLoading(true);
         setStatus({ type: null, message: "" });
         try {
-            const nextResult = await window.electronAPI.sceneKit.createBoilerplate(scenePath, tableFormat);
+            const nextResult = await window.electronAPI.sceneKit.createBoilerplate(activeSourcePath, tableFormat, sourceType);
             setResult(nextResult);
             setPreview({
                 gameId: nextResult.gameId,
+                sourceType: nextResult.sourceType,
                 projectRoot: nextResult.projectRoot,
                 tableFormat: nextResult.tableFormat,
                 files: nextResult.files.map((file) => ({
@@ -122,8 +168,31 @@ export default function SceneKit() {
     };
 
     useEffect(() => {
-        if (scenePath.trim()) {
-            void handlePreview(scenePath, tableFormat);
+        const scenePathType = getSourceTypeFromPath(scenePath);
+        const firePathType = getSourceTypeFromPath(firePath);
+
+        if (scenePathType === "fire") {
+            if (!firePath.trim()) {
+                setFirePath(scenePath);
+            }
+            setScenePath("");
+            setSourceType("fire");
+            void handlePreview(scenePath, tableFormat, "fire");
+            return;
+        }
+
+        if (firePathType === "scene") {
+            if (!scenePath.trim()) {
+                setScenePath(firePath);
+            }
+            setFirePath("");
+            setSourceType("scene");
+            void handlePreview(firePath, tableFormat, "scene");
+            return;
+        }
+
+        if (activeSourcePath.trim()) {
+            void handlePreview(activeSourcePath, tableFormat, sourceType);
         }
     }, []);
 
@@ -135,7 +204,7 @@ export default function SceneKit() {
                 <div className="text-left">
                     <h2 className="mb-1 text-2xl font-bold text-[#9b8cff]">Starter Kit</h2>
                     <p className="text-xs text-slate-500 dark:text-zinc-400">
-                        Generate game-scoped source boilerplate from a Cocos scene path
+                        Generate game-scoped source boilerplate from a Cocos source path
                     </p>
                 </div>
             </div>
@@ -163,7 +232,9 @@ export default function SceneKit() {
                             </h3>
                         </div>
 
-                        <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
+                        <div className={`grid grid-cols-1 items-center gap-2 transition-opacity sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4 ${
+                            isSceneActive ? "opacity-100" : "opacity-45"
+                        }`}>
                             <label className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                                 Scene Path <span className="text-red-500">*</span>
                             </label>
@@ -172,20 +243,69 @@ export default function SceneKit() {
                                     type="text"
                                     value={scenePath}
                                     readOnly
-                                    placeholder="Choose g9691L.scene"
-                                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                                    disabled={!isSceneActive}
+                                    placeholder="Cocos 3.x: choose .scene file"
+                                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="button"
-                                    onClick={handleSelectScene}
-                                    disabled={isLoading}
-                                    title="Choose scene file"
-                                    aria-label="Choose scene file"
+                                    onClick={() => void handleSelectSource("scene")}
+                                    disabled={isLoading || !isSceneActive}
+                                    title="Choose Cocos 3.x scene file"
+                                    aria-label="Choose Cocos 3.x scene file"
                                     className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:border-[#7d6df7]/20 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
                                     <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
                                     </svg>
                                 </button>
+                            </div>
+                        </div>
+
+                        <div className={`grid grid-cols-1 items-center gap-2 transition-opacity sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4 ${
+                            isFireActive ? "opacity-100" : "opacity-45"
+                        }`}>
+                            <label className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                Fire Path <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex min-w-0 gap-2">
+                                <input
+                                    type="text"
+                                    value={firePath}
+                                    readOnly
+                                    disabled={!isFireActive}
+                                    placeholder="Cocos 2.x: choose .fire file"
+                                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => void handleSelectSource("fire")}
+                                    disabled={isLoading || !isFireActive}
+                                    title="Choose Cocos 2.x fire file"
+                                    aria-label="Choose Cocos 2.x fire file"
+                                    className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:border-[#7d6df7]/20 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200">
+                                    <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A1.75 1.75 0 015.5 5.75h4l1.5 1.75h7a1.75 1.75 0 011.75 1.75v7A1.75 1.75 0 0118 18H5.5a1.75 1.75 0 01-1.75-1.75v-8.75z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
+                            <div />
+                            <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-white/5 dark:bg-[#1b2029]">
+                                {(["scene", "fire"] as const).map((item) => (
+                                    <button
+                                        key={item}
+                                        type="button"
+                                        onClick={() => handleSourceTypeChange(item)}
+                                        className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                                            sourceType === item
+                                                ? "bg-[#7d6df7] text-white shadow-sm shadow-[#7d6df7]/25"
+                                                : "text-slate-500 hover:bg-white hover:text-slate-700 dark:text-zinc-400 dark:hover:bg-[#232938] dark:hover:text-zinc-200"
+                                        }`}>
+                                        {item === "fire" ? "Use Cocos 2.x Fire" : "Use Cocos 3.x Scene"}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -197,7 +317,7 @@ export default function SceneKit() {
                                 type="text"
                                 value={tableFormat}
                                 onChange={(event) => setTableFormat(event.target.value)}
-                                onBlur={() => scenePath.trim() && void handlePreview(scenePath, tableFormat)}
+                                onBlur={() => activeSourcePath.trim() && void handlePreview(activeSourcePath, tableFormat, sourceType)}
                                 placeholder="3,3,3,3,3"
                                 spellCheck={false}
                                 className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none dark:border-white/5 dark:bg-[#1b2029] dark:text-zinc-100 dark:placeholder-zinc-500"
@@ -211,10 +331,14 @@ export default function SceneKit() {
                                     <div className="mt-1 font-mono text-lg font-bold text-slate-800 dark:text-zinc-100">{preview.gameId}</div>
                                 </div>
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029]">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Source</div>
+                                    <div className="mt-1 font-mono text-lg font-bold text-slate-800 dark:text-zinc-100">{preview.sourceType === "fire" ? "Cocos 2.x" : "Cocos 3.x"}</div>
+                                </div>
+                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029] sm:col-span-2">
                                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Table Format</div>
                                     <div className="mt-1 font-mono text-lg font-bold text-slate-800 dark:text-zinc-100">[{preview.tableFormat.join(", ")}]</div>
                                 </div>
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029] sm:col-span-2">
+                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-white/5 dark:bg-[#1b2029] sm:col-span-4">
                                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Project Root</div>
                                     <div className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-zinc-200">{preview.projectRoot}</div>
                                 </div>
@@ -273,7 +397,7 @@ export default function SceneKit() {
                         <button
                             type="button"
                             onClick={() => void handleCreate()}
-                            disabled={isLoading || !scenePath.trim()}
+                            disabled={isLoading || !activeSourcePath.trim()}
                             className="flex-1 cursor-pointer rounded-xl bg-[#7d6df7] px-6 py-3.5 text-sm font-bold text-white shadow-sm shadow-[#7d6df7]/25 transition-all hover:bg-[#9387ff] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-500">
                             Create Boilerplate
                         </button>

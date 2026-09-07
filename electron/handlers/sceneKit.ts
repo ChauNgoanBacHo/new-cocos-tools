@@ -18,17 +18,56 @@ interface ComponentRefReplacement {
     count: number;
 }
 
+type SceneKitSourceType = "scene" | "fire";
+
 const UUID_BASE64_KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 function extractGameIdFromScenePath(sceneFilePath: string) {
     const fileName = path.basename(sceneFilePath);
-    const sceneNameMatch = fileName.match(/^g(\d{4,})(?:[A-Za-z])?\.scene$/i);
+    const sceneNameMatch = fileName.match(/^g(\d{4,})(?:[A-Za-z])?\.(?:scene|fire)$/i);
     if (sceneNameMatch) {
         return sceneNameMatch[1];
     }
 
     const fallbackMatch = sceneFilePath.match(/(?:^|[^\d])(\d{4,})(?:[^\d]|$)/);
     return fallbackMatch ? fallbackMatch[1] : "";
+}
+
+function normalizeSceneKitSourceType(sourceType?: string): SceneKitSourceType {
+    return sourceType === "fire" ? "fire" : "scene";
+}
+
+function getSceneKitSourceExtension(sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? ".fire" : ".scene";
+}
+
+function isCocosSceneFile(filePath: string, sourceType: SceneKitSourceType = "scene") {
+    return sourceType === "fire" ? /\.fire$/i.test(filePath) : /\.scene$/i.test(filePath);
+}
+
+function isCocosSceneOrPrefabFile(filePath: string) {
+    return /\.(scene|fire|prefab)$/i.test(filePath);
+}
+
+function createCocosImport(names: string[], sourceType: SceneKitSourceType) {
+    const importNames = sourceType === "fire" ? names.filter((name) => name !== "sp") : names;
+    return sourceType === "fire"
+        ? `const { ${importNames.join(", ")} } = cc;`
+        : `import { ${importNames.join(", ")} } from 'cc';`;
+}
+
+function getSlotModuleExportPath(sourceType: SceneKitSourceType) {
+    return sourceType === "fire"
+        ? "../../../../cc-common/cc-slot-module/SlotModuleExport"
+        : "../../../../cc-common/cc30-slot-module/SlotModuleExport";
+}
+
+function createSlotModuleImport(names: string[], sourceType: SceneKitSourceType) {
+    return `import { ${names.join(", ")} } from '${getSlotModuleExportPath(sourceType)}';`;
+}
+
+function createCcClassDecorator(className: string, sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? "@ccclass" : `@ccclass('${className}')`;
 }
 
 function parseTableFormatInput(tableFormatInput?: string): number[] {
@@ -230,13 +269,13 @@ function createGameConstantTemplate(gameId: string, tableFormat: number[]) {
 `;
 }
 
-function createGameConfigTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { GameConfig } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
-import { PAY_SYSTEM_TYPE_ENUM } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createGameConfigTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["GameConfig"], sourceType)}
+${createSlotModuleImport(["PAY_SYSTEM_TYPE_ENUM"], sourceType)}
 import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';
 const { ccclass } = _decorator;
-@ccclass('GameConfig${gameId}')
+${createCcClassDecorator("GameConfig" + gameId, sourceType)}
 export class GameConfig${gameId} extends GameConfig {
     public GAME_ID = "${gameId}";
     public JP_PREFIX_EVENT = "${gameId}_";
@@ -290,14 +329,14 @@ export class GameConfig${gameId} extends GameConfig {
 `;
 }
 
-function createGameDirectorTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
+function createGameDirectorTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
 const { ccclass } = _decorator;
-import { GAME_MODE_ENUM, GameDirector } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+${createSlotModuleImport(["GAME_MODE_ENUM", "GameDirector"], sourceType)}
 import { FreeGameDirectorModule${gameId} } from '../GameMode/FreeGameDirectorModule${gameId}';
 import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';
 import { GAME_EVENT_${gameId} } from '../DataConfig/EventConfig${gameId}';
-@ccclass('GameDirector${gameId}')
+${createCcClassDecorator("GameDirector" + gameId, sourceType)}
 export class GameDirector${gameId} extends GameDirector {
     onLoadExtend(): void {
         super.onLoadExtend();
@@ -316,12 +355,12 @@ export class GameDirector${gameId} extends GameDirector {
 `;
 }
 
-function createPaylineConfigTemplate(gameId: string) {
-    return `import { _decorator, Vec2 } from 'cc';
-import { PaylineConfig, PAYLINE_TYPE } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createPaylineConfigTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "Vec2"], sourceType)}
+${createSlotModuleImport(["PaylineConfig", "PAYLINE_TYPE"], sourceType)}
 import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';
 const { ccclass } = _decorator;
-@ccclass('PaylineConfig${gameId}')
+${createCcClassDecorator("PaylineConfig" + gameId, sourceType)}
 export class PaylineConfig${gameId} extends PaylineConfig {
     public readonly PAYLINE_TYPE: PAYLINE_TYPE = PAYLINE_TYPE.AllWays;
     public readonly TABLE_CONFIG: any = {
@@ -333,13 +372,13 @@ export class PaylineConfig${gameId} extends PaylineConfig {
 `;
 }
 
-function createPaylineSymbolModuleTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { PayLineInfo, PaylineSymbolModule, PayWayInfo } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createPaylineSymbolModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["PayLineInfo", "PaylineSymbolModule", "PayWayInfo"], sourceType)}
 import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 const { ccclass } = _decorator;
-@ccclass('PaylineSymbolModule${gameId}')
+${createCcClassDecorator("PaylineSymbolModule" + gameId, sourceType)}
 export class PaylineSymbolModule${gameId} extends PaylineSymbolModule {
     protected showSpecialSymbolById(symbolId: string, duration?: number): void {
         super.showSpecialSymbolById(symbolId, duration);
@@ -358,12 +397,12 @@ export class PaylineSymbolModule${gameId} extends PaylineSymbolModule {
 `;
 }
 
-function createTableModuleConfigTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { TableModuleConfig } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createTableModuleConfigTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["TableModuleConfig"], sourceType)}
 import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';
 const { ccclass } = _decorator;
-@ccclass('TableModuleConfig${gameId}')
+${createCcClassDecorator("TableModuleConfig" + gameId, sourceType)}
 export class TableModuleConfig${gameId} extends TableModuleConfig {
     public SYMBOL_WIDTH: number = GameConstant${gameId}.SYMBOL_WIDTH;
     public SYMBOL_HEIGHT: number = GameConstant${gameId}.SYMBOL_HEIGHT;
@@ -372,11 +411,11 @@ export class TableModuleConfig${gameId} extends TableModuleConfig {
 `;
 }
 
-function createSlotReelModuleTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { GAME_MODE_ENUM, SlotReelModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createSlotReelModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["GAME_MODE_ENUM", "SlotReelModule"], sourceType)}
 const { ccclass } = _decorator;
-@ccclass('SlotReelModule${gameId}')
+${createCcClassDecorator("SlotReelModule" + gameId, sourceType)}
 export class SlotReelModule${gameId} extends SlotReelModule {
     gameMode: typeof GAME_MODE_ENUM;
 
@@ -387,11 +426,11 @@ export class SlotReelModule${gameId} extends SlotReelModule {
 `;
 }
 
-function createSlotSymbolModuleTemplate(gameId: string) {
-    return `import { _decorator, Color, tween, Tween, UIRenderer } from 'cc';
-import { SlotSymbolModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createSlotSymbolModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "Color", "tween", "Tween", "UIRenderer"], sourceType)}
+${createSlotModuleImport(["SlotSymbolModule"], sourceType)}
 const { ccclass } = _decorator;
-@ccclass('SlotSymbolModule${gameId}')
+${createCcClassDecorator("SlotSymbolModule" + gameId, sourceType)}
 export class SlotSymbolModule${gameId} extends SlotSymbolModule {
     tweenColor(obj: UIRenderer, duration: number, targetColor: Color): Tween<any> {
         const startColor = obj.color.clone();
@@ -461,12 +500,12 @@ export class SlotSymbolModule${gameId} extends SlotSymbolModule {
 `;
 }
 
-function createSlotTableModuleTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { GAME_MODE_ENUM, SlotTableModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createSlotTableModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["GAME_MODE_ENUM", "SlotTableModule"], sourceType)}
 import { SlotReelModule${gameId} } from './SlotReelModule${gameId}';
 const { ccclass } = _decorator;
-@ccclass('SlotTableModule${gameId}')
+${createCcClassDecorator("SlotTableModule" + gameId, sourceType)}
 export class SlotTableModule${gameId} extends SlotTableModule {
     initTable(): void {
         super.initTable();
@@ -485,12 +524,12 @@ export class SlotTableModule${gameId} extends SlotTableModule {
 `;
 }
 
-function createNormalGameDirectorModuleTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { GAME_MODE_ENUM, NormalGameDirectorModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createNormalGameDirectorModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["GAME_MODE_ENUM", "NormalGameDirectorModule"], sourceType)}
 import { GAME_EVENT_${gameId} } from '../DataConfig/EventConfig${gameId}';
 const { ccclass } = _decorator;
-@ccclass('NormalGameDirectorModule${gameId}')
+${createCcClassDecorator("NormalGameDirectorModule" + gameId, sourceType)}
 export class NormalGameDirectorModule${gameId} extends NormalGameDirectorModule {
     transitionToGameModeWhenResume(mode: number): Promise<void> {
         if (mode === GAME_MODE_ENUM.FREE_GAME) {
@@ -503,11 +542,11 @@ export class NormalGameDirectorModule${gameId} extends NormalGameDirectorModule 
 `;
 }
 
-function createFreeGameDirectorModuleTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
-import { GAME_MODE_ENUM, FreeGameDirectorModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createFreeGameDirectorModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["GAME_MODE_ENUM", "FreeGameDirectorModule"], sourceType)}
 const { ccclass } = _decorator;
-@ccclass('FreeGameDirectorModule${gameId}')
+${createCcClassDecorator("FreeGameDirectorModule" + gameId, sourceType)}
 export class FreeGameDirectorModule${gameId} extends FreeGameDirectorModule {
     preResumeFreeTable(data): void {
         this.moduleEvent.emit('SYNC_TABLE', data, GAME_MODE_ENUM.FREE_GAME);
@@ -516,14 +555,14 @@ export class FreeGameDirectorModule${gameId} extends FreeGameDirectorModule {
 `;
 }
 
-function createJackpotWinModuleTemplate(gameId: string) {
-    return `import { _decorator, sp, Tween, tween } from 'cc';
-import { JackpotWinModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createJackpotWinModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "sp", "Tween", "tween"], sourceType)}
+${createSlotModuleImport(["JackpotWinModule"], sourceType)}
 import { UI_JACKPOT_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 const { ccclass, property } = _decorator;
 const FADE_DURATION = 0.2;
-@ccclass('JackpotWinModule${gameId}')
+${createCcClassDecorator("JackpotWinModule" + gameId, sourceType)}
 export class JackpotWinModule${gameId} extends JackpotWinModule {
     @property(sp.Skeleton) jackpotWinEffect: sp.Skeleton = null;
 
@@ -677,9 +716,9 @@ export class JackpotWinModule${gameId} extends JackpotWinModule {
 `;
 }
 
-function createWinEffectModuleTemplate(gameId: string) {
-    return `import { _decorator, sp, tween, Tween } from 'cc';
-import { GameUIEvents, WinEffectLevelEnum, WinEffectModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createWinEffectModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "sp", "tween", "Tween"], sourceType)}
+${createSlotModuleImport(["GameUIEvents", "WinEffectLevelEnum", "WinEffectModule"], sourceType)}
 import { UI_BIGWIN_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 const { ccclass, property } = _decorator;
@@ -692,7 +731,7 @@ const SOUND_DURATION = {
     [WinEffectLevelEnum.SUPER]: 17.344,
 }
 
-@ccclass('WinEffectModule${gameId}')
+${createCcClassDecorator("WinEffectModule" + gameId, sourceType)}
 export class WinEffectModule${gameId} extends WinEffectModule {
     @property(sp.Skeleton) bigWinEffect: sp.Skeleton = null;
     private mixTime = 0.2;
@@ -929,9 +968,9 @@ export class WinEffectModule${gameId} extends WinEffectModule {
 `;
 }
 
-function createTotalWinModuleTemplate(gameId: string) {
-    return `import { _decorator, sp, tween } from 'cc';
-import { TotalWinModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createTotalWinModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "sp", "tween"], sourceType)}
+${createSlotModuleImport(["TotalWinModule"], sourceType)}
 import { UI_TOTALWIN_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 const { ccclass, property } = _decorator;
@@ -945,7 +984,7 @@ const TOTAL_WIN_SFX_DURATIONS = [
 ];
 const DELAY_APPEAR_ANIM = 0.5;
 const MAX_TOTAL_WIN_LEVEL = 2;
-@ccclass('TotalWinModule${gameId}')
+${createCcClassDecorator("TotalWinModule" + gameId, sourceType)}
 export class TotalWinModule${gameId} extends TotalWinModule {
     @property(sp.Skeleton) totalWinAnim: sp.Skeleton = null;
     level = 0;
@@ -1089,11 +1128,11 @@ export class TotalWinModule${gameId} extends TotalWinModule {
 `;
 }
 
-function createCoinEffectTemplate(gameId: string) {
-    return `import { _decorator, Component, Node } from 'cc';
-import { WinEffectLevelEnum } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createCoinEffectTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "Component", "Node"], sourceType)}
+${createSlotModuleImport(["WinEffectLevelEnum"], sourceType)}
 const { ccclass, property } = _decorator;
-@ccclass('CoinEffect${gameId}')
+${createCcClassDecorator("CoinEffect" + gameId, sourceType)}
 export class CoinEffect${gameId} extends Component {
     @property({ type: Node }) coinBigWin: Node = null;
     @property({ type: Node }) coinMegaWin: Node = null;
@@ -1153,12 +1192,12 @@ export class CoinEffect${gameId} extends Component {
 `;
 }
 
-function createParticleControlTemplate(gameId: string) {
-    return `import { _decorator, Component, ParticleSystem2D } from 'cc';
+function createParticleControlTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "Component", "ParticleSystem2D"], sourceType)}
 const { ccclass } = _decorator;
 const { setOpacity } = eno;
 
-@ccclass('ParticleControl${gameId}')
+${createCcClassDecorator("ParticleControl" + gameId, sourceType)}
 export class ParticleControl${gameId} extends Component {
     coinParticles: ParticleSystem2D[] = [];
 
@@ -1199,11 +1238,11 @@ export class ParticleControl${gameId} extends Component {
 `;
 }
 
-function createInfoPanelTemplate(gameId: string) {
-    return `import { _decorator } from 'cc';
+function createInfoPanelTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator"], sourceType)}
 const { ccclass } = _decorator;
-import { InfoPanel } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
-@ccclass('InfoPanel${gameId}')
+${createSlotModuleImport(["InfoPanel"], sourceType)}
+${createCcClassDecorator("InfoPanel" + gameId, sourceType)}
 export class InfoPanel${gameId} extends InfoPanel {
     onLoadExtend(): void {
         super.onLoadExtend();
@@ -1214,13 +1253,13 @@ export class InfoPanel${gameId} extends InfoPanel {
 `;
 }
 
-function createSlotButtonSpineTemplate(gameId: string) {
-    return `import { _decorator, Node, tween, Tween } from "cc";
-import { SlotButtonSpine } from "../../../../cc-common/cc30-slot-module/SlotModuleExport";
+function createSlotButtonSpineTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "Node", "tween", "Tween"], sourceType)}
+${createSlotModuleImport(["SlotButtonSpine"], sourceType)}
 import { BTN_SPIN_ANIM } from "../DataConfig/AnimConfig${gameId}";
 import { BUTTON_EVENT_${gameId} } from "../DataConfig/EventConfig${gameId}";
 const { ccclass, property } = _decorator;
-@ccclass("SlotButtonSpine${gameId}")
+${createCcClassDecorator("SlotButtonSpine" + gameId, sourceType)}
 export class SlotButtonSpine${gameId} extends SlotButtonSpine {
     @property(Node) arrow: Node;
 
@@ -1314,15 +1353,15 @@ export class SlotButtonSpine${gameId} extends SlotButtonSpine {
 `;
 }
 
-function createSlotButtonNormalTemplate(gameId: string) {
-    return `import { _decorator, EventKeyboard, KeyCode, tween } from "cc";
-import { GameLogicUIEvents, SlotButtonNormal, SPIN_BUTTON_STATE_ENUM } from "../../../../cc-common/cc30-slot-module/SlotModuleExport";
+function createSlotButtonNormalTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "EventKeyboard", "KeyCode", "tween"], sourceType)}
+${createSlotModuleImport(["GameLogicUIEvents", "SlotButtonNormal", "SPIN_BUTTON_STATE_ENUM"], sourceType)}
 import { BUTTON_EVENT_${gameId} } from "../DataConfig/EventConfig${gameId}";
 import { SOUND_CONFIG } from "../DataConfig/SoundConfig${gameId}";
 
 const { ccclass } = _decorator;
 const DELAY_LOADING_TIME = 0.3;
-@ccclass("SlotButtonNormal${gameId}")
+${createCcClassDecorator("SlotButtonNormal" + gameId, sourceType)}
 export class SlotButtonNormal${gameId} extends SlotButtonNormal {
     isPressed: boolean = false;
     _tweenDelayTime = null;
@@ -1401,16 +1440,16 @@ export class SlotButtonNormal${gameId} extends SlotButtonNormal {
 `;
 }
 
-function createWinAmountModuleTemplate(gameId: string) {
-    return `import { Label, Node, Tween, Vec3, _decorator, log, sp, tween } from 'cc';
-import { PoolFactoryModule, WinAmountModule } from '../../../../cc-common/cc30-slot-module/SlotModuleExport';
+function createWinAmountModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["Label", "Node", "Tween", "Vec3", "_decorator", "log", "sp", "tween"], sourceType)}
+${createSlotModuleImport(["PoolFactoryModule", "WinAmountModule"], sourceType)}
 import { UI_SUBWINAMOUNT_ANIM, UI_WIN_AMOUNT_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 import { UI_SUBWINAMOUNT_TIME } from '../DataConfig/TimeConfig${gameId}';
 const { ccclass, property } = _decorator;
 const { fadeOut, setOpacity } = eno;
 
-@ccclass('WinAmountModule${gameId}')
+${createCcClassDecorator("WinAmountModule" + gameId, sourceType)}
 export class WinAmountModule${gameId} extends WinAmountModule {
     @property(sp.Skeleton) subWinFrameEffect: sp.Skeleton = null;
     @property(Label) labelSubWinAmount: Label = null;
@@ -1852,102 +1891,102 @@ function updateTableModuleConfigContent(content: string, gameId: string) {
     throw new Error(`Cannot find TableModuleConfig${gameId} class body.`);
 }
 
-function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat: number[]) {
+function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat: number[], sourceType: SceneKitSourceType = "scene") {
     const projectRoot = path.dirname(sceneFilePath);
     return [
         {
             filePath: path.join(projectRoot, "scripts", "Core", `GameConfig${gameId}.ts`),
-            content: createGameConfigTemplate(gameId),
+            content: createGameConfigTemplate(gameId, sourceType),
             mode: "patchGameConfig" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Core", `GameDirector${gameId}.ts`),
-            content: createGameDirectorTemplate(gameId),
+            content: createGameDirectorTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Payline", `PaylineConfig${gameId}.ts`),
-            content: createPaylineConfigTemplate(gameId),
+            content: createPaylineConfigTemplate(gameId, sourceType),
             mode: "patchPaylineConfig" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Payline", `PaylineSymbolModule${gameId}.ts`),
-            content: createPaylineSymbolModuleTemplate(gameId),
+            content: createPaylineSymbolModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Table", `TableModuleConfig${gameId}.ts`),
-            content: createTableModuleConfigTemplate(gameId),
+            content: createTableModuleConfigTemplate(gameId, sourceType),
             mode: "patchTableModuleConfig" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Table", `SlotReelModule${gameId}.ts`),
-            content: createSlotReelModuleTemplate(gameId),
+            content: createSlotReelModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Table", `SlotSymbolModule${gameId}.ts`),
-            content: createSlotSymbolModuleTemplate(gameId),
+            content: createSlotSymbolModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Table", `SlotTableModule${gameId}.ts`),
-            content: createSlotTableModuleTemplate(gameId),
+            content: createSlotTableModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "GameMode", `NormalGameDirectorModule${gameId}.ts`),
-            content: createNormalGameDirectorModuleTemplate(gameId),
+            content: createNormalGameDirectorModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "GameMode", `FreeGameDirectorModule${gameId}.ts`),
-            content: createFreeGameDirectorModuleTemplate(gameId),
+            content: createFreeGameDirectorModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `JackpotWinModule${gameId}.ts`),
-            content: createJackpotWinModuleTemplate(gameId),
+            content: createJackpotWinModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `WinEffectModule${gameId}.ts`),
-            content: createWinEffectModuleTemplate(gameId),
+            content: createWinEffectModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `TotalWinModule${gameId}.ts`),
-            content: createTotalWinModuleTemplate(gameId),
+            content: createTotalWinModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `CoinEffect${gameId}.ts`),
-            content: createCoinEffectTemplate(gameId),
+            content: createCoinEffectTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `ParticleControl${gameId}.ts`),
-            content: createParticleControlTemplate(gameId),
+            content: createParticleControlTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Cutscene", `InfoPanel${gameId}.ts`),
-            content: createInfoPanelTemplate(gameId),
+            content: createInfoPanelTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Gui", `WinAmountModule${gameId}.ts`),
-            content: createWinAmountModuleTemplate(gameId),
+            content: createWinAmountModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Gui", `SlotButtonNormal${gameId}.ts`),
-            content: createSlotButtonNormalTemplate(gameId),
+            content: createSlotButtonNormalTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
             filePath: path.join(projectRoot, "scripts", "Gui", `SlotButtonSpine${gameId}.ts`),
-            content: createSlotButtonSpineTemplate(gameId),
+            content: createSlotButtonSpineTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {
@@ -2087,11 +2126,11 @@ function getUuidLikeReplacementPairs(oldUuidInput: string, newUuidInput: string)
 function replaceUuidRefs(targetFilePathInput: string, oldUuidInput: string, newUuidInput: string, shouldWrite: boolean) {
     const targetFilePath = String(targetFilePathInput || "").trim();
 
-    if (!targetFilePath || !/\.(scene|prefab)$/i.test(targetFilePath)) {
-        throw new Error("Please choose a .scene or .prefab target file.");
+    if (!targetFilePath || !isCocosSceneOrPrefabFile(targetFilePath)) {
+        throw new Error("Please choose a .scene, .fire, or .prefab target file.");
     }
     if (!fs.existsSync(targetFilePath)) {
-        throw new Error("Target scene/prefab file does not exist.");
+        throw new Error("Target scene/fire/prefab file does not exist.");
     }
 
     const pairs = getUuidLikeReplacementPairs(oldUuidInput, newUuidInput);
@@ -2133,35 +2172,51 @@ function replaceUuidRefs(targetFilePathInput: string, oldUuidInput: string, newU
 }
 
 export function registerSceneKitHandler() {
-    ipcMain.handle("scene-kit:select-scene-or-prefab-file", async () => {
+    ipcMain.handle("scene-kit:select-source-file", async (_event, sourceTypeInput?: string) => {
+        const sourceType = normalizeSceneKitSourceType(sourceTypeInput);
+        const extension = getSceneKitSourceExtension(sourceType).slice(1);
         const result = await dialog.showOpenDialog({
             properties: ["openFile"],
             filters: [
-                { name: "Cocos Scene or Prefab", extensions: ["scene", "prefab"] },
+                { name: sourceType === "fire" ? "Cocos 2.x Fire" : "Cocos 3.x Scene", extensions: [extension] },
             ],
         });
         if (result.canceled || result.filePaths.length === 0) return null;
         return result.filePaths[0];
     });
 
-    ipcMain.handle("scene-kit:preview-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string) => {
+    ipcMain.handle("scene-kit:select-scene-or-prefab-file", async () => {
+        const result = await dialog.showOpenDialog({
+            properties: ["openFile"],
+            filters: [
+                { name: "Cocos Scene or Prefab", extensions: ["scene", "fire", "prefab"] },
+            ],
+        });
+        if (result.canceled || result.filePaths.length === 0) return null;
+        return result.filePaths[0];
+    });
+
+    ipcMain.handle("scene-kit:preview-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string, sourceTypeInput?: string) => {
+        const sourceType = normalizeSceneKitSourceType(sourceTypeInput);
+        const sourceExtension = getSceneKitSourceExtension(sourceType);
         const normalizedScenePath = String(sceneFilePath || "").trim();
         const gameId = extractGameIdFromScenePath(normalizedScenePath);
         const tableFormat = parseTableFormatInput(tableFormatInput);
 
-        if (!normalizedScenePath || !normalizedScenePath.endsWith(".scene")) {
-            throw new Error("Please choose a .scene file.");
+        if (!normalizedScenePath || !isCocosSceneFile(normalizedScenePath, sourceType)) {
+            throw new Error(`Please choose a ${sourceExtension} file.`);
         }
 
         if (!gameId) {
-            throw new Error("Cannot detect gameId from scene file name.");
+            throw new Error(`Cannot detect gameId from ${sourceExtension} file name.`);
         }
 
         return {
             gameId,
+            sourceType,
             projectRoot: path.dirname(normalizedScenePath),
             tableFormat,
-            files: getBoilerplateFiles(normalizedScenePath, gameId, tableFormat).map((file) => ({
+            files: getBoilerplateFiles(normalizedScenePath, gameId, tableFormat, sourceType).map((file) => ({
                 filePath: file.filePath,
                 status: fs.existsSync(file.filePath) ? "exists" : "new",
             })),
@@ -2169,25 +2224,27 @@ export function registerSceneKitHandler() {
         };
     });
 
-    ipcMain.handle("scene-kit:create-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string) => {
+    ipcMain.handle("scene-kit:create-boilerplate", async (_event, sceneFilePath: string, tableFormatInput?: string, sourceTypeInput?: string) => {
+        const sourceType = normalizeSceneKitSourceType(sourceTypeInput);
+        const sourceExtension = getSceneKitSourceExtension(sourceType);
         const normalizedScenePath = String(sceneFilePath || "").trim();
         const gameId = extractGameIdFromScenePath(normalizedScenePath);
         const tableFormat = parseTableFormatInput(tableFormatInput);
 
-        if (!normalizedScenePath || !normalizedScenePath.endsWith(".scene")) {
-            throw new Error("Please choose a .scene file.");
+        if (!normalizedScenePath || !isCocosSceneFile(normalizedScenePath, sourceType)) {
+            throw new Error(`Please choose a ${sourceExtension} file.`);
         }
 
         if (!fs.existsSync(normalizedScenePath)) {
-            throw new Error("Scene file does not exist.");
+            throw new Error(`${sourceExtension} file does not exist.`);
         }
 
         if (!gameId) {
-            throw new Error("Cannot detect gameId from scene file name.");
+            throw new Error(`Cannot detect gameId from ${sourceExtension} file name.`);
         }
 
         const results: BoilerplateFileResult[] = [];
-        for (const file of getBoilerplateFiles(normalizedScenePath, gameId, tableFormat)) {
+        for (const file of getBoilerplateFiles(normalizedScenePath, gameId, tableFormat, sourceType)) {
             if (fs.existsSync(file.filePath)) {
                 const currentContent = fs.readFileSync(file.filePath, "utf8");
                 let nextContent = file.content;
@@ -2211,6 +2268,7 @@ export function registerSceneKitHandler() {
 
         return {
             gameId,
+            sourceType,
             projectRoot: path.dirname(normalizedScenePath),
             tableFormat,
             files: results,

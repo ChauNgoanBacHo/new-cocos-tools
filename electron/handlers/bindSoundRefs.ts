@@ -6,7 +6,7 @@ export function registerBindSoundRefsHandler() {
     ipcMain.handle("select-scene-file", async () => {
         const result = await dialog.showOpenDialog({
             properties: ["openFile"],
-            filters: [{ name: "Scene", extensions: ["scene"] }],
+            filters: [{ name: "Cocos Scene", extensions: ["scene", "fire"] }],
         });
         if (result.canceled || result.filePaths.length === 0) return null;
         return result.filePaths[0];
