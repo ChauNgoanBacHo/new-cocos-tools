@@ -50,10 +50,55 @@ function isCocosSceneOrPrefabFile(filePath: string) {
 }
 
 function createCocosImport(names: string[], sourceType: SceneKitSourceType) {
-    const importNames = sourceType === "fire" ? names.filter((name) => name !== "sp") : names;
-    return sourceType === "fire"
-        ? `const { ${importNames.join(", ")} } = cc;`
-        : `import { ${importNames.join(", ")} } from 'cc';`;
+    const importNames = sourceType === "fire" ? names.filter((name) => name === "_decorator") : names;
+    if (sourceType === "fire") {
+        return importNames.length ? `const { ${importNames.join(", ")} } = cc;` : "";
+    }
+
+    return `import { ${importNames.join(", ")} } from 'cc';`;
+}
+
+const FIRE_COCOS_GLOBAL_NAMES = [
+    "Button",
+    "Color",
+    "Component",
+    "Director",
+    "EventKeyboard",
+    "KeyCode",
+    "Label",
+    "Node",
+    "ParticleSystem",
+    "ProgressBar",
+    "Tween",
+    "UIRenderer",
+    "Vec2",
+    "Vec3",
+    "director",
+    "game",
+    "instantiate",
+    "log",
+    "sys",
+    "tween",
+];
+
+function qualifyFireCocosGlobals(content: string, sourceType: SceneKitSourceType) {
+    if (sourceType !== "fire") {
+        return content;
+    }
+
+    const normalizedContent = content
+        .replace(/^import\s+\{[^}]+\}\s+from\s+['"]cc['"];\n?/gm, "")
+        .replace(/const\s*\{\s*([^}]+)\s*\}\s*=\s*cc;/g, (_match, rawNames: string) => {
+            const names = rawNames.split(",").map((name) => name.trim()).filter(Boolean);
+            return names.includes("_decorator") ? "const { _decorator } = cc;" : "";
+        });
+
+    const fireContent = normalizedContent.replace(/(^|[^A-Za-z0-9_.$])ParticleSystem2D(?![A-Za-z0-9_$])/g, "$1cc.ParticleSystem");
+
+    return FIRE_COCOS_GLOBAL_NAMES.reduce((nextContent, name) => {
+        const namePattern = new RegExp(`(^|[^A-Za-z0-9_.$])${name}(?![A-Za-z0-9_$])`, "g");
+        return nextContent.replace(namePattern, `$1cc.${name}`);
+    }, fireContent);
 }
 
 function getSlotModuleExportPath(sourceType: SceneKitSourceType) {
@@ -68,6 +113,10 @@ function createSlotModuleImport(names: string[], sourceType: SceneKitSourceType)
 
 function createCcClassDecorator(className: string, sourceType: SceneKitSourceType) {
     return sourceType === "fire" ? "@ccclass" : `@ccclass('${className}')`;
+}
+
+function createNullInitializer(sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? "null!" : "null";
 }
 
 function parseTableFormatInput(tableFormatInput?: string): number[] {
@@ -413,13 +462,13 @@ export class TableModuleConfig${gameId} extends TableModuleConfig {
 
 function createSlotReelModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
     return `${createCocosImport(["_decorator"], sourceType)}
-${createSlotModuleImport(["GAME_MODE_ENUM", "SlotReelModule"], sourceType)}
+${createSlotModuleImport(["SlotReelModule"], sourceType)}
 const { ccclass } = _decorator;
 ${createCcClassDecorator("SlotReelModule" + gameId, sourceType)}
 export class SlotReelModule${gameId} extends SlotReelModule {
-    gameMode: typeof GAME_MODE_ENUM;
+    gameMode: number = ${createNullInitializer(sourceType)};
 
-    setGameMode(gameMode: typeof GAME_MODE_ENUM): void {
+    setGameMode(gameMode: number): void {
         this.gameMode = gameMode;
     }
 }
@@ -548,7 +597,7 @@ ${createSlotModuleImport(["GAME_MODE_ENUM", "FreeGameDirectorModule"], sourceTyp
 const { ccclass } = _decorator;
 ${createCcClassDecorator("FreeGameDirectorModule" + gameId, sourceType)}
 export class FreeGameDirectorModule${gameId} extends FreeGameDirectorModule {
-    preResumeFreeTable(data): void {
+    preResumeFreeTable(data: any): void {
         this.moduleEvent.emit('SYNC_TABLE', data, GAME_MODE_ENUM.FREE_GAME);
     }
 }
@@ -556,7 +605,7 @@ export class FreeGameDirectorModule${gameId} extends FreeGameDirectorModule {
 }
 
 function createJackpotWinModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
-    return `${createCocosImport(["_decorator", "sp", "Tween", "tween"], sourceType)}
+    return `${createCocosImport(["_decorator", "sp", "tween"], sourceType)}
 ${createSlotModuleImport(["JackpotWinModule"], sourceType)}
 import { UI_JACKPOT_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
@@ -564,7 +613,7 @@ const { ccclass, property } = _decorator;
 const FADE_DURATION = 0.2;
 ${createCcClassDecorator("JackpotWinModule" + gameId, sourceType)}
 export class JackpotWinModule${gameId} extends JackpotWinModule {
-    @property(sp.Skeleton) jackpotWinEffect: sp.Skeleton = null;
+    @property(sp.Skeleton) jackpotWinEffect: sp.Skeleton = ${createNullInitializer(sourceType)};
 
     // #region Base
     onLoadExtend(): void {
@@ -733,7 +782,7 @@ const SOUND_DURATION = {
 
 ${createCcClassDecorator("WinEffectModule" + gameId, sourceType)}
 export class WinEffectModule${gameId} extends WinEffectModule {
-    @property(sp.Skeleton) bigWinEffect: sp.Skeleton = null;
+    @property(sp.Skeleton) bigWinEffect: sp.Skeleton = ${createNullInitializer(sourceType)};
     private mixTime = 0.2;
     private playingLevelSfx: string | null = null;
     private endWinEffectLevel: WinEffectLevelEnum = WinEffectLevelEnum.BIG;
@@ -986,7 +1035,7 @@ const DELAY_APPEAR_ANIM = 0.5;
 const MAX_TOTAL_WIN_LEVEL = 2;
 ${createCcClassDecorator("TotalWinModule" + gameId, sourceType)}
 export class TotalWinModule${gameId} extends TotalWinModule {
-    @property(sp.Skeleton) totalWinAnim: sp.Skeleton = null;
+    @property(sp.Skeleton) totalWinAnim: sp.Skeleton = ${createNullInitializer(sourceType)};
     level = 0;
 
     // #region Base
@@ -1109,7 +1158,7 @@ export class TotalWinModule${gameId} extends TotalWinModule {
                     this.totalWinAnim.setAnimation(0, this.getTotalWinAnimName(this.level, 'DISAPPEAR'), false);
                 }
                 this.callback && this.callback();
-                this.callback = null;
+                this.callback = ${createNullInitializer(sourceType)};
             })
             .delay(0.5)
             .call(() => {
@@ -1134,10 +1183,10 @@ ${createSlotModuleImport(["WinEffectLevelEnum"], sourceType)}
 const { ccclass, property } = _decorator;
 ${createCcClassDecorator("CoinEffect" + gameId, sourceType)}
 export class CoinEffect${gameId} extends Component {
-    @property({ type: Node }) coinBigWin: Node = null;
-    @property({ type: Node }) coinMegaWin: Node = null;
-    @property({ type: Node }) coinSuperWin: Node = null;
-    @property({ type: Node }) turboCoin: Node = null;
+    @property({ type: Node }) coinBigWin: Node = ${createNullInitializer(sourceType)};
+    @property({ type: Node }) coinMegaWin: Node = ${createNullInitializer(sourceType)};
+    @property({ type: Node }) coinSuperWin: Node = ${createNullInitializer(sourceType)};
+    @property({ type: Node }) turboCoin: Node = ${createNullInitializer(sourceType)};
 
     protected onLoad(): void {
         this.node.on('SHOW_COINS_EFFECT', this.showCoinsEffect, this);
@@ -1261,7 +1310,7 @@ import { BUTTON_EVENT_${gameId} } from "../DataConfig/EventConfig${gameId}";
 const { ccclass, property } = _decorator;
 ${createCcClassDecorator("SlotButtonSpine" + gameId, sourceType)}
 export class SlotButtonSpine${gameId} extends SlotButtonSpine {
-    @property(Node) arrow: Node;
+    @property(Node) arrow: Node = ${createNullInitializer(sourceType)};
 
     isHolding: boolean = false;
     speedRotate: number = 1;
@@ -1451,14 +1500,14 @@ const { fadeOut, setOpacity } = eno;
 
 ${createCcClassDecorator("WinAmountModule" + gameId, sourceType)}
 export class WinAmountModule${gameId} extends WinAmountModule {
-    @property(sp.Skeleton) subWinFrameEffect: sp.Skeleton = null;
-    @property(Label) labelSubWinAmount: Label = null;
-    @property(Node) holderNode: Node = null;
-    @property({ type: PoolFactoryModule }) labelPool: PoolFactoryModule;
+    @property(sp.Skeleton) subWinFrameEffect: sp.Skeleton = ${createNullInitializer(sourceType)};
+    @property(Label) labelSubWinAmount: Label = ${createNullInitializer(sourceType)};
+    @property(Node) holderNode: Node = ${createNullInitializer(sourceType)};
+    @property({ type: PoolFactoryModule }) labelPool: PoolFactoryModule = ${createNullInitializer(sourceType)};
 
     winAmountPS: number = 0;
-    _charNodeList: Node[];
-    _tweenFadeSubWin: Tween<Node>;
+    _charNodeList: Node[] = [];
+    _tweenFadeSubWin: Tween = ${createNullInitializer(sourceType)};
 
     // #region Base
     syncWinAmount(value: any): void {
@@ -1836,12 +1885,12 @@ function updateGameConfigContent(content: string, gameId: string) {
     throw new Error(`Cannot find GameConfig${gameId} class body.`);
 }
 
-function updatePaylineConfigContent(content: string, gameId: string) {
-    let nextContent = ensureNamedImport(content, "cc", "Vec2");
+function updatePaylineConfigContent(content: string, gameId: string, sourceType: SceneKitSourceType = "scene") {
+    let nextContent = sourceType === "fire" ? content : ensureNamedImport(content, "cc", "Vec2");
     nextContent = ensureImportLine(nextContent, `import { GameConstant${gameId} } from '../Utils/GameConstant${gameId}';`);
 
     if (/^\s*public\s+readonly\s+TABLE_CONFIG\b/m.test(nextContent)) {
-        return nextContent;
+        return qualifyFireCocosGlobals(nextContent, sourceType);
     }
 
     const tableConfig = `    public readonly TABLE_CONFIG: any = {
@@ -1852,13 +1901,13 @@ function updatePaylineConfigContent(content: string, gameId: string) {
     const paylineTypeMatch = nextContent.match(/^\s*public\s+readonly\s+PAYLINE_TYPE\b.*$/m);
     if (paylineTypeMatch && paylineTypeMatch.index !== undefined) {
         const insertIndex = paylineTypeMatch.index + paylineTypeMatch[0].length;
-        return `${nextContent.slice(0, insertIndex)}\n${tableConfig}${nextContent.slice(insertIndex)}`;
+        return qualifyFireCocosGlobals(`${nextContent.slice(0, insertIndex)}\n${tableConfig}${nextContent.slice(insertIndex)}`, sourceType);
     }
 
     const classMatch = nextContent.match(new RegExp(`export\\s+class\\s+PaylineConfig${gameId}\\s+extends\\s+PaylineConfig\\s*\\{`));
     if (classMatch && classMatch.index !== undefined) {
         const insertIndex = classMatch.index + classMatch[0].length;
-        return `${nextContent.slice(0, insertIndex)}\n${tableConfig}${nextContent.slice(insertIndex)}`;
+        return qualifyFireCocosGlobals(`${nextContent.slice(0, insertIndex)}\n${tableConfig}${nextContent.slice(insertIndex)}`, sourceType);
     }
 
     throw new Error(`Cannot find PaylineConfig${gameId} class body.`);
@@ -1893,7 +1942,7 @@ function updateTableModuleConfigContent(content: string, gameId: string) {
 
 function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat: number[], sourceType: SceneKitSourceType = "scene") {
     const projectRoot = path.dirname(sceneFilePath);
-    return [
+    const files = [
         {
             filePath: path.join(projectRoot, "scripts", "Core", `GameConfig${gameId}.ts`),
             content: createGameConfigTemplate(gameId, sourceType),
@@ -2025,6 +2074,11 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat:
             mode: "overwrite" as const,
         },
     ];
+
+    return files.map((file) => ({
+        ...file,
+        content: qualifyFireCocosGlobals(file.content, sourceType),
+    }));
 }
 
 function readJsonFile<T>(filePath: string): T {
@@ -2251,10 +2305,11 @@ export function registerSceneKitHandler() {
                 if (file.mode === "patchGameConfig") {
                     nextContent = updateGameConfigContent(currentContent, gameId);
                 } else if (file.mode === "patchPaylineConfig") {
-                    nextContent = updatePaylineConfigContent(currentContent, gameId);
+                    nextContent = updatePaylineConfigContent(currentContent, gameId, sourceType);
                 } else if (file.mode === "patchTableModuleConfig") {
                     nextContent = updateTableModuleConfigContent(currentContent, gameId);
                 }
+                nextContent = qualifyFireCocosGlobals(nextContent, sourceType);
                 fs.writeFileSync(file.filePath, nextContent, "utf8");
                 results.push({ filePath: file.filePath, status: nextContent === currentContent ? "exists" : "updated" });
                 continue;
