@@ -1,6 +1,7 @@
 import { dialog, ipcMain } from "electron";
 import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 
 interface BoilerplateFileResult {
     filePath: string;
@@ -111,12 +112,30 @@ function createSlotModuleImport(names: string[], sourceType: SceneKitSourceType)
     return `import { ${names.join(", ")} } from '${getSlotModuleExportPath(sourceType)}';`;
 }
 
+function createGameLogicUiEventsImport(sourceType: SceneKitSourceType) {
+    return sourceType === "fire"
+        ? "import { GameLogicUIEvents } from '../../../../cc-common/cc-slot-module/Core/GameLogicUIEvents';"
+        : createSlotModuleImport(["GameLogicUIEvents"], sourceType);
+}
+
 function createCcClassDecorator(className: string, sourceType: SceneKitSourceType) {
     return sourceType === "fire" ? "@ccclass" : `@ccclass('${className}')`;
 }
 
 function createNullInitializer(sourceType: SceneKitSourceType) {
     return sourceType === "fire" ? "null!" : "null";
+}
+
+function createTweenType(sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? "cc.Tween" : "Tween<any>";
+}
+
+function createNullableStringField(sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? "string = ''" : "string | null = null";
+}
+
+function createEmptyStringValue(sourceType: SceneKitSourceType) {
+    return sourceType === "fire" ? "''" : "null";
 }
 
 function parseTableFormatInput(tableFormatInput?: string): number[] {
@@ -331,6 +350,8 @@ export class GameConfig${gameId} extends GameConfig {
     public PAY_SYSTEM = PAY_SYSTEM_TYPE_ENUM.ALLWAYS;
     public TOTAL_BET_CREDIT:number = 25;
     public readonly TABLE_FORMAT: number[] = GameConstant${gameId}.TABLE_FORMAT;
+    public readonly SYMBOL_HEIGHT: number = GameConstant${gameId}.SYMBOL_HEIGHT;
+    public readonly SYMBOL_WIDTH: number = GameConstant${gameId}.SYMBOL_WIDTH;
     public readonly WIN_LEVEL_CONFIG: any = {
         THRESHOLDS: [1, 3, 10],
         COUNT_MONEY_TIME: { 1: 0.5, 2: 1, 3: 2, 4: 4 },
@@ -476,6 +497,36 @@ export class SlotReelModule${gameId} extends SlotReelModule {
 }
 
 function createSlotSymbolModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    if (sourceType === "fire") {
+        return `${createCocosImport(["_decorator"], sourceType)}
+${createSlotModuleImport(["SlotSymbolModule"], sourceType)}
+const { ccclass } = _decorator;
+const { fadeIn, fadeOut } = eno;
+${createCcClassDecorator("SlotSymbolModule" + gameId, sourceType)}
+export class SlotSymbolModule${gameId} extends SlotSymbolModule {
+    enableHighlight(duration: number = 0.2): void {
+        if (duration > 0) {
+            this.node["isHighlight"] = true;
+            fadeIn(this.node, duration);
+            return;
+        }
+
+        super.enableHighlight();
+    }
+
+    disableHighlight(duration: number = 0.2): void {
+        if (duration > 0) {
+            this.node["isHighlight"] = false;
+            fadeOut(this.node, duration);
+            return;
+        }
+
+        super.disableHighlight();
+    }
+}
+`;
+    }
+
     return `${createCocosImport(["_decorator", "Color", "tween", "Tween", "UIRenderer"], sourceType)}
 ${createSlotModuleImport(["SlotSymbolModule"], sourceType)}
 const { ccclass } = _decorator;
@@ -784,10 +835,10 @@ ${createCcClassDecorator("WinEffectModule" + gameId, sourceType)}
 export class WinEffectModule${gameId} extends WinEffectModule {
     @property(sp.Skeleton) bigWinEffect: sp.Skeleton = ${createNullInitializer(sourceType)};
     private mixTime = 0.2;
-    private playingLevelSfx: string | null = null;
+    private playingLevelSfx: ${createNullableStringField(sourceType)};
     private endWinEffectLevel: WinEffectLevelEnum = WinEffectLevelEnum.BIG;
     private bigWinSoundTime: number = 0;
-    private _tweenSound: Tween<any> = null;
+    private _tweenSound: ${createTweenType(sourceType)} = ${createNullInitializer(sourceType)};
 
     // #region Base
     onLoadExtend(): void { 
@@ -922,7 +973,7 @@ export class WinEffectModule${gameId} extends WinEffectModule {
         }
 
         this.soundPlayer.stopSfx(this.playingLevelSfx);
-        this.playingLevelSfx = null;
+        this.playingLevelSfx = ${createEmptyStringValue(sourceType)};
     }
 
     playSfxFastBigWin(): void {
@@ -978,7 +1029,7 @@ export class WinEffectModule${gameId} extends WinEffectModule {
     resetSoundTime(): void {
         this.bigWinSoundTime = 0;
         this._tweenSound?.stop();
-        this._tweenSound = null;
+        this._tweenSound = ${createNullInitializer(sourceType)};
     }
 
     finish(): void {
@@ -1404,7 +1455,8 @@ export class SlotButtonSpine${gameId} extends SlotButtonSpine {
 
 function createSlotButtonNormalTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
     return `${createCocosImport(["_decorator", "EventKeyboard", "KeyCode", "tween"], sourceType)}
-${createSlotModuleImport(["GameLogicUIEvents", "SlotButtonNormal", "SPIN_BUTTON_STATE_ENUM"], sourceType)}
+${createGameLogicUiEventsImport(sourceType)}
+${createSlotModuleImport(["SlotButtonNormal", "SPIN_BUTTON_STATE_ENUM"], sourceType)}
 import { BUTTON_EVENT_${gameId} } from "../DataConfig/EventConfig${gameId}";
 import { SOUND_CONFIG } from "../DataConfig/SoundConfig${gameId}";
 
@@ -1811,6 +1863,12 @@ function updateGameConfigContent(content: string, gameId: string) {
     if (!/\bTABLE_FORMAT\b/.test(nextContent)) {
         additions.push(`    public readonly TABLE_FORMAT: number[] = GameConstant${gameId}.TABLE_FORMAT;`);
     }
+    if (!/\bSYMBOL_HEIGHT\b/.test(nextContent)) {
+        additions.push(`    public readonly SYMBOL_HEIGHT: number = GameConstant${gameId}.SYMBOL_HEIGHT;`);
+    }
+    if (!/\bSYMBOL_WIDTH\b/.test(nextContent)) {
+        additions.push(`    public readonly SYMBOL_WIDTH: number = GameConstant${gameId}.SYMBOL_WIDTH;`);
+    }
     if (!/\bWIN_LEVEL_CONFIG\b/.test(nextContent)) {
         additions.push(`    public readonly WIN_LEVEL_CONFIG: any = {
         THRESHOLDS: [1, 3, 10],
@@ -1861,6 +1919,12 @@ function updateGameConfigContent(content: string, gameId: string) {
 
     if (additions.length === 0) {
         return nextContent;
+    }
+
+    const tableFormatMatch = nextContent.match(/^.*\bTABLE_FORMAT\b.*$/m);
+    if (tableFormatMatch && tableFormatMatch.index !== undefined && additions.every((addition) => /SYMBOL_(HEIGHT|WIDTH)/.test(addition))) {
+        const insertIndex = tableFormatMatch.index + tableFormatMatch[0].length;
+        return `${nextContent.slice(0, insertIndex)}\n${additions.join("\n")}${nextContent.slice(insertIndex)}`;
     }
 
     const hasTrialConfigAddition = additions.some((addition) => addition.includes("DEFAULT_TRIAL_BET_ID"));
@@ -2085,6 +2149,82 @@ function readJsonFile<T>(filePath: string): T {
     return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
 }
 
+function ensureTypescriptMetaFile(scriptFilePath: string) {
+    if (!scriptFilePath.endsWith(".ts")) {
+        return;
+    }
+
+    const metaPath = `${scriptFilePath}.meta`;
+    if (fs.existsSync(metaPath)) {
+        return;
+    }
+
+    const meta = {
+        ver: "4.0.23",
+        importer: "typescript",
+        imported: true,
+        uuid: randomUUID(),
+        files: [],
+        subMetas: {},
+        userData: {},
+    };
+    fs.writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`, "utf8");
+}
+
+function getBoilerplateStatusRank(status: BoilerplateFileResult["status"]) {
+    if (status === "updated") return 3;
+    if (status === "created") return 2;
+    return 1;
+}
+
+function mergeBoilerplateFileResults(results: BoilerplateFileResult[]): BoilerplateFileResult[] {
+    const merged = new Map<string, BoilerplateFileResult>();
+
+    for (const result of results) {
+        const current = merged.get(result.filePath);
+        if (!current || getBoilerplateStatusRank(result.status) > getBoilerplateStatusRank(current.status)) {
+            merged.set(result.filePath, result);
+        }
+    }
+
+    return Array.from(merged.values());
+}
+
+function findFirstFileByName(rootDir: string, fileName: string): string | null {
+    if (!fs.existsSync(rootDir)) {
+        return null;
+    }
+
+    const entries = fs.readdirSync(rootDir, { withFileTypes: true });
+    for (const entry of entries) {
+        const entryPath = path.join(rootDir, entry.name);
+        if (entry.isFile() && entry.name === fileName) {
+            return entryPath;
+        }
+        if (entry.isDirectory()) {
+            const foundPath = findFirstFileByName(entryPath, fileName);
+            if (foundPath) {
+                return foundPath;
+            }
+        }
+    }
+
+    return null;
+}
+
+function getCommonSlotModuleRoot(projectRoot: string, sourceType: SceneKitSourceType) {
+    return path.resolve(projectRoot, "..", "..", "cc-common", sourceType === "fire" ? "cc-slot-module" : "cc30-slot-module");
+}
+
+function readMetaUuid(metaPath: string): string | null {
+    if (!fs.existsSync(metaPath)) {
+        return null;
+    }
+
+    const meta = readJsonFile<{ uuid?: unknown }>(metaPath);
+    return typeof meta.uuid === "string" && meta.uuid.trim() ? meta.uuid.trim() : null;
+}
+
 function getReelPrefabPatchTargets(projectRoot: string) {
     return [
         path.join(projectRoot, "data", "prefabs", "GameMode", "MainGamePrefab.prefab"),
@@ -2108,7 +2248,7 @@ function getSceneKitPatchPreview(sceneFilePath: string, gameId: string): SceneKi
     ];
 }
 
-function patchReelPrefabRefs(projectRoot: string, gameId: string): BoilerplateFileResult[] {
+function patchReelPrefabRefs(projectRoot: string, gameId: string, sourceType: SceneKitSourceType): BoilerplateFileResult[] {
     const reelPrefabMetaPath = path.join(projectRoot, "data", "prefabs", "Table", `SlotReelPrefab${gameId}.prefab.meta`);
     if (!fs.existsSync(reelPrefabMetaPath)) {
         throw new Error(`SlotReelPrefab${gameId}.prefab.meta does not exist.`);
@@ -2121,7 +2261,9 @@ function patchReelPrefabRefs(projectRoot: string, gameId: string): BoilerplateFi
 
     const reelPrefabUuid = reelPrefabMeta.uuid.trim();
     const results: BoilerplateFileResult[] = [];
-    const reelPrefabRefPattern = /("reelPrefab"\s*:\s*\{\s*"__uuid__"\s*:\s*")([^"]+)("\s*,\s*"__expectedType__"\s*:\s*"cc\.Prefab"\s*\})/g;
+    const reelPrefabRefPattern = sourceType === "fire"
+        ? /("reelPrefab"\s*:\s*\{\s*"__uuid__"\s*:\s*")([^"]+)("(\s*,\s*"__expectedType__"\s*:\s*"cc\.Prefab")?\s*\})/g
+        : /("reelPrefab"\s*:\s*\{\s*"__uuid__"\s*:\s*")([^"]+)("\s*,\s*"__expectedType__"\s*:\s*"cc\.Prefab"\s*\})/g;
 
     for (const prefabPath of getReelPrefabPatchTargets(projectRoot)) {
         if (!fs.existsSync(prefabPath)) {
@@ -2149,6 +2291,106 @@ function patchReelPrefabRefs(projectRoot: string, gameId: string): BoilerplateFi
             results.push({ filePath: prefabPath, status: "updated" });
         } else {
             results.push({ filePath: prefabPath, status: "exists" });
+        }
+    }
+
+    return results;
+}
+
+function replaceUuidPairsInFile(targetFilePath: string, oldUuid: string, newUuid: string): BoilerplateFileResult {
+    const pairs = getUuidReplacementPairs(oldUuid, newUuid);
+    const currentContent = fs.readFileSync(targetFilePath, "utf8");
+    let nextContent = currentContent;
+
+    for (const pair of pairs) {
+        nextContent = nextContent.replace(new RegExp(escapeRegExp(pair.from), "g"), pair.to);
+    }
+
+    if (nextContent === currentContent) {
+        return { filePath: targetFilePath, status: "exists" };
+    }
+
+    JSON.parse(nextContent);
+    fs.writeFileSync(targetFilePath, nextContent, "utf8");
+    return { filePath: targetFilePath, status: "updated" };
+}
+
+function patchStarterKitScriptRefs(sceneFilePath: string, projectRoot: string, gameId: string, sourceType: SceneKitSourceType): BoilerplateFileResult[] {
+    const commonRoot = getCommonSlotModuleRoot(projectRoot, sourceType);
+    const patchTargets: Array<{
+        targetFilePaths: string[];
+        baseMetaName: string;
+        newMetaPath: string;
+    }> = [
+        {
+            targetFilePaths: [sceneFilePath],
+            baseMetaName: "GameDirector.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Core", `GameDirector${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [
+                path.join(projectRoot, "data", "prefabs", "Popup", "InfoPanel.prefab"),
+                path.join(projectRoot, "data", "prefabs", "Popup", "Info", "InfoPanel.prefab"),
+            ],
+            baseMetaName: "InfoPanel.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Cutscene", `InfoPanel${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: getReelPrefabPatchTargets(projectRoot),
+            baseMetaName: "SlotTableModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Table", `SlotTableModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "Table", `SlotReelPrefab${gameId}.prefab`)],
+            baseMetaName: "SlotReelModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Table", `SlotReelModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "Table", `SymbolPrefab${gameId}.prefab`)],
+            baseMetaName: "SlotSymbolModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Table", `SlotSymbolModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "GameMode", "MainGamePrefab.prefab")],
+            baseMetaName: "NormalGameDirectorModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "GameMode", `NormalGameDirectorModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "GameMode", "FreeGamePrefab.prefab")],
+            baseMetaName: "FreeGameDirectorModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "GameMode", `FreeGameDirectorModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "Cutscene", "JackpotWin.prefab")],
+            baseMetaName: "JackpotWinModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Cutscene", `JackpotWinModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "Cutscene", "WinEffect.prefab")],
+            baseMetaName: "WinEffectModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Cutscene", `WinEffectModule${gameId}.ts.meta`),
+        },
+        {
+            targetFilePaths: [path.join(projectRoot, "data", "prefabs", "Cutscene", "TotalWin.prefab")],
+            baseMetaName: "TotalWinModule.ts.meta",
+            newMetaPath: path.join(projectRoot, "scripts", "Cutscene", `TotalWinModule${gameId}.ts.meta`),
+        },
+    ];
+
+    const results: BoilerplateFileResult[] = [];
+    for (const target of patchTargets) {
+        const baseMetaPath = findFirstFileByName(commonRoot, target.baseMetaName);
+        const oldUuid = baseMetaPath ? readMetaUuid(baseMetaPath) : null;
+        const newUuid = readMetaUuid(target.newMetaPath);
+        if (!oldUuid || !newUuid) {
+            continue;
+        }
+
+        for (const targetFilePath of target.targetFilePaths) {
+            if (!fs.existsSync(targetFilePath)) {
+                continue;
+            }
+            results.push(replaceUuidPairsInFile(targetFilePath, oldUuid, newUuid));
         }
     }
 
@@ -2311,22 +2553,27 @@ export function registerSceneKitHandler() {
                 }
                 nextContent = qualifyFireCocosGlobals(nextContent, sourceType);
                 fs.writeFileSync(file.filePath, nextContent, "utf8");
+                ensureTypescriptMetaFile(file.filePath);
                 results.push({ filePath: file.filePath, status: nextContent === currentContent ? "exists" : "updated" });
                 continue;
             }
 
             fs.mkdirSync(path.dirname(file.filePath), { recursive: true });
             fs.writeFileSync(file.filePath, file.content, "utf8");
+            ensureTypescriptMetaFile(file.filePath);
             results.push({ filePath: file.filePath, status: "created" });
         }
-        results.push(...patchReelPrefabRefs(path.dirname(normalizedScenePath), gameId));
+        const projectRoot = path.dirname(normalizedScenePath);
+        results.push(...patchReelPrefabRefs(projectRoot, gameId, sourceType));
+        results.push(...patchStarterKitScriptRefs(normalizedScenePath, projectRoot, gameId, sourceType));
+        const mergedResults = mergeBoilerplateFileResults(results);
 
         return {
             gameId,
             sourceType,
-            projectRoot: path.dirname(normalizedScenePath),
+            projectRoot,
             tableFormat,
-            files: results,
+            files: mergedResults,
         };
     });
 

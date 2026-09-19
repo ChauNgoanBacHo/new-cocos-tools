@@ -20,8 +20,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("run-code-health", sourcePath, mode),
     checkConfig: (configFilePath: string, sourcePath: string) =>
         ipcRenderer.invoke("check-config", configFilePath, sourcePath),
-    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) =>
-        ipcRenderer.invoke("create-anim-config", spineDir, outputDir, animFileName, timeFileName, overwrite, excludeList),
+    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, clearFull: boolean, excludeList?: string[]) =>
+        ipcRenderer.invoke("create-anim-config", spineDir, outputDir, animFileName, timeFileName, overwrite, clearFull, excludeList),
     createSoundConfig: (soundDir: string, outputDir: string, soundFileName: string, overwrite: boolean, excludeList?: string[]) =>
         ipcRenderer.invoke("create-sound-config", soundDir, outputDir, soundFileName, overwrite, excludeList),
     selectSceneFile: () => ipcRenderer.invoke("select-scene-file"),
@@ -46,6 +46,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
             ipcRenderer.invoke("scene-kit:create-boilerplate", sceneFilePath, tableFormat, sourceType),
         replaceUuidRef: (targetFilePath: string, oldUuid: string, newUuid: string) =>
             ipcRenderer.invoke("scene-kit:replace-uuid-ref", targetFilePath, oldUuid, newUuid),
+    },
+    replaceSprite: {
+        selectSceneFile: () => ipcRenderer.invoke("replace-sprite:select-scene-file"),
+        run: (sceneFilePath: string, gameId: string, mappings: string) =>
+            ipcRenderer.invoke("replace-sprite:run", sceneFilePath, gameId, mappings),
     },
     eventGraph: {
         scan: (sourcePath: string) => ipcRenderer.invoke("event-graph:scan", sourcePath),

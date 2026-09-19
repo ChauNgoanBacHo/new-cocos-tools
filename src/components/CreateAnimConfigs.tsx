@@ -50,6 +50,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
     const [animFileName, setAnimFileName] = useStoredState<string>("anim-file-name", "AnimConfig9000.ts");
     const [timeFileName, setTimeFileName] = useStoredState<string>("time-file-name", "TimeConfig9000.ts");
     const [overwrite, setOverwrite] = useStoredState<boolean>("anim-overwrite", false);
+    const [clearFull, setClearFull] = useStoredState<boolean>("anim-clear-full", true);
     const [excludeList] = useStoredState<string[]>("anim-generator-exclude-list", DEFAULT_ANIM_EXCLUDE_LIST);
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<AnimResult | null>(null);
@@ -90,7 +91,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
 
         try {
             const res: AnimResult = await window.electronAPI.createAnimConfig(
-                spineDir, outputDir, animFileName, timeFileName, overwrite, excludeList
+                spineDir, outputDir, animFileName, timeFileName, overwrite, clearFull, excludeList
             );
             setResult(res);
             if (res.exitCode === 0) {
@@ -114,6 +115,7 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
         setAnimFileName("");
         setTimeFileName("");
         setOverwrite(false);
+        setClearFull(true);
         setResult(null);
         setPendingCodeHealthPath(null);
         setStatus({ type: null, message: "" });
@@ -393,6 +395,26 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     />
                                     <span className="text-sm text-slate-600 dark:text-zinc-400">
                                         {overwrite ? "Sẽ ghi đè file nếu đã tồn tại" : "Chỉ quét, không ghi file"}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2 sm:gap-4 items-center">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left">
+                                Clear Full
+                            </label>
+                            <div className="text-left">
+                                <label className={`inline-flex items-center gap-2 ${overwrite ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={clearFull}
+                                        disabled={!overwrite}
+                                        onChange={(e) => setClearFull(e.target.checked)}
+                                        className="w-4 h-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 disabled:cursor-not-allowed"
+                                    />
+                                    <span className="text-sm text-slate-600 dark:text-zinc-400">
+                                        {clearFull ? "Tạo lại sạch, không giữ customize biến" : "Giữ lại customize biến chưa scan ra"}
                                     </span>
                                 </label>
                             </div>

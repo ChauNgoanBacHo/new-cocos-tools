@@ -11,6 +11,7 @@ import CodeHealth from "./components/CodeHealth";
 import SpinePreview from "./components/SpinePreview";
 import SceneKit from "./components/SceneKit";
 import ReplaceComponentRef from "./components/ReplaceComponentRef";
+import ReplaceSprite from "./components/ReplaceSprite";
 import EventGraph from "./components/EventGraph";
 import { DriveSyncMenu } from "./components/DriveSyncMenu";
 import { useStoredState } from "./hooks/useStoredState";
@@ -18,7 +19,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { ChargeUpLoadingScreen } from "./components/loading/ChargeUpLoadingScreen";
 import brandLogo from "./assets/logo.png";
 
-type TabType = "cheat" | "scene-kit" | "replace-ref" | "event-graph" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
+type TabType = "cheat" | "scene-kit" | "replace-ref" | "replace-sprite" | "event-graph" | "anim" | "sound" | "check-config" | "check-assets" | "code-health" | "spine-preview" | "drive-sync" | "settings";
 type MenuGroupId = "simulation" | "generators" | "analysis" | "tools";
 
 // Elegant line icons (Heroicons outline, stroke-based) per tab. Defined once and
@@ -55,6 +56,18 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 10l-3 2.5L10 15" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16.5H9.5a2.5 2.5 0 010-5H14" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 9l3-2.5L14 4" />
+            </>
+        ),
+    },
+    {
+        id: "replace-sprite",
+        label: "Replace Sprite",
+        icon: (
+            <>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 6.5h13v11h-13v-11z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 15l3.25-3.25 2.25 2.25 1.5-1.5L18.5 16" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.25 9.25h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.25h7.5M8.25 19.75h7.5" />
             </>
         ),
     },
@@ -152,7 +165,7 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
     {
         id: "simulation",
         label: "Game Layer",
-        itemIds: ["scene-kit", "replace-ref", "event-graph"],
+        itemIds: ["scene-kit", "replace-ref", "replace-sprite", "event-graph"],
     },
     {
         id: "generators",
@@ -299,6 +312,8 @@ function App() {
                 return <SceneKit />;
             case "replace-ref":
                 return <ReplaceComponentRef />;
+            case "replace-sprite":
+                return <ReplaceSprite />;
             case "event-graph":
                 return <EventGraph />;
             case "anim":

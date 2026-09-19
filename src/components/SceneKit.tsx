@@ -359,13 +359,13 @@ export default function SceneKit() {
                             </div>
 
                             <div className="space-y-2">
-                                {visibleFiles.map((file) => {
+                                {visibleFiles.map((file, index) => {
                                     const isDone = file.status === "created" || file.status === "exists" || file.status === "updated";
                                     const isExisting = file.status === "exists";
                                     const isUpdated = file.status === "updated";
                                     return (
                                         <div
-                                            key={file.filePath}
+                                            key={`${file.filePath}-${index}`}
                                             className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left dark:border-white/5 dark:bg-[#1b2029]">
                                             <div className="min-w-0">
                                                 <div className="truncate font-mono text-sm font-bold text-slate-800 dark:text-zinc-100">

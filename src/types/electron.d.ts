@@ -104,7 +104,7 @@ interface ElectronAPI {
         exitCode: number;
         spineSummary: { spine: string; unusedAnims: string[] }[];
     }>;
-    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) => Promise<{
+    createAnimConfig: (spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, clearFull: boolean, excludeList?: string[]) => Promise<{
         stdout: string;
         stderr: string;
         exitCode: number;
@@ -200,6 +200,26 @@ interface ElectronAPI {
             }>;
             totalCount: number;
             changed: boolean;
+        }>;
+    };
+    replaceSprite: {
+        selectSceneFile: () => Promise<string | null>;
+        run: (sceneFilePath: string, gameId: string, mappings: string) => Promise<{
+            sceneFilePath: string;
+            gameId: string;
+            scannedAssets: number;
+            mappingCount: number;
+            replacedCount: number;
+            unasyncPrefabCount: number;
+            changed: boolean;
+            details: Array<{
+                mapping: string;
+                nodePath?: string;
+                nodeName?: string;
+                assetName?: string;
+                status: "replaced" | "missing-node" | "missing-asset" | "missing-component" | "error";
+                message: string;
+            }>;
         }>;
     };
     eventGraph: {

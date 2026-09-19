@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 export function registerCreateAnimHandler() {
-    ipcMain.handle("create-anim-config", async (_event, spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, excludeList?: string[]) => {
+    ipcMain.handle("create-anim-config", async (_event, spineDir: string, outputDir: string, animFileName: string, timeFileName: string, overwrite: boolean, clearFull: boolean = true, excludeList?: string[]) => {
         try {
             const normalizedExcludeList = new Set(
                 Array.isArray(excludeList)
@@ -146,10 +146,11 @@ export function registerCreateAnimHandler() {
             const validationIssues: Array<{ fileName: string; message: string }> = [];
             let foundTime = false;
             let foundAnim = false;
-            const localTimeExports = overwrite
+            const shouldPreserveLocalKeys = overwrite && !clearFull;
+            const localTimeExports = shouldPreserveLocalKeys
                 ? readLocalObjectExports(path.join(outputDir, timeFileName))
                 : new Map<string, Map<string, string>>();
-            const localAnimExports = overwrite
+            const localAnimExports = shouldPreserveLocalKeys
                 ? readLocalObjectExports(path.join(outputDir, animFileName))
                 : new Map<string, Map<string, string>>();
 
