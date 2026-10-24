@@ -1,0 +1,33 @@
+{
+  "appId": "com.onepunch.spine-notes",
+  "productName": "Spine Notes",
+  "artifactName": "Spine-Notes-${version}-${os}-${arch}.${ext}",
+  "compression": "normal",
+  "directories": {
+    "output": "release-spine-notes"
+  },
+  "files": [
+    "dist-spine-metadata/**/*",
+    "spine-metadata-app/electron/main.mjs",
+    "spine-metadata-app/electron/preload.cjs",
+    "assets/icon.png"
+  ],
+  "extraMetadata": {
+    "main": "spine-metadata-app/electron/main.mjs"
+  },
+  "mac": {
+    "icon": "assets/icon.icns",
+    "target": [
+      "dir"
+    ],
+    "category": "public.app-category.developer-tools",
+    "identity": null,
+    "hardenedRuntime": false
+  },
+  "win": {
+    "icon": "assets/spine-notes.ico",
+    "target": [
+      "portable"
+    ]
+  }
+}
