@@ -425,6 +425,66 @@ export class GameDirector${gameId} extends GameDirector {
 `;
 }
 
+function createSlotSoundPlayerModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
+    return `${createCocosImport(["_decorator", "log", "sys"], sourceType)}
+${createSlotModuleImport(["SlotSoundPlayerModule"], sourceType)}
+const { ccclass } = _decorator;
+${createCcClassDecorator("SlotSoundPlayerModule" + gameId, sourceType)}
+export class SlotSoundPlayerModule${gameId} extends SlotSoundPlayerModule{
+    _onEventShow(): void {
+        const isIOS = sys.os == sys.OS.IOS;
+        if (this.isWebSound && isIOS) {
+            this.scheduleOnce(() => {
+                this.resumeContext().then(() => {
+                    this._soundPlayer && this._soundPlayer.onEventShow(this.musicVolume === 1 ? this.isEnableBGM : false, this.isEnableSFX);
+                });
+            }, 0.5);
+        } else {
+            this._soundPlayer && this._soundPlayer.onEventShow(this.musicVolume === 1 ? this.isEnableBGM : false, this.isEnableSFX);
+        }
+    }
+
+    async resumeContext(): Promise<void> {
+        const Howler = globalThis.Howler;
+        if (!Howler?.ctx) {
+            return Promise.resolve();
+        }
+
+        const ctx = Howler.ctx;
+        const state = ctx.state;
+        try {
+            if (state === 'interrupted' || state === 'suspended') {
+                await ctx.resume();
+            } else if (state === 'running') {
+                const iOSVersion = this._getVersionIOS();
+                if (sys.os === sys.OS.IOS && iOSVersion >= 14) {
+                    await ctx.suspend();
+                    await ctx.resume();
+                }
+            }
+        } catch (e) {
+            await ctx.resume();
+        }
+    }
+
+    fadeMusicTo(duration: number, volume: number, onComplete?: () => void): void {
+        this.musicVolume = volume;
+        super.fadeMusicTo(duration, volume, onComplete);
+    }
+
+    setMusicVolume(volume: number): void {
+        this.musicVolume = volume;
+
+        if (this.isMuteMusic) {
+            return;
+        }
+
+        super.setMusicVolume(volume);
+    }
+}
+`;
+}
+
 function createPaylineConfigTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
     return `${createCocosImport(["_decorator", "Vec2"], sourceType)}
 ${createSlotModuleImport(["PaylineConfig", "PAYLINE_TYPE"], sourceType)}
@@ -2015,6 +2075,11 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat:
         {
             filePath: path.join(projectRoot, "scripts", "Core", `GameDirector${gameId}.ts`),
             content: createGameDirectorTemplate(gameId, sourceType),
+            mode: "overwrite" as const,
+        },
+        {
+            filePath: path.join(projectRoot, "scripts", "Core", `SlotSoundPlayerModule${gameId}.ts`),
+            content: createSlotSoundPlayerModuleTemplate(gameId, sourceType),
             mode: "overwrite" as const,
         },
         {

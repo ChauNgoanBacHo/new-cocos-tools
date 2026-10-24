@@ -357,8 +357,8 @@ function App() {
     }
 
     const sidebarClassName = isDark
-        ? "w-64 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col justify-between shadow-lg z-10"
-        : "w-64 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col justify-between shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
+        ? "w-64 h-screen min-h-0 bg-[rgb(25,27,33)] border-r border-[#2b3040] p-5 flex flex-col shadow-lg z-10"
+        : "w-64 h-screen min-h-0 bg-[#f7f7fb] border-r border-[#dde3f0] p-5 flex flex-col shadow-[0_18px_45px_rgba(148,163,184,0.18)] z-10";
 
     const navItemClassName = (active: boolean) =>
         active
@@ -379,8 +379,8 @@ function App() {
                 : "text-[#8b95aa] group-hover:text-[#49566d]";
 
     const sidebarFooterClassName = isDark
-        ? "pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2"
-        : "pt-4 border-t border-[#dde3f0] flex flex-col items-center gap-2";
+        ? "mt-4 shrink-0 pt-4 border-t border-[#2b3040] flex flex-col items-center gap-2"
+        : "mt-4 shrink-0 pt-4 border-t border-[#dde3f0] flex flex-col items-center gap-2";
 
     const themeToggleButtonClassName = isDark
         ? "p-2 rounded-lg bg-[#2b3040] hover:bg-[#353b4c] text-[#8e95a7] hover:text-white transition-all cursor-pointer"
@@ -414,8 +414,8 @@ function App() {
         <div className={appShellClassName}>
             {/* MENU BÊN TRÁI */}
             <aside className={sidebarClassName}>
-                <div>
-                    <div className="mb-8 px-2">
+                <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="mb-8 shrink-0 px-2">
                         <img
                             src={brandLogo}
                             alt="One Punch DevKit"
@@ -423,7 +423,7 @@ function App() {
                         />
                     </div>
 
-                    <nav className="flex flex-col gap-5">
+                    <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1">
                         {visibleMenuGroups.map((group) => (
                             <div key={group.id} className="space-y-2">
                                 <div className={groupLabelClassName}>
