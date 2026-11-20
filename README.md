@@ -25,22 +25,28 @@ npm run build:electron:mac
 npm run build:electron:linux
 ```
 
-## Release macOS patch update
+## Build macOS update artifacts
 
 ```bash
 npm run release:mac
 ```
 
-This builds `One Punch DevKit.app`, then creates a macOS `.zip` release in `release/`.
-The release script also cleans the `release/` folder so only the current patch `.zip` remains.
+This creates the macOS ZIP, blockmap, and `latest-mac.yml` in `release/`.
 
-## Manual patch update flow
+## Publish a macOS auto-update
 
 1. Bump `version` in `package.json`.
-2. Run `npm run release:mac`.
-3. Send the generated `.zip` file in `release/` to users.
-4. Users close the current app, unzip the new package, and replace the old `One Punch DevKit.app`.
-5. Reopen the app and confirm the version label in the sidebar has changed.
+2. Make sure the GitHub repository is public.
+3. Export a GitHub token that can create releases:
+
+```bash
+export GH_TOKEN=your_github_token
+npm run release:mac:publish
+```
+
+The packaged app checks GitHub Releases automatically and downloads newer versions in the background. Version `0.5.7` is the first updater-enabled build, so existing users must install this version manually once.
+
+macOS requires every auto-updating build to be signed by the same Developer ID. Configure `CSC_LINK` and `CSC_KEY_PASSWORD` in the release environment before distributing updater-enabled builds.
 
 ## Preview
 

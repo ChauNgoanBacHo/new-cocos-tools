@@ -1,6 +1,33 @@
+type AppUpdateStatus =
+    | "disabled"
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "downloaded"
+    | "not-available"
+    | "error";
+
+interface AppUpdateState {
+    status: AppUpdateStatus;
+    currentVersion: string;
+    version?: string;
+    releaseName?: string;
+    percent?: number;
+    transferred?: number;
+    total?: number;
+    message?: string;
+}
+
 interface ElectronAPI {
     ping: () => Promise<string>;
     getAppVersion: () => Promise<string>;
+    appUpdate: {
+        getState: () => Promise<AppUpdateState>;
+        check: () => Promise<AppUpdateState>;
+        install: () => Promise<{ ok: boolean; error?: string }>;
+        onState: (listener: (state: AppUpdateState) => void) => () => void;
+    };
     storage: {
         get: (key: string) => Promise<unknown>;
         set: (key: string, value: unknown) => Promise<boolean>;

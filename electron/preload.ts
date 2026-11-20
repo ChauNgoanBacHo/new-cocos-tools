@@ -4,6 +4,16 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("electronAPI", {
     ping: () => ipcRenderer.invoke("ping"),
     getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+    appUpdate: {
+        getState: () => ipcRenderer.invoke("app-update:get-state"),
+        check: () => ipcRenderer.invoke("app-update:check"),
+        install: () => ipcRenderer.invoke("app-update:install"),
+        onState: (listener: (state: unknown) => void) => {
+            const wrapped = (_event: unknown, state: unknown) => listener(state);
+            ipcRenderer.on("app-update:state", wrapped);
+            return () => ipcRenderer.removeListener("app-update:state", wrapped);
+        },
+    },
     storage: {
         get: (key: string) => ipcRenderer.invoke("storage:get", key),
         set: (key: string, value: unknown) => ipcRenderer.invoke("storage:set", key, value),

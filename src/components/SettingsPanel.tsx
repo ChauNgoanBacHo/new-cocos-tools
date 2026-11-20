@@ -9,6 +9,7 @@ import {
     SPINE_ALIASES_STORAGE_KEY,
     type PathAlias,
 } from "../constants/spineAliases";
+import { AppUpdateSettings } from "./AppUpdateSettings";
 
 type MenuItem = {
     id: string;
@@ -205,6 +206,8 @@ export function SettingsPanel({
             </div>
 
             <div className="bg-white border border-slate-200 dark:bg-[#2b3140] dark:border-white/5 rounded-2xl shadow-[0_18px_36px_rgba(148,163,184,0.16)] dark:shadow-[0_18px_36px_rgba(10,12,18,0.28)] overflow-hidden space-y-6">
+                <AppUpdateSettings />
+
                 <div className="p-6 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-600 pb-2.5 mb-2">
                         <span className="text-sm">🧭</span>

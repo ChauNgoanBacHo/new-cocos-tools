@@ -15,6 +15,7 @@ import { registerSpinePreviewHandler } from "./handlers/spinePreview";
 import { registerSceneKitHandler } from "./handlers/sceneKit";
 import { registerReplaceSpriteHandler } from "./handlers/replaceSprite";
 import { registerEventGraphHandler } from "./handlers/eventGraph";
+import { initializeAppUpdater, registerAppUpdaterHandlers } from "./handlers/appUpdater";
 import { registerStorageHandlers } from "./storage";
 import { registerCheatLocalSocketHandlers } from "./handlers/cheatLocalSocket";
 import { registerExportCheatExtensionHandlers } from "./handlers/exportCheatExtension";
@@ -220,6 +221,7 @@ app.whenReady().then(() => {
         }
     });
     createWindow();
+    initializeAppUpdater();
 });
 
 app.on("window-all-closed", () => {
@@ -406,6 +408,7 @@ registerSpinePreviewHandler();
 registerSceneKitHandler();
 registerReplaceSpriteHandler();
 registerEventGraphHandler();
+registerAppUpdaterHandlers();
 registerStorageHandlers();
 registerCheatLocalSocketHandlers();
 registerExportCheatExtensionHandlers();

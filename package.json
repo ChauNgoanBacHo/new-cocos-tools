@@ -1,7 +1,7 @@
 {
   "name": "one-punch-devkit",
   "private": true,
-  "version": "0.5.6",
+  "version": "0.5.7",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -16,13 +16,15 @@
     "release:spine-notes:win": "npm run build:spine-notes && electron-builder --config spine-metadata-app/electron-builder.json --win portable --x64",
     "build:electron": "npm run build && electron-builder",
     "build:electron:mac": "npm run build && electron-builder --mac",
-    "release:mac": "rm -rf release && npm run build && electron-builder --mac dir && node scripts/package-mac-release.mjs && node scripts/cleanup-mac-release.mjs",
+    "release:mac": "rm -rf release && npm run build && electron-builder --mac zip",
+    "release:mac:publish": "rm -rf release && npm run build && electron-builder --mac zip --publish always",
     "build:electron:linux": "npm run build && electron-builder --linux",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.5",
+    "electron-updater": "^6.8.11",
     "elkjs": "^0.12.0",
     "eslint": "^10.3.0",
     "typescript": "~6.0.2",
@@ -31,6 +33,7 @@
   "build": {
     "appId": "com.superapp.app",
     "productName": "One Punch DevKit",
+    "artifactName": "One-Punch-DevKit-${version}-${arch}-${os}.${ext}",
     "compression": "maximum",
     "electronLanguages": [
       "en",
@@ -56,11 +59,16 @@
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
-        "dir"
+        "zip"
       ],
       "category": "public.app-category.utilities",
-      "identity": null,
       "hardenedRuntime": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "ChauNgoanBacHo",
+      "repo": "new-cocos-tools",
+      "releaseType": "release"
     },
     "linux": {
       "icon": "assets/icon.png",
