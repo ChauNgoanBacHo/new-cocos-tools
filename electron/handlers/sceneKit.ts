@@ -314,8 +314,8 @@ function createTimeConfigTemplate() {
 `;
 }
 
-function createDateTypeTemplate(gameId: string) {
-    return `export enum DateType${gameId} {
+function createDataTypeTemplate(gameId: string) {
+    return `export enum DataType${gameId} {
 }
 `;
 }
@@ -614,9 +614,6 @@ export class SlotSymbolModule${gameId} extends SlotSymbolModule {
     tweenRenderersColor(duration: number, targetColor: Color): void {
         this._rendererList.forEach(renderer => {
             if (!renderer.color.equals(targetColor)) {
-                renderer['tweenColor'] && renderer['tweenColor'].stop();
-                renderer['tweenColor'] = null;
-
                 if (duration) {
                     const tweenColor = this.tweenColor(renderer, duration, targetColor);
                     renderer['tweenColor'] = tweenColor;
@@ -627,7 +624,15 @@ export class SlotSymbolModule${gameId} extends SlotSymbolModule {
         });
     }
 
+    stopColorTweens(): void {
+        this._rendererList.forEach(renderer => {
+            renderer['tweenColor'] && renderer['tweenColor'].stop();
+            renderer['tweenColor'] = null;
+        });
+    }
+
     enableHighlight(duration: number = 0.2): void {
+        this.stopColorTweens();
         if (duration > 0) {
             this.node["isHighlight"] = true;
             const normalColor = this.resourceManager.getColorNormal();
@@ -639,6 +644,7 @@ export class SlotSymbolModule${gameId} extends SlotSymbolModule {
     }
 
     disableHighlight(duration: number = 0.2): void {
+        this.stopColorTweens();
         if (duration > 0) {
             this.node["isHighlight"] = false;
             const dimColor = this.resourceManager.getColorDim();
@@ -651,10 +657,7 @@ export class SlotSymbolModule${gameId} extends SlotSymbolModule {
 
     onDestroy(): void {
         super.onDestroy();
-        this._rendererList.forEach(renderer => {
-            renderer['tweenColor'] && renderer['tweenColor'].stop();
-            renderer['tweenColor'] = null;
-        });
+        this.stopColorTweens();
     }
 }
 `;
@@ -2188,8 +2191,8 @@ function getBoilerplateFiles(sceneFilePath: string, gameId: string, tableFormat:
             mode: "overwrite" as const,
         },
         {
-            filePath: path.join(projectRoot, "scripts", "Utils", `DateType${gameId}.ts`),
-            content: createDateTypeTemplate(gameId),
+            filePath: path.join(projectRoot, "scripts", "Utils", `DataType${gameId}.ts`),
+            content: createDataTypeTemplate(gameId),
             mode: "overwrite" as const,
         },
         {
