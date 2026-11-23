@@ -1,5 +1,8 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import { autoUpdater, type ProgressInfo, type UpdateInfo } from "electron-updater";
+import updaterPackage from "electron-updater";
+import type { ProgressInfo, UpdateInfo } from "electron-updater";
+
+const { autoUpdater } = updaterPackage;
 
 export type AppUpdateStatus =
     | "disabled"
