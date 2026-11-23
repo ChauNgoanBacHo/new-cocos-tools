@@ -101,6 +101,12 @@ export function AppUpdateSettings() {
                         </span>
                     </div>
 
+                    {state.currentVersion === "0.5.9" && (
+                        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                            Auto-update test passed: this Settings marker was added in v0.5.9.
+                        </p>
+                    )}
+
                     {(state.message || actionError || progressDetail) && (
                         <p className={`text-xs ${state.status === "error" || actionError ? "text-red-500 dark:text-red-300" : "text-slate-500 dark:text-zinc-400"}`}>
                             {actionError || state.message || progressDetail}
