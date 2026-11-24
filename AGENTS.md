@@ -456,9 +456,21 @@ Meaning:
   - full Electron builder path for mac
 
 - `npm run release:mac`
-  - build app
-  - package release directory
-  - run cleanup helper scripts
+  - runs `scripts/release-mac.mjs`
+  - builds the macOS ZIP and Ed25519-signed `update-mac-<arch>.json`
+  - requires the existing local signing key; does not publish
+
+Release automation:
+
+- `.github/workflows/release-mac.yml`: manual `workflow_dispatch` only, macOS arm64.
+- Publish through Actions -> Release macOS -> Run workflow, not automatically on push/tag.
+- Actions uses its built-in `GITHUB_TOKEN` with `contents: write`; no personal access token is needed.
+- Repository secret `UPDATE_SIGNING_PRIVATE_KEY` must contain the existing Ed25519 private key. Do not generate/rotate the key for a routine release.
+- Set the temporary key path in a shell step using `$RUNNER_TEMP` and `$GITHUB_ENV`; `runner.temp` is not accepted in job-level `env`.
+- macOS uses the internal verified installer helper, not Squirrel.Mac. No Apple Developer certificate is required for this update mechanism; normal filesystem permissions and macOS policies still apply.
+- See `internal-macos-auto-update-guide.md` and README for the implementation, key handling, and test checklist.
+- User confirmed build success at source version `0.5.13`. The local test client is `0.5.12` with a Settings marker; `0.5.13` removes it. End-to-end update installation is not yet confirmed.
+- Only bump versions when the user asks. Current changes do not require an automatic release.
 
 Current app version is stored in:
 

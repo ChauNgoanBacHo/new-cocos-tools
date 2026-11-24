@@ -176,6 +176,7 @@ Workflow cần:
 - macOS runner đúng architecture. Workflow mẫu dùng `macos-15` và kiểm tra `process.arch === 'arm64'`.
 - Quyền `contents: write` để tạo/upload release bằng `${{ secrets.GITHUB_TOKEN }}`.
 - `npm ci`, test, khôi phục key vào `runner.temp` với mode `600`, sau đó build/ký/publish.
+- Với workflow mẫu, export đường dẫn key bằng shell `$RUNNER_TEMP` vào `$GITHUB_ENV` trong một step. Không dùng `${{ runner.temp }}` trong `env` cấp job vì GitHub đã báo context không hợp lệ ở vị trí đó.
 - Kiểm tra tag khớp version/lockfile và private key khớp public key đã nhúng.
 - Cleanup private key với `if: always()`; không upload thư mục chứa key vào artifacts.
 - Không chạy workflow có signing secret trên code pull request từ nguồn không tin cậy.
@@ -230,3 +231,13 @@ Các phần CHƯA có trong implementation mẫu, cần làm thêm nếu app kh�
 ## 9. Tiêu chí hoàn tất
 
 User cài bản chuyển tiếp một lần. Từ lần sau, mở app, thấy update mới, tải nền, bấm Restart & Install và app mở lại đúng version mới; không kéo `.app` bằng tay, không cần Apple Developer certificate và không bỏ kiểm tra tính xác thực của bản update.
+
+## 10. Trạng thái One Punch DevKit
+
+- Source hiện tại: `0.5.13`, đã bỏ dòng test trong Settings.
+- User đã xác nhận build thành công sau khi cấu hình/sửa workflow.
+- Chỉ chạy **Actions -> Release macOS -> Run workflow** thủ công; push commit/tag không tự chạy.
+- Không dùng Fine-grained PAT trong Actions. Dùng `GITHUB_TOKEN` tự cấp và secret `UPDATE_SIGNING_PRIVATE_KEY` chứa private key hiện tại.
+- Bản local để test: `0.5.12` có dòng `Hello from v0.5.12. Internal updater test marker.`
+- Bản đích: `0.5.13` không có dòng test. Sau update cần xác nhận version mới, mất dòng test và giữ nguyên settings/userData.
+- Chưa ghi nhận xác nhận end-to-end từ user. Không đánh dấu đã test auto-update thành công chỉ dựa vào build pass.

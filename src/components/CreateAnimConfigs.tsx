@@ -424,7 +424,18 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 text-left pt-1">
                                 Exclude List
                             </label>
-                            <div className="text-left">
+                            <div className="min-w-0 space-y-2 text-left">
+                                {excludeList.length > 0 && (
+                                    <ul aria-label="Active exclude keys" className="flex flex-wrap gap-2">
+                                        {excludeList.map((key, index) => (
+                                            <li
+                                                key={`${key}-${index}`}
+                                                className="max-w-full rounded-md border border-amber-300/70 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-200">
+                                                <code className="break-all">{key}</code>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                                 <div className="flex flex-wrap items-center gap-1.5 text-xs leading-6 text-amber-700 dark:text-amber-300/90">
                                     <span>
                                         {excludeList.length > 0
@@ -443,8 +454,8 @@ export default function CreateAnimConfigs({ onOpenCodeHealth }: CreateAnimConfig
                                     </span>
                                     <span>
                                         {excludeList.length > 0
-                                            ? "to add or remove items."
-                                            : "if you want to define one."}
+                                            ? "Settings > Generator Exclude List to add or remove items."
+                                            : "Settings > Generator Exclude List to define one."}
                                     </span>
                                 </div>
                             </div>

@@ -74,7 +74,14 @@ macOS builds now use an internal installer helper instead of Squirrel.Mac. An Ap
 - Backups stay in `.one-punch-update-*` next to the installed app. Keep them until the new app is confirmed working; they may then be deleted manually. The installer status is recorded in `~/Library/Application Support/one-punch-devkit/update-result.txt`.
 - Updates are full ZIP downloads. The workflow avoids manual replacement; it does not promise delta-only downloads.
 
-Test with `npm run test:updater`. For an end-to-end test, install `0.5.11`, publish `0.5.12` signed with the same private key, then check/install from Settings. Do not overwrite a published version.
+Test with `npm run test:updater`. The current test pair is the local `0.5.12` build with the Settings marker and release `0.5.13` without that marker. From the local app, check/install the newer release; confirm the app reopens as `0.5.13`, the marker is gone, and existing settings remain. Do not overwrite a published version.
+
+### Verified status
+
+- User confirmed the build succeeds after the workflow setup/fix. Current source version: `0.5.13`.
+- Workflow runs manually only; GitHub supplies the publish token. Keep using the same Ed25519 key in `UPDATE_SIGNING_PRIVATE_KEY`.
+- The key path is exported from shell `$RUNNER_TEMP` through `$GITHUB_ENV`. Do not put `${{ runner.temp }}` in job-level `env`; GitHub rejected that context there.
+- End-to-end installation from `0.5.12` to `0.5.13` has not yet been confirmed by the user. Build success alone is not confirmation that auto-update installation succeeded.
 
 ## Preview
 
