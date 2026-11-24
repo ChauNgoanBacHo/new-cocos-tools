@@ -15,6 +15,8 @@ dist-spine-metadata
 release
 release-spine-notes
 *.local
+update-private.pem
+*.p12
 
 # Editor directories and files
 .vscode/*

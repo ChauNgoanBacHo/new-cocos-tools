@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron/simple";
 
 const electronMainExternals = [
-    "electron-updater",
     "eslint",
     "typescript",
     "typescript-eslint",

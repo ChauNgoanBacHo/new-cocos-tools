@@ -51,7 +51,7 @@ export function AppUpdateSettings() {
         }
     }, [state]);
 
-    const isBusy = state.status === "checking" || state.status === "downloading";
+    const isBusy = state.status === "checking" || state.status === "available" || state.status === "downloading";
     const progressDetail = state.status === "downloading" && state.total
         ? `${formatBytes(state.transferred)} / ${formatBytes(state.total)}`
         : "";
@@ -67,9 +67,11 @@ export function AppUpdateSettings() {
 
     const handleInstall = async () => {
         setActionError("");
-        const result = await window.electronAPI.appUpdate.install();
-        if (!result.ok) {
-            setActionError(result.error || "Unable to install the update.");
+        try {
+            const result = await window.electronAPI.appUpdate.install();
+            if (!result.ok) setActionError(result.error || "Unable to install the update.");
+        } catch (error: unknown) {
+            setActionError(error instanceof Error ? error.message : "Unable to install the update.");
         }
     };
 
@@ -100,12 +102,6 @@ export function AppUpdateSettings() {
                             {statusLabel}
                         </span>
                     </div>
-
-                    {state.currentVersion === "0.5.9" && (
-                        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                            Auto-update test passed: this Settings marker was added in v0.5.9.
-                        </p>
-                    )}
 
                     {(state.message || actionError || progressDetail) && (
                         <p className={`text-xs ${state.status === "error" || actionError ? "text-red-500 dark:text-red-300" : "text-slate-500 dark:text-zinc-400"}`}>
