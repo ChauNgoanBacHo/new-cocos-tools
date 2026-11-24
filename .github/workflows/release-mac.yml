@@ -18,9 +18,12 @@ jobs:
     permissions:
       contents: write
     env:
-      UPDATE_SIGNING_KEY_PATH: ${{ runner.temp }}/one-punch-update-private.pem
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
+      - name: Set signing key path
+        shell: bash
+        run: printf 'UPDATE_SIGNING_KEY_PATH=%s/one-punch-update-private.pem\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
       - name: Checkout release source
         uses: actions/checkout@v4
         with:
