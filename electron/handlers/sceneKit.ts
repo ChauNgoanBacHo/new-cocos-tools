@@ -1622,7 +1622,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
 
     winAmountPS: number = 0;
     _charNodeList: Node[] = [];
-    _tweenFadeSubWin: Tween = ${createNullInitializer(sourceType)};
+    _tweenFadeSubWin: ${sourceType === "fire" ? "Tween" : "Tween<Node>"} = ${createNullInitializer(sourceType)};
 
     // #region Base
     syncWinAmount(value: any): void {
@@ -1646,6 +1646,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
 
     // #region Update WinAmount
     updateWinAmount({ winAmount, winAmountPS, time, winLevel }): Promise<void> {
+        // NOTE: set winAmountPS in free game
         return new Promise((resolve) => {
             this._callBackOnComplete = resolve;
             this.winAmountPS = winAmountPS;
@@ -1666,7 +1667,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
                     })
                     .start();
             } else {
-                this.updateWinAmountInstantly(winAmountPS);
+                this.updateWinAmountInstantly(winAmountPS || winAmount);
             }
 		});
 	}
@@ -1709,6 +1710,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
     }
 
     playMainWinEffect(winLevel: number, winAmount: number): void {
+        this._resetLabel();
         this.hideSubWinEffect();
         this.currentValue = this.winAmountPS || winAmount;
         const key = \`WIN_\${winLevel}\`;
@@ -1733,8 +1735,8 @@ export class WinAmountModule${gameId} extends WinAmountModule {
         Tween.stopAllByTarget(this.node);
         Tween.stopAllByTarget(this.labelSubWinAmount.node);
         this.clearLabel();
-        this.labelSubWinAmount.string = this.moneyFormatter.formatMoney(this._winValue);
         if (this.subWinFrameEffect.node.active) {
+            this.labelSubWinAmount.string = this.moneyFormatter.formatMoney(this._winValue);
             eno.setOpacity(this.subWinFrameEffect.node, 255);
             this._tweenFadeSubWin = fadeOut(this.subWinFrameEffect.node, time);
         }
@@ -1754,7 +1756,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
                 this.subWinFrameEffect.setAnimation(0, UI_SUBWINAMOUNT_ANIM.DISAPPEAR, false);
                 this.playDisappearSound(winLevel);
             })
-            .delay(UI_SUBWINAMOUNT_TIME.DISAPPEAR )
+            .delay(UI_SUBWINAMOUNT_TIME.DISAPPEAR)
             .call(() => {
                 this.playMainWinEffect(winLevel, winAmount);
             })
@@ -1782,7 +1784,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
                 this.subWinFrameEffect.setAnimation(0, UI_SUBWINAMOUNT_ANIM.DISAPPEAR, false);
                 this.playDisappearSound(winLevel);
             })
-            .delay(UI_SUBWINAMOUNT_TIME.DISAPPEAR )
+            .delay(UI_SUBWINAMOUNT_TIME.DISAPPEAR)
             .call(() => {
                 this.playMainWinEffect(winLevel, winAmount);
             })
