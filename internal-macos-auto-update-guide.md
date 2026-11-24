@@ -172,7 +172,7 @@ Thêm repository Actions secret `UPDATE_SIGNING_PRIVATE_KEY` chứa nội dung P
 
 Workflow cần:
 
-- `workflow_dispatch` để bấm chạy và/hoặc trigger push tag `v*`.
+- Chỉ dùng `workflow_dispatch` để bấm chạy thủ công; không trigger tự động khi push commit hoặc tag.
 - macOS runner đúng architecture. Workflow mẫu dùng `macos-15` và kiểm tra `process.arch === 'arm64'`.
 - Quyền `contents: write` để tạo/upload release bằng `${{ secrets.GITHUB_TOKEN }}`.
 - `npm ci`, test, khôi phục key vào `runner.temp` với mode `600`, sau đó build/ký/publish.
@@ -180,7 +180,7 @@ Workflow cần:
 - Cleanup private key với `if: always()`; không upload thư mục chứa key vào artifacts.
 - Không chạy workflow có signing secret trên code pull request từ nguồn không tin cậy.
 
-Sau khi sửa version và push commit lên `main`, bấm **Actions -> Release macOS -> Run workflow**, hoặc push tag khớp version. Workflow tạo release draft, upload đủ file rồi mới công bố. Không cần tự tạo hoặc export Fine-grained PAT.
+Sau khi sửa version và push commit lên `main`, bấm **Actions -> Release macOS -> Run workflow**. Push commit hoặc tag không tự chạy workflow. Workflow tạo release draft, upload đủ file rồi mới công bố. Không cần tự tạo hoặc export Fine-grained PAT.
 
 ### Phát hành local, tùy chọn
 

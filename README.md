@@ -53,8 +53,7 @@ For each release:
 
 1. Update `package.json` and `package-lock.json` only when ready to release, then commit/push to `main`.
 2. Open **Actions -> Release macOS -> Run workflow**, selecting `main`.
-3. Or push a matching tag such as `v0.5.13` after its version change is on `main`.
-4. Wait for the workflow to publish the ZIP and signed manifest in GitHub Releases.
+3. Wait for the workflow to publish the ZIP and signed manifest in GitHub Releases. Pushing commits or tags does not start a release automatically.
 
 The workflow rejects mismatched tags, commits outside `main`, wrong signing keys, and already-published versions. If publishing failed after creating a draft, rerun the same workflow to finish that draft. It never builds Windows/Linux or Spine Notes. The private key is written only to the runner's temporary folder and removed in an always-run cleanup step.
 
