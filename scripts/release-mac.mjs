@@ -6,7 +6,8 @@ import { createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { sha256File, verifyManifest } from './update-security.mjs';
 
 const publish = process.argv.includes('--publish');
-if (publish && !process.env.GH_TOKEN) throw new Error('GH_TOKEN is required to publish.');
+const githubToken = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+if (publish && !githubToken) throw new Error('Run the macOS release workflow, or provide GH_TOKEN/GITHUB_TOKEN to publish locally.');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const keyPath = process.env.UPDATE_SIGNING_KEY_PATH || path.join(os.homedir(), '.config/one-punch-devkit/update-private.pem');
 if (!fs.existsSync(keyPath)) throw new Error('Missing update signing key. Run npm run update:keygen once on the release machine.');
@@ -19,7 +20,7 @@ const tag = `v${pkg.version}`;
 async function api(url, options = {}) {
     const response = await fetch(url, {
         ...options,
-        headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json', ...options.headers },
+        headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github+json', ...options.headers },
         signal: AbortSignal.timeout(15 * 60_000),
     });
     if (!response.ok) throw new Error(`GitHub HTTP ${response.status}: ${(await response.text()).slice(0, 500)}`);
@@ -57,7 +58,7 @@ if (publish) {
     for (const name of names) {
         const oldAsset = release.assets?.find(asset => asset.name === name);
         if (oldAsset) {
-            const response = await fetch(oldAsset.url, { method: 'DELETE', headers: { Authorization: `Bearer ${process.env.GH_TOKEN}` } });
+            const response = await fetch(oldAsset.url, { method: 'DELETE', headers: { Authorization: `Bearer ${githubToken}` } });
             if (!response.ok) throw new Error(`Could not replace draft asset ${name}.`);
         }
         const assetPath = path.join('release', name);

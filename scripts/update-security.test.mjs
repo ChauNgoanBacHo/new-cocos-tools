@@ -73,3 +73,26 @@ test('mac helper replaces a temporary app, preserves backup and requests launch'
         assert.match(await fs.readFile(path.join(dir, 'result'), 'utf8'), /Updated successfully/);
     } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
+
+test('CI restores only the matching key, with private permissions and no secret in output', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'updater-ci-key-'));
+    const target = path.join(dir, 'private.pem');
+    const script = path.resolve('scripts/prepare-ci-update-key.mjs');
+    const secret = privateKey.export({ type: 'pkcs8', format: 'pem' });
+    const run = value => execFileSync(process.execPath, [script], {
+        cwd: dir, encoding: 'utf8', stdio: 'pipe',
+        env: { ...process.env, UPDATE_SIGNING_PRIVATE_KEY: value, UPDATE_SIGNING_KEY_PATH: target },
+    });
+    try {
+        await fs.mkdir(path.join(dir, 'assets'));
+        await fs.writeFile(path.join(dir, 'assets/update-public.pem'), pem);
+        assert.throws(() => run('invalid'));
+        assert.throws(() => run(generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' })));
+        await assert.rejects(fs.access(target));
+        const output = run(secret);
+        assert.ok(!output.includes('BEGIN PRIVATE KEY'));
+        assert.equal((await fs.stat(target)).mode & 0o777, 0o600);
+        assert.equal(await fs.readFile(target, 'utf8'), secret);
+        assert.throws(() => run(secret), 'Existing key must not be overwritten');
+    } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

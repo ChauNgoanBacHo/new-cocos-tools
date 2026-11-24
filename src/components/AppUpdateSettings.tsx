@@ -103,10 +103,6 @@ export function AppUpdateSettings() {
                         </span>
                     </div>
 
-                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                        Hello from v0.5.12. Internal updater test marker.
-                    </p>
-
                     {(state.message || actionError || progressDetail) && (
                         <p className={`text-xs ${state.status === "error" || actionError ? "text-red-500 dark:text-red-300" : "text-slate-500 dark:text-zinc-400"}`}>
                             {actionError || state.message || progressDetail}

@@ -1,0 +1,77 @@
+name: Release macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-macos
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      UPDATE_SIGNING_KEY_PATH: ${{ runner.temp }}/one-punch-update-private.pem
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Validate release version and runner
+        shell: bash
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
+          assert.equal(pkg.version, lock.version);
+          assert.equal(pkg.version, lock.packages[''].version);
+          assert.equal(process.platform, 'darwin');
+          assert.equal(process.arch, 'arm64', 'Release workflow requires an Apple Silicon runner.');
+          if (process.env.GITHUB_REF.startsWith('refs/tags/')) {
+            assert.equal(process.env.GITHUB_REF, `refs/tags/v${pkg.version}`, 'Tag must match package.json version.');
+          }
+          console.log(`Release version: ${pkg.version}, architecture: ${process.arch}`);
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test updater
+        run: npm run test:updater
+
+      - name: Restore existing signing key
+        env:
+          UPDATE_SIGNING_PRIVATE_KEY: ${{ secrets.UPDATE_SIGNING_PRIVATE_KEY }}
+        run: node scripts/prepare-ci-update-key.mjs
+
+      - name: Build, sign and publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run release:mac:publish
+
+      - name: Remove private signing key
+        if: always()
+        run: node --input-type=module -e "import fs from 'node:fs'; fs.rmSync(process.env.UPDATE_SIGNING_KEY_PATH, { force:true });"
