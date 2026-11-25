@@ -471,6 +471,8 @@ Release automation:
 - See `internal-macos-auto-update-guide.md` and README for the implementation, key handling, and test checklist.
 - User confirmed build success at source version `0.5.13`. The local test client is `0.5.12` with a Settings marker; `0.5.13` removes it. End-to-end update installation is not yet confirmed.
 - Only bump versions when the user asks. Current changes do not require an automatic release.
+- Version policy: patch digits run from 0 to 9. After `0.5.9`, increment minor and reset patch to `0.6.0`, not `0.5.10`. Honor an explicitly requested version.
+- User subsequently requested `0.6.0`, which supersedes the temporary `0.5.2` reset and is higher than the published `0.5.14`. Do not bypass downgrade checks or change versions without an explicit user request.
 
 Current app version is stored in:
 
