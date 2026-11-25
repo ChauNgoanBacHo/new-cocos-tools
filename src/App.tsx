@@ -165,7 +165,7 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
     {
         id: "simulation",
         label: "Game Layer",
-        itemIds: ["scene-kit", "replace-ref", "replace-sprite", "event-graph"],
+        itemIds: ["scene-kit", "replace-ref", "replace-sprite"],
     },
     {
         id: "generators",
@@ -173,14 +173,14 @@ const MENU_GROUPS: { id: MenuGroupId; label: string; itemIds: TabType[] }[] = [
         itemIds: ["anim", "sound"],
     },
     {
-        id: "analysis",
-        label: "Analysis",
-        itemIds: ["check-config", "check-assets", "code-health"],
-    },
-    {
         id: "tools",
         label: "Tools",
         itemIds: ["spine-preview", "drive-sync"],
+    },
+    {
+        id: "analysis",
+        label: "Analysis",
+        itemIds: ["check-config", "check-assets", "code-health"],
     },
 ];
 
@@ -194,10 +194,24 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [appVersion, setAppVersion] = useState("v0.1.0");
     const [isDark, setIsDark] = useStoredState<boolean>("theme", true);
-    const [menuGroupOrder, setMenuGroupOrder] = useStoredState<MenuGroupId[]>("app-menu-group-order", MENU_GROUPS.map((group) => group.id));
+    const [menuGroupOrder, setMenuGroupOrder, menuGroupOrderReady] = useStoredState<MenuGroupId[]>("app-menu-group-order", MENU_GROUPS.map((group) => group.id));
+    const [toolsOrderMigrated, setToolsOrderMigrated, toolsOrderMigrationReady] = useStoredState<boolean>("app-menu-tools-order-migrated", false);
     const [hiddenMenuGroupIds, setHiddenMenuGroupIds] = useStoredState<MenuGroupId[]>("app-hidden-menu-group-ids", []);
     const [, setCodeHealthSourcePath] = useStoredState<string>("code-health-source-path", "");
     const [, setCodeHealthAutoRunKey] = useStoredState<string>("code-health-auto-run-key", "");
+
+    useEffect(() => {
+        if (!menuGroupOrderReady || !toolsOrderMigrationReady || toolsOrderMigrated) return;
+        setMenuGroupOrder((previous) => {
+            const toolsIndex = previous.indexOf("tools");
+            const analysisIndex = previous.indexOf("analysis");
+            if (toolsIndex < 0 || analysisIndex < 0 || toolsIndex < analysisIndex) return previous;
+            const next: MenuGroupId[] = previous.filter((id) => id !== "tools");
+            next.splice(next.indexOf("analysis"), 0, "tools");
+            return next;
+        });
+        setToolsOrderMigrated(true);
+    }, [menuGroupOrderReady, toolsOrderMigrationReady, toolsOrderMigrated, setMenuGroupOrder, setToolsOrderMigrated]);
 
     const tabMap = new Map(TABS.map((tab) => [tab.id, tab] as const));
 
