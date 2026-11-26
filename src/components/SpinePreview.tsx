@@ -71,6 +71,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
     const previewViewportRef = useRef<HTMLDivElement>(null);
     const inlineStageRef = useRef<SpineStage | null>(null);
     const previewInstancesRef = useRef<PreviewInstance[]>([]);
+    const previewGenerationRef = useRef(0);
     const previewDragRef = useRef<{
         pointerId: number;
         instanceId: string;
@@ -148,6 +149,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
 
     const addItemsToInlinePreview = async (items: SpineResult[], point?: { x: number; y: number }) => {
         const stage = inlineStageRef.current;
+        const generation = previewGenerationRef.current;
         if (!stage) {
             setInlinePreviewError("Không tạo được khung preview.");
             return;
@@ -164,6 +166,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
         );
 
         for (const item of uniqueItems) {
+            if (generation !== previewGenerationRef.current || stage !== inlineStageRef.current) return;
             const instanceId = `spine-preview-${Date.now()}-${Math.random().toString(16).slice(2)}`;
             const pendingInstance: PreviewInstance = {
                 id: instanceId,
@@ -184,6 +187,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
                 sequence: [],
                 loopLast: true,
             };
+            previewInstancesRef.current = [...previewInstancesRef.current, pendingInstance];
             setPreviewInstances((prev) => [...prev, pendingInstance]);
 
             try {
@@ -191,6 +195,12 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
                     jsonPath: item.jsonPath,
                     atlasPath: item.atlasPath,
                 });
+
+                if (generation !== previewGenerationRef.current || stage !== inlineStageRef.current ||
+                    !previewInstancesRef.current.some((instance) => instance.id === instanceId)) {
+                    stage.removeSpine(spine);
+                    continue;
+                }
 
                 if (item.skins.length > 0) {
                     SpineStage.setSkin(spine, item.skins.includes("default") ? "default" : item.skins[0]);
@@ -219,6 +229,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
                 );
                 setActivePreviewInstanceId(instanceId);
             } catch (error) {
+                if (generation !== previewGenerationRef.current || stage !== inlineStageRef.current) return;
                 setPreviewInstances((prev) =>
                     prev.map((instance) =>
                         instance.id === instanceId
@@ -237,6 +248,7 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
     const removePreviewInstance = (instanceId: string) => {
         const instance = previewInstancesRef.current.find((item) => item.id === instanceId);
         inlineStageRef.current?.removeSpine(instance?.spine);
+        previewInstancesRef.current = previewInstancesRef.current.filter((item) => item.id !== instanceId);
         setPreviewInstances((prev) => prev.filter((item) => item.id !== instanceId));
         setSpinePopover((current) => current?.instanceId === instanceId ? null : current);
         setActivePreviewInstanceId((currentId) => {
@@ -246,7 +258,9 @@ export default function SpinePreview({ isStandalone = false }: { isStandalone?: 
     };
 
     const clearInlinePreview = () => {
+        previewGenerationRef.current += 1;
         inlineStageRef.current?.clearSpines();
+        previewInstancesRef.current = [];
         setPreviewInstances([]);
         setActivePreviewInstanceId("");
         setInlinePreviewError(null);

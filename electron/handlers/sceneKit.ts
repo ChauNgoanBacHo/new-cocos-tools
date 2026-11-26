@@ -1606,12 +1606,12 @@ export class SlotButtonNormal${gameId} extends SlotButtonNormal {
 
 function createWinAmountModuleTemplate(gameId: string, sourceType: SceneKitSourceType = "scene") {
     return `${createCocosImport(["Label", "Node", "Tween", "Vec3", "_decorator", "log", "sp", "tween"], sourceType)}
-${createSlotModuleImport(["PoolFactoryModule", "WinAmountModule"], sourceType)}
+${createSlotModuleImport(["GAME_SPEED_ENUM", "PoolFactoryModule", "SlotGameSettings", "WinAmountModule"], sourceType)}
 import { UI_SUBWINAMOUNT_ANIM, UI_WIN_AMOUNT_ANIM } from '../DataConfig/AnimConfig${gameId}';
 import { SOUND_CONFIG } from '../DataConfig/SoundConfig${gameId}';
 import { UI_SUBWINAMOUNT_TIME } from '../DataConfig/TimeConfig${gameId}';
 const { ccclass, property } = _decorator;
-const { fadeOut, setOpacity } = eno;
+const { inject, fadeOut, setOpacity } = eno;
 
 ${createCcClassDecorator("WinAmountModule" + gameId, sourceType)}
 export class WinAmountModule${gameId} extends WinAmountModule {
@@ -1619,6 +1619,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
     @property(Label) labelSubWinAmount: Label = ${createNullInitializer(sourceType)};
     @property(Node) holderNode: Node = ${createNullInitializer(sourceType)};
     @property({ type: PoolFactoryModule }) labelPool: PoolFactoryModule = ${createNullInitializer(sourceType)};
+    @inject(SlotGameSettings) gameSettings: SlotGameSettings;
 
     winAmountPS: number = 0;
     _charNodeList: Node[] = [];
@@ -1727,6 +1728,9 @@ export class WinAmountModule${gameId} extends WinAmountModule {
     }
 
     fadeOutNumber(time: number = 0.5): void {
+        if (this.gameSettings.gameSpeed === GAME_SPEED_ENUM.INSTANTLY) {
+            time = 0;
+        }
         this.resetCallBack();
         super.fadeOutNumber(time);
         if (!this._winValue) {
@@ -1735,7 +1739,7 @@ export class WinAmountModule${gameId} extends WinAmountModule {
         Tween.stopAllByTarget(this.node);
         Tween.stopAllByTarget(this.labelSubWinAmount.node);
         this.clearLabel();
-        if (this.subWinFrameEffect.node.active) {
+        if (this.subWinFrameEffect.node.active && this.gameSettings.gameSpeed !== GAME_SPEED_ENUM.INSTANTLY) {
             this.labelSubWinAmount.string = this.moneyFormatter.formatMoney(this._winValue);
             eno.setOpacity(this.subWinFrameEffect.node, 255);
             this._tweenFadeSubWin = fadeOut(this.subWinFrameEffect.node, time);

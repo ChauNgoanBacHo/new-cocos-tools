@@ -204,10 +204,10 @@ function createSpinePreviewWindow(parentWindow?: BrowserWindow | null) {
 
 app.whenReady().then(() => {
     // Serve local files over the privileged scheme. The renderer encodes the
-    // absolute path as the URL pathname, with a fixed "local" host:
-    //   spine-asset://local/<percent-encoded-abs-path>
+    // absolute path as the URL pathname. Per-load hosts keep atlas-relative
+    // textures fresh when assets are overwritten at the same path.
     protocol.handle(SPINE_SCHEME, async (request) => {
-        const cors = { "Access-Control-Allow-Origin": "*" };
+        const cors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
         try {
             const url = new URL(request.url);
             // url.pathname starts with "/"; decode back into a real filesystem path.

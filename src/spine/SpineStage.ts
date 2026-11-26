@@ -33,15 +33,15 @@ export interface LoadSpineParams {
  * API (which PixiJS uses for textures), so we route through a privileged scheme.
  *
  * The scheme is registered as `standard`, so the first path segment after `//`
- * is parsed as the HOST. We use a fixed host ("local") and put the real absolute
- * path in the pathname. Each segment is percent-encoded but slashes stay literal
+ * is parsed as the HOST. A per-load host versions JSON, atlas and relative PNGs;
+ * the real absolute path stays in the pathname. Segments are encoded but slashes stay literal
  * so PixiJS's path utils (dirname/join) resolve atlas-relative image names.
  */
-function toAssetURL(absPath: string): string {
+function toAssetURL(absPath: string, revision: string): string {
     const normalized = absPath.replace(/\\/g, "/");
     const withoutLead = normalized.startsWith("/") ? normalized.slice(1) : normalized;
     const encoded = withoutLead.split("/").map(encodeURIComponent).join("/");
-    return `spine-asset://local/${encoded}`;
+    return `spine-asset://${revision}/${encoded}`;
 }
 
 /**
@@ -55,6 +55,8 @@ export class SpineStage {
     readonly app: PIXI.Application;
     private spines: Spine[] = [];
     private destroyed = false;
+    private assetUrls = new Map<Spine, string[]>();
+    private resizeObserver: ResizeObserver;
     // Fit state for the single previewed spine, plus the current zoom factor
     // (1 = fit-to-view). Zoom is applied as baseScale * zoom.
     private fit: { spine: Spine; baseScale: number; centerX: number; centerY: number } | null = null;
@@ -81,38 +83,48 @@ export class SpineStage {
         container.appendChild(view);
 
         // Re-fit spine and background on canvas resize
-        const resizeObserver = new ResizeObserver(() => this.onResize());
-        resizeObserver.observe(container);
+        this.resizeObserver = new ResizeObserver(() => this.onResize());
+        this.resizeObserver.observe(container);
     }
 
     /** Load a spine from local json+atlas. Adds it to the stage and returns it. */
     async loadSpine(params: LoadSpineParams): Promise<Spine> {
         applyAssetPreferences();
-        const jsonUrl = toAssetURL(params.jsonPath);
+        // A unique origin also versions atlas-relative PNGs, unlike a JSON query parameter.
+        const revision = `load-${crypto.randomUUID()}`;
+        const jsonUrl = toAssetURL(params.jsonPath, revision);
         // Tell the loader exactly which atlas to use; images are resolved relative
         // to the atlas's own directory by the loader.
-        const atlasUrl = toAssetURL(params.atlasPath);
+        const atlasUrl = toAssetURL(params.atlasPath, revision);
 
         const resource = await PIXI.Assets.load({
             src: jsonUrl,
             data: { spineAtlasFile: atlasUrl },
         });
 
+        const urls = [jsonUrl, atlasUrl, ...resource.spineAtlas.pages.map((page: { name: string }) =>
+            PIXI.utils.path.join(PIXI.utils.path.dirname(atlasUrl), page.name)
+        )];
         const spine = new Spine(resource.spineData);
         if (this.destroyed) {
             spine.destroy();
+            this.releaseAssets(urls);
             throw new Error("SpineStage was destroyed before load completed");
         }
         this.spines.push(spine);
+        this.assetUrls.set(spine, urls);
         this.app.stage.addChild(spine);
         return spine;
     }
 
     removeSpine(spine: Spine | null | undefined): void {
-        if (!spine) return;
+        if (!spine || spine.destroyed) return;
         this.spines = this.spines.filter((item) => item !== spine);
         spine.parent?.removeChild(spine);
         spine.destroy();
+        const urls = this.assetUrls.get(spine);
+        this.assetUrls.delete(spine);
+        if (urls) this.releaseAssets(urls);
         if (this.fit?.spine === spine) {
             this.fit = null;
         }
@@ -122,6 +134,13 @@ export class SpineStage {
         for (const spine of [...this.spines]) {
             this.removeSpine(spine);
         }
+    }
+
+    private releaseAssets(urls: string[]): void {
+        // Dispose the atlas before destroying its textures. Loads never share these URLs.
+        void PIXI.Assets.unload(urls.slice(0, 2))
+            .then(() => PIXI.Assets.unload(urls.slice(2)))
+            .catch((error) => console.warn('Failed to release Spine assets:', error));
     }
 
     clientToCanvasPoint(clientX: number, clientY: number): { x: number; y: number } {
@@ -444,6 +463,8 @@ export class SpineStage {
     destroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;
+        this.resizeObserver.disconnect();
+        this.clearSpines();
         const view = this.app.view as HTMLCanvasElement;
         // Destroy the app, its view children and the WebGL context to avoid leaks
         // across repeated modal opens.

@@ -434,12 +434,12 @@ export default function CreateSoundConfigs({ onOpenCodeHealth }: CreateSoundConf
                             </label>
                             <div className="min-w-0 space-y-2 text-left">
                                 {excludeList.length > 0 && (
-                                    <ul aria-label="Active exclude keys" className="flex flex-wrap gap-2">
+                                    <ul aria-label="Active exclude keys" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                                         {excludeList.map((key, index) => (
                                             <li
                                                 key={`${key}-${index}`}
-                                                className="max-w-full rounded-md border border-amber-300/70 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-200">
-                                                <code className="break-all">{key}</code>
+                                                className="max-w-full break-all rounded border border-slate-200 bg-slate-100/70 px-2 py-1 font-mono text-[11px] leading-4 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+                                                {key}
                                             </li>
                                         ))}
                                     </ul>
